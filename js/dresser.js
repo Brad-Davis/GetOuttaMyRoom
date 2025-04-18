@@ -69,6 +69,22 @@ class Dresser {
     });
   }
 
+  leaveDresser(camera, gsap) {
+    this.dresserFocus = false;
+    gsap.to(camera.position, {
+      x: 0,
+      z: -5,
+      y: 0,
+      duration: 1,
+      ease: 'power2.inOut',
+    });
+    gsap.to(camera.rotation, {
+      y: 0,
+      duration: 1,
+      ease: 'power2.inOut',
+    });
+  }
+
 
 }
 
