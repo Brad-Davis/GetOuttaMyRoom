@@ -6,8 +6,35 @@
   <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
-  <div id="hand"></div>
-  <div id="phone"></div>
+  <div id="container">
+    <button id="backButton"></button>
+    
+    <div id="inventory">
+      <div id="phone">
+        <img src="./resources/images/phone.png" alt="Phone" id="phoneImage"></img>
+      </div>
+      <div id="hand">
+        <img src="./resources/images/hand.png" alt="Hand" id="handImage" style="pointer-events: none;"></img>
+      </div>
+    </div>
+    
+    <div id="battleMode">
+      <div id="enemyHealthContainer" class="progress-container">
+        <progress id="enemyHealth" value="50" max="100">
+          <div class="progress-value"></div>
+        </progress>
+        <span id="enemyHealthText">50 / 100</span>
+      </div>
+      <div id="playerHealthContainer" class="progress-container">
+        <progress id="playerHealth" value="50" max="100">
+          <div class="progress-value"></div>
+        </progress>
+        <span id="playerHealthText">50 / 100</span>
+      </div>
+    </div>
+    
+</div>
+  
   <script type="module" src="./js/game.js"></script>
 </body>
 </html>

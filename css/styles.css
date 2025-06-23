@@ -4,4 +4,156 @@ body {
     margin: 0; /* Remove default margin */
     padding: 0; /* Add padding around the content */
     color: #333; /* Default text color */
+    overflow: hidden;
+}
+
+#backButton {
+    background-color: #007BFF; /* Blue background for the button */
+    color: white; /* White text color */
+    border: none; /* Remove default border */
+    padding: 10px 20px; /* Add padding to the button */
+    text-align: center; /* Center the text inside the button */
+    text-decoration: none; /* Remove underline from text */
+    display: inline-block; /* Make the button inline-block */
+    font-size: 16px; /* Set font size */
+    margin: 4px 2px; /* Add margin around the button */
+    cursor: pointer; /* Change cursor to pointer on hover */
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+#container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Allow clickthrough on the container */
+}
+    
+#container > * {
+    pointer-events: auto; /* Enable pointer events for child elements */
+}
+
+
+#phone {
+    position: absolute;
+    bottom: 70px;
+    right: 20px;
+    width: 200px; /* Set a fixed width for the phone */
+}
+
+#phone img {
+    width: 100%; /* Make the image responsive */
+    height: auto; /* Maintain aspect ratio */
+    filter: brightness(0.4);
+}
+
+canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw; /* Full width of the viewport */
+    height: 100vh; /* Full height of the viewport */
+    pointer-events: auto; /* Allow clickthrough on the canvas */
+    z-index: -1;
+
+}
+
+#playerHealthContainer {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    width: calc(100% - 100px); /* Set a fixed width for the health bar */
+    height: 20px; /* Set a fixed height for the health bar */  
+    border-radius: 5px; /* Rounded corners */
+}
+
+#enemyHealthContainer {
+    position: absolute;
+    top: 50px;
+    right: 50px;
+    width: calc(100% - 100px); /* Set a fixed width for the health bar */
+    height: 20px; /* Set a fixed height for the health bar */  
+    border-radius: 5px; /* Rounded corners */
+}
+
+.progress-container {
+    position: relative;
+    display: inline-block;
+    width: 100%; /* Adjust as needed */
+  }
+
+  #playerHealth, #enemyHealth {
+    background: rgba(255,255,255,0.1);
+    justify-content: flex-start;
+    border-radius: 100px;
+    align-items: center;
+    position: relative;
+    padding: 0 5px;
+    display: flex;
+    height: 40px;
+    width: 500px;
+  }
+
+  #p
+  
+  .progress-value {
+    animation: load 3s normal forwards;
+    box-shadow: 0 10px 40px -10px #fff;
+    border-radius: 100px;
+    background: #fff;
+    height: 30px;
+    width: 0;
+  }
+  
+  @keyframes load {
+    0% { width: 0; }
+    100% { width: 68%; }
+  }
+  
+  #playerHealth {
+    width: 100%; /* Ensure the progress bar spans the container */
+    height: 20px; /* Adjust height as needed */
+  }
+
+  #enemyHealth {
+    width: 100%; /* Ensure the progress bar spans the container */
+    height: 20px; /* Adjust height as needed */
+  }
+  
+  #playerHealthText {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px; /* Adjust font size as needed */
+    color: white; /* Ensure visibility */
+    pointer-events: none; /* Prevent interaction with the text */
+  }
+
+  #enemyHealthText {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px; /* Adjust font size as needed */
+    color: white; /* Ensure visibility */
+    pointer-events: none; /* Prevent interaction with the text */
+  }
+
+#hand {
+    position: absolute;
+    bottom: -5px;
+    left: 0px;
+    width: 200px; /* Set a fixed width for the hand */
+}
+
+#hand img {
+    filter: brightness(0.4); /* Adjust the brightness value as needed */
+}
+
+#inventory, #battleMode {
+  display: none;
 }
