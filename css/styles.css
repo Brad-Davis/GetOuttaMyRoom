@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 body {
-    font-family: Arial, sans-serif; /* Set a default font for the body */
+    font-family: 'Press Start 2P', cursive !important; /* Set retro gaming font for the body */
     background-color: #f4f4f4; /* Light background color for the body */
     margin: 0; /* Remove default margin */
     padding: 0; /* Add padding around the content */
@@ -154,6 +156,124 @@ canvas {
     filter: brightness(0.4); /* Adjust the brightness value as needed */
 }
 
-#inventory, #battleMode {
+#inventory {
   display: none;
 }
+
+#battleMode {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  pointer-events: none;
+}
+
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+#full-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 48px;
+  font-weight: bold;
+  color: transparent;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 1001;
+}
+
+#bottom-overlay {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 1000px;
+  text-align: center;
+  font-size: 24px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 1001;
+  padding: 20px;
+  border-radius: 10px;
+  color: transparent;
+  text-shadow: 2px 2px 0px rgb(255, 43, 163, 0.75); /* No blur radius, 2px offsets for a pixelated look */
+}
+
+#window-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40%;
+  min-width: 300px;
+  z-index: 1001;
+  font-size: 2em;
+  display: none;
+  pointer-events: auto;
+}
+
+#window-buttons button {
+  margin-right: 10px;
+  padding: 10px 20px;
+  font-size: 1em;
+}
+
+#inventory-button {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 100px;
+  height: 100px;
+}
+
+#active-items {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: 100px;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.active-item-container, .inventory-item-container {
+  width: 100px;
+  height: 100px;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.active-item-container {
+  display: inline-block; /* Keep inline-block for active items */
+}
+
+.inventory-item-container {
+  padding: 0 !important;
+}
+
+#inventory-items {
+  position: absolute;
+  right: 0px;
+  width: 300px;
+  height: 300px;
+  top: 50%;
+  transform: translate(100%, -50%);
+  transition: transform 0.5s ease-in-out;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0; /* Optional: adds consistent spacing between items */
+}
+

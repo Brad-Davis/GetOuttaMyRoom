@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
+import audioService from '../utils/audioService.js';
 
 class CD {
   constructor(scene, camera) {
@@ -70,6 +71,9 @@ class CD {
     if (this.exploded) return; // Prevent multiple explosions
     
     this.exploded = true;
+    
+    // Start background music on first user interaction
+    audioService.startBackgroundMusic();
     
     // Smooth camera transition to CD position
     gsap.to(this.camera.position, {

@@ -30,6 +30,11 @@ class Room {
 
     const texture = this.textureLoader.load(`../resources/images/${texturePath}`);
     
+    // Set proper texture filtering to prevent glitching
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;
+    
     // Apply texture options
     if (options.repeat) {
       texture.wrapS = THREE.RepeatWrapping;

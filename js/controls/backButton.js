@@ -5,7 +5,6 @@ class BackButton {
     this.BackButtonEl = document.getElementById('backButton');
     this.BackButtonEl.addEventListener('click', () => {
       this.returnToDefaultPos(camera, gsap); 
-      unsetFocus();
     });
   }
 

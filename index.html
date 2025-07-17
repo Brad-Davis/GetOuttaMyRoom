@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>My Three.js App</title>
   <link rel="stylesheet" href="./css/styles.css">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/98.css"
+  >
 </head>
 <body>
   <div id="container">
@@ -17,7 +21,24 @@
         <img src="./resources/images/hand.png" alt="Hand" id="handImage" style="pointer-events: none;"></img>
       </div>
     </div>
-    
+    <div id="inventory-container">
+      <button id="inventory-button">Back<br>Pack</button>
+      <div id="inventory-items" class="window">
+        <div class="status-bar-field inventory-item-container"></div>
+        <div class="status-bar-field inventory-item-container"></div>
+        <div class="status-bar-field inventory-item-container"></div>
+        <div class="status-bar-field inventory-item-container"></div>
+        <div class="status-bar-field inventory-item-container"></div>
+        <div class="status-bar-field inventory-item-container"></div>
+        <div class="status-bar-field inventory-item-container"></div>
+        <div class="status-bar-field inventory-item-container"></div>
+        <div class="status-bar-field inventory-item-container"></div>
+      </div>
+      <div id="active-items" class="status-bar">
+        <div class="status-bar-field active-item-container"></div>
+        <div class="status-bar-field active-item-container"></div>
+      </div>
+    </div>
     <div id="battleMode">
       <div id="enemyHealthContainer" class="progress-container">
         <progress id="enemyHealth" value="50" max="100">
@@ -30,6 +51,22 @@
           <div class="progress-value"></div>
         </progress>
         <span id="playerHealthText">50 / 100</span>
+      </div>
+    </div>
+    <div id="overlay">
+      <div id="full-overlay"></div>
+      <div id="bottom-overlay">[Click on the CD to start]</div>
+      <div class="window" id="window-overlay">
+        <div class="title-bar">
+          <div class="title-bar-text" id="window-title"></div>
+          <div class="title-bar-controls">
+            <button aria-label="Close"></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <p id="window-message"></p>
+          <div id="window-buttons"></div>
+        </div>
       </div>
     </div>
     

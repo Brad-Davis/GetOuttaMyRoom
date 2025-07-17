@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import loaderService from '../utils/loaderService.js';
 
 class Dresser {
   constructor(scene) {
@@ -9,9 +9,9 @@ class Dresser {
     this.dresserFocus = false;
   }
 
-  createDresser(x, y, z) {
-    const loader = new GLTFLoader();
-    loader.load('./resources/models/dresser.glb', (gltf) => {
+  async createDresser(x, y, z) {
+    try {
+      const gltf = await loaderService.loadGLTF('./resources/models/dresser.glb');
       const model = gltf.scene;
       console.log(model);
       model.scale.set(13, 10, 15); // Scale the model
@@ -44,9 +44,9 @@ class Dresser {
       this.dresserMesh.add(pentagram);
 
       this.dresserMesh.position.set(x, y, z); // Position the group
-    }, undefined, (error) => {
-      console.error('An error happened', error);
-    });
+    } catch (error) {
+      console.error('Error loading dresser model:', error);
+    }
   }
 
   getDresserMesh() {

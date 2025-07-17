@@ -9,6 +9,7 @@
     "dev": "vite --host 127.0.0.1"
   },
   "dependencies": {
+    "98.css": "^0.1.21",
     "express": "^4.17.1",
     "gsap": "^3.12.7",
     "socket.io": "^4.0.1",

@@ -1,7 +1,9 @@
 import HealthBar from "../UI/healthBar.js";
+import sceneService from "../utils/sceneService.js";
+import gsap from 'gsap';
 
 class Enemy {
-    constructor (  name, items,hp, level, exp, gold, gltf) {
+    constructor (  name, items,hp, level, exp, gold, gltf, center, model) {
         this.maxHp = hp;
         this.currentHp = hp;   
         this.items = items;
@@ -11,6 +13,11 @@ class Enemy {
         this.gold = gold;
         this.enemyHealthBar = new HealthBar(document.getElementById("enemyHealthContainer"), this);
         this.gltf = gltf;
+        this.startPosition = [0, 0, -10];
+        this.endPosition = [0, 0, -5];
+        this.center = center;
+        this.model = null;
+        this.moveAnimation = null;
     }
 
     getHp () {
@@ -43,6 +50,10 @@ class Enemy {
         this.currentHp = 0;
     }
 
+    takeDamage(damage) {
+        // Should trigger an animation
+    }
+
     getHpString () {
         return this.currentHp + "/" + this.maxHp;
     }
@@ -60,7 +71,42 @@ class Enemy {
     }
 
     enterScene() {
+        this.model.position.set(this.startPosition[0] + this.center[0], this.startPosition[1] + this.center[1], this.startPosition[2] + this.center[2]);
+        sceneService.getScene().add(this.model);
+        this.moveTo(this.endPosition);
+    }
 
+    setPosition(position) {
+        //ADDS THE CENTER OF THE ENEMY TO THE POSITION
+        this.model.position.set(position[0] + this.center[0], position[1] + this.center[1], position[2] + this.center[2]);
+    }
+
+    moveTo(position) {
+        if (!this.model) return;
+        
+        // Kill any existing animation on this model
+        if (this.moveAnimation) {
+            this.moveAnimation.kill();
+        }
+        
+        // Calculate target position with center offset
+        const targetPosition = {
+            x: position[0] + this.center[0],
+            y: position[1] + this.center[1],
+            z: position[2] + this.center[2]
+        };
+        
+        // Animate to the new position using GSAP
+        this.moveAnimation = gsap.to(this.model.position, {
+            x: targetPosition.x,
+            y: targetPosition.y,
+            z: targetPosition.z,
+            duration: 1, // 1 second
+            ease: "power2.out", // Smooth ease-out curve
+            onComplete: () => {
+                this.moveAnimation = null; // Clear reference when done
+            }
+        });
     }
 
     startBattle() {
@@ -71,7 +117,6 @@ class Enemy {
     
     tick() {
         this.changeHp(-1);
-        
     }
 
 

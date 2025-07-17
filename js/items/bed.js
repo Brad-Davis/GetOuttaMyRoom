@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import loaderService from '../utils/loaderService.js';
+import interactionService from '../utils/interactionService.js';
 
 class Bed {
   constructor(scene) {
@@ -7,9 +8,9 @@ class Bed {
     this.bedMesh = null;
   }
 
-    createBed(x, y, z, gsap, camera, interactionManager, backButton) {
-            const loader = new GLTFLoader();
-            loader.load('./resources/models/bed.glb', (gltf) => {
+    async createBed(x, y, z, gsap, camera, interactionManager, backButton) {
+        try {
+            const gltf = await loaderService.loadGLTF('./resources/models/bed.glb');
             this.bedMesh = gltf.scene;
             console.log(this.bedMesh);
             this.bedMesh.scale.set(0.02, 0.02, 0.02); // Scale the model
@@ -18,13 +19,16 @@ class Bed {
             interactionManager.add(this.bedMesh);
 
             this.bedMesh.addEventListener('click', () => {
+              if (!interactionService.checkEnabled()) {
+                return;
+              }
               this.lookAtBed(camera, gsap);
               backButton.showBackButton();
             });
 
-        }, undefined, (error) => {
-            console.error('An error happened', error);
-        });
+        } catch (error) {
+            console.error('Error loading bed model:', error);
+        }
     }
 
     getBedMesh() {

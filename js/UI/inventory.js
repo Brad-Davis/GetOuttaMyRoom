@@ -6,6 +6,13 @@ class Inventory {
     addItem(item) {
         this.items.push(item);
     }
+
+    showInventory() {
+        const inventory = document.getElementById("inventory");
+        inventory.style.display = "block";
+    }
+
+    hideInventory() {}
     
     removeItem(item) {
         const index = this.items.indexOf(item);
@@ -19,4 +26,5 @@ class Inventory {
     }
 }
 
-export default Inventory;
+const inventory = new Inventory();
+export default inventory;

@@ -2,7 +2,6 @@
 import * as THREE from 'three';
 import { InteractionManager } from 'three.interactive';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
 import gsap from 'gsap';
 import Room from './controls/room.js';
 import Door from './items/door.js';
@@ -19,9 +18,16 @@ import Bedroom from './enviroments/bedroom.js';
 import CD from './items/cd.js';
 import LightingFixture from './items/lightingFixture.js';
 import HealthBar from "./UI/healthBar.js";
+import textOverlay from "./UI/textOverlay.js";
+import audioService from "./utils/audioService.js";
+import gameState from "./gameState.js";
+import player from "./templates/player.js";
+import sceneService from "./utils/sceneService.js";
+import interactionService from "./utils/interactionService.js";
 
 // Set up the scene
 const scene = new THREE.Scene();
+sceneService.setScene(scene);
 
 // Set up the camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -46,6 +52,8 @@ const interactionManager = new InteractionManager(
   camera,
   renderer.domElement
 );
+
+interactionService.setInteractionManager(interactionManager);
 
 // Set up OrbitControls
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -76,12 +84,10 @@ const gameGroup = new THREE.Group();
 function flickerLight() {
   targetIntensity = Math.random() * 0.05 + 0.01; // Random intensity between -2 and 3
   rampSpeed = 0.001; // Random ramp speed between 0.005 and 0.015
-  console.log(targetIntensity);
   rampToValue();
 }
 
 function rampToValue() {
-  console.log(currentIntensity);
   if (currentIntensity < targetIntensity - 0.001) {
     currentIntensity += rampSpeed;
     light.intensity = currentIntensity;
@@ -112,23 +118,49 @@ const doorMesh = door.getDoorMesh()
 const rug = new Rug(gameGroup);
 rug.createRug(0, -3, -1.5);
 
-const backButton = new BackButton(camera, gsap, unsetFocus);
+const backButton = new BackButton(camera, gsap);
 
-const bed = new Bed(gameGroup);
-bed.createBed(3.5, -3, -1.5, gsap, camera, interactionManager, backButton);
+// Initialize models asynchronously
+let dresserMesh;
+async function initializeModels() {
+  const bed = new Bed(gameGroup);
+  await bed.createBed(3.5, -3, -1.5, gsap, camera, interactionManager, backButton);
+
+  const bong = new Bong(gameGroup);
+  await bong.createBong(-4, -1.5, -3);
+
+  const dresser = new Dresser(gameGroup);
+  await dresser.createDresser(-4, -3, -2);
+  dresserMesh = dresser.getDresserMesh();
+  interactionManager.add(doorMesh);
+  if (dresserMesh) {
+    interactionManager.add(dresserMesh);
+
+    dresserMesh.addEventListener('click', () => {
+      if (!interactionService.checkEnabled()) {
+        return;
+      }
+      console.log('Dresser clicked');
+      if(!dresser.getDresserFocus()) {
+        dresser.lookAtDresser(camera, gsap, backButton);
+      }
+    });
+  } else {
+    console.error('dresserMesh is not valid');
+  }
+
+  
+}
+
+// Start model loading
+initializeModels();
 
 const moon = new Moon(gameGroup);
 moon.createMoon(7, 0, -5);
 
-const bong = new Bong(gameGroup);
-bong.createBong(-4, -1.5, -3);
-
-const dresser = new Dresser(gameGroup);
-dresser.createDresser(-4, -3, -2);
-
 // Create a floating CD
 const cd = new CD(gameGroup, camera);
-cd.createCD(0, -0.5, 7); // Position the CD floating above the room
+cd.createCD(0.25, -0.5, 7); // Position the CD floating above the room
 
 // Add the room to the group
 const bedroom = new Bedroom();
@@ -146,10 +178,16 @@ if (cdMesh) {
   cdMesh.addEventListener('click', () => {
     console.log('CD clicked - exploding!');
     cd.onClick();
+    textOverlay.hide();
+    setTimeout(() => {
+      interactionService.enable();
+    }, 2000);
+    
   });
+  
 }
 
-interactionManager.add(doorMesh);
+
 
 let enemyIndex = 0;
 const enemies = []
@@ -166,41 +204,23 @@ generateEnemies();
 let battle;
 
 // Add event listener to open the door on click
-doorMesh.addEventListener('click', () => {
+doorMesh.addEventListener('click', async () => {
+  if (!interactionService.checkEnabled()) {
+    return;
+  }
   if (door.doorOpen) {
     door.close();
     movement.disable();
+    
   } else {
-    door.open();
-    if (enemyIndex < enemies.length) {
-      const enemy = enemies[enemyIndex];
-      battle = new Battle(player, enemy);
-      battle.startBattle();
+    const battleStarted = await gameState.goToBattle(door);
+    if (!battleStarted) {
+      // Stops from opening the door to check if you really wanna go to battle
     } else {
-      movement.enable();
+      door.open();
     }
   }
 });
-
-const dresserMesh = dresser.getDresserMesh();
-
-
-if (dresserMesh) {
-  interactionManager.add(dresserMesh);
-
-  dresserMesh.addEventListener('click', () => {
-    console.log('Dresser clicked');
-    if(!dresser.getDresserFocus()) {
-      dresser.lookAtDresser(camera, gsap, backButton);
-    }
-  });
-} else {
-  console.error('dresserMesh is not valid');
-}
-
-function unsetFocus() {
-  dresser.unsetFocus();
-}
 
 
 // Add the group to the scene

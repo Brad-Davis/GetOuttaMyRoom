@@ -1,4 +1,5 @@
 import Room from '../controls/room.js';
+import Hallway from './hallway.js';
 
 class Bedroom extends Room {
   constructor(config = {}) {
@@ -112,12 +113,16 @@ class Bedroom extends Room {
       height: 4.1,
       x: -0.5,
       y: this.config.wallHeight - 1.5,
-      z: this.config.depth / 2,
+      z: this.config.depth / 2 + 0.1,
       rotX: 0,
       rotY: 0,
       rotZ: 0,
       texture: 'outdoorWindow.webp',
-      alphaMap: 'outdoorAlpha.jpg'
+      alphaMap: 'outdoorAlpha.jpg',
+      textureOptions: {
+        repeat: { x: 1, y: 1 },
+        offset: { x: 0, y: 0 }
+      }
     });
 
     const frontWall2 = this.createSurface('wall', {
@@ -186,6 +191,8 @@ class Bedroom extends Room {
     surfaces.push(bush);
     scene.add(bush);
     scene.add(grass);
+
+    const hallway = new Hallway(scene)
 
     return surfaces;
   }
