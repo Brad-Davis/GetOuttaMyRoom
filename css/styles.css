@@ -242,18 +242,22 @@ canvas {
 #active-items {
   position: absolute;
   bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 20px;
   width: auto;
-  height: 100px;
+  width: 100px;
+  display: flex;
+  text-align: center;
+  flex-direction: column;
+  gap: 0;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
+
 }
 
 .active-item-container, .inventory-item-container {
   width: 100px;
   height: 100px;
   background-color: rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
 }
 
 .active-item-container {
@@ -262,6 +266,9 @@ canvas {
 
 .inventory-item-container {
   padding: 0 !important;
+  max-width: 100px;
+  max-height: 100px;
+  box-sizing: border-box;
 }
 
 #inventory-items {
@@ -277,3 +284,92 @@ canvas {
   gap: 0; /* Optional: adds consistent spacing between items */
 }
 
+/* Drag and Drop Styles */
+.inventory-item, .active-item {
+  width: 100%;
+  max-width: 100px;
+  max-height: 100px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.inventory-item img, .active-item img {
+  pointer-events: none;
+}
+
+.inventory-item:hover, .active-item:hover {
+  border-color: #007BFF;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.inventory-item:active, .active-item:active {
+  cursor: grabbing;
+}
+
+.inventory-item img, .active-item img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+
+.inventory-item .item-name, .active-item .item-name {
+  font-size: 8px;
+  text-align: center;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  line-height: 1.2;
+  word-wrap: break-word;
+  max-width: 90%;
+}
+
+/* Drag over states */
+.inventory-item-container.drag-over, .active-item-container.drag-over {
+  background-color: rgba(0, 123, 255, 0.3);
+  border: 2px #007BFF;
+}
+
+/* Item container states */
+.inventory-item-container.has-item, .active-item-container.has-item {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.inventory-item-container:empty, .active-item-container:empty {
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+/* Visual feedback during drag */
+.inventory-item[draggable="true"]:hover, .active-item[draggable="true"]:hover {
+  transform: scale(1.05);
+}
+
+.inventory-item.dragging, .active-item.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+/* Active items specific styling */
+.active-item-container {
+  margin: 0 5px;
+}
+
+#item-info-block {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  width: 300px;
+}
+
+#item-info-block img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
