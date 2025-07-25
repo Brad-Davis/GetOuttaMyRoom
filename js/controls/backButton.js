@@ -1,10 +1,10 @@
 class BackButton {
-  constructor(camera, gsap, unsetFocus) {
+  constructor(camera, gsap, unsetFocus, gameState) {
     // constructor logic here
     this.noFocus = true;
     this.BackButtonEl = document.getElementById('backButton');
     this.BackButtonEl.addEventListener('click', () => {
-      this.returnToDefaultPos(camera, gsap); 
+      this.returnToDefaultPos(camera, gsap, gameState); 
     });
   }
 
@@ -17,7 +17,7 @@ class BackButton {
       this.BackButtonEl.style.display = 'none';
   }
 
-  returnToDefaultPos(camera, gsap) {
+  returnToDefaultPos(camera, gsap, gameState) {
       gsap.to(camera.position, {
           x: 0,
           z: 0,
@@ -32,6 +32,7 @@ class BackButton {
           duration: 1,
           ease: 'power2.inOut',
         });
+        gameState.resetPosition();
   }
 
 }

@@ -118,7 +118,7 @@ const doorMesh = door.getDoorMesh()
 const rug = new Rug(gameGroup);
 rug.createRug(0, -3, -1.5);
 
-const backButton = new BackButton(camera, gsap);
+const backButton = new BackButton(camera, gsap, null, gameState);
 
 // Initialize models asynchronously
 let dresserMesh;

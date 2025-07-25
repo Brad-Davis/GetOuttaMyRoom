@@ -20,64 +20,74 @@ class Item {
     }
 
     tick(timeAmount, index, activeItems) {
-        const itemElement = activeItems[index + 1]
+        // For charging animation, we target the container
+        const containerElement = activeItems[index + 1];
+        // For click events when ready, we target the inner item
+        const innerItemElement = containerElement ? containerElement.querySelector('.active-item') : null;
+        
         if (this.isReady) {
             return;
         }
         if (this.rechargeTime === 0) {
             this.isReady = true;
-            itemElement.style.background = `rgba(192, 192, 192, 1)`;
+            if (containerElement) {
+                containerElement.style.background = `rgba(192, 192, 192, 1)`;
+            }
             return;
-
         }
-        console.log(`${this.name} is ticking.`)
+
         this.currentCharge+= timeAmount;
-        console.log(index);
-        
-        
-        console.log(itemElement);
-        if (itemElement) {
+        console.log("charge of " + this.name + " is " + this.currentCharge + " and recharge time is " + this.rechargeTime);
+
+        if (containerElement) {
             const gradient = this.currentCharge / this.rechargeTime * 100;
             console.log(gradient);
-            itemElement.style.background = `linear-gradient(
+            // Apply charging animation to the CONTAINER
+            containerElement.style.background = `linear-gradient(
                     to right,
                     rgba(192, 192, 192, 1),
                     rgba(192, 192, 192, 1) ${gradient}%,
                     transparent ${gradient}%,
                     transparent 100%
             )`;
-            
-            // rgba(192, 192, 192, ${gradient})`;
         }
+        
         if (this.currentCharge >= this.rechargeTime) {
             this.currentCharge = 0;
             this.isReady = true;
-            itemElement.style.background = `rgba(192, 192, 192, 1)`;
-            itemElement.style.cursor = `pointer`;
+            
+            if (containerElement) {
+                containerElement.style.background = `rgba(192, 192, 192, 1)`;
+            }
+            
+            // Apply ready-state effects to the inner item if it exists and isn't already set up
+            if (innerItemElement && !innerItemElement._readyClickHandler) {
+                innerItemElement.style.cursor = `pointer`;
+                innerItemElement.style.boxShadow = "0 0 16px 4px #ffe066, 0 0 4px 2px #fff";
+                innerItemElement.style.transition = "box-shadow 0.2s, transform 0.1s";
+                innerItemElement.classList.add('active-item-ready');
 
-            // Add a glowing border and subtle scale animation to indicate clickability
-            itemElement.style.boxShadow = "0 0 16px 4px #ffe066, 0 0 4px 2px #fff";
-            itemElement.style.transition = "box-shadow 0.2s, transform 0.1s";
-            itemElement.classList.add('active-item-ready');
+                // Add hover effects to inner item
+                innerItemElement.addEventListener('mouseenter', function bounce() {
+                    innerItemElement.style.transform = "scale(1.08)";
+                });
+                innerItemElement.addEventListener('mouseleave', function unbounce() {
+                    innerItemElement.style.transform = "scale(1)";
+                });
 
-            // Add a little bounce on hover
-            itemElement.addEventListener('mouseenter', function bounce() {
-                itemElement.style.transform = "scale(1.08)";
-            });
-            itemElement.addEventListener('mouseleave', function unbounce() {
-                itemElement.style.transform = "scale(1)";
-            });
-
-            // Only add the click event once
-            if (!itemElement._readyClickHandler) {
-                itemElement._readyClickHandler = () => {
+                // Add the click event handler
+                innerItemElement._readyClickHandler = () => {
                     this.use();
                     this.isReady = false;
-                    itemElement.style.boxShadow = "";
-                    itemElement.classList.remove('active-item-ready');
-                    itemElement.style.transform = "scale(1)";
+                    innerItemElement.style.boxShadow = "";
+                    innerItemElement.classList.remove('active-item-ready');
+                    innerItemElement.style.transform = "scale(1)";
+                    // Reset container background
+                    if (containerElement) {
+                        containerElement.style.background = `rgba(192, 192, 192, 0)`;
+                    }
                 };
-                itemElement.addEventListener('click', itemElement._readyClickHandler);
+                innerItemElement.addEventListener('click', innerItemElement._readyClickHandler);
             }
         }
     }
@@ -120,7 +130,7 @@ const items = {
         2,
         5,
         () => {
-            
+            hurtEnemy(10);
         },
         10,
         0,
@@ -143,11 +153,17 @@ const items = {
         "./resources/images/cd.jpg",
         "cd_001"
     ),
-    "pentagram_001": new Item(
+    "pentagram_001": new Weapon(
         "Pentagram",
-        "A mystical symbol with unknown powers.",
+        "A mystical symbol that deals devastating damage but takes time to recharge.",
         50,
-        10,
+        15,
+        () => {
+            console.log("Pentagram unleashes dark energy!");
+            hurtEnemy(25);
+        },
+        25,
+        5,
         "./resources/images/pentagramV3.png",
         "pentagram_001"
     ),

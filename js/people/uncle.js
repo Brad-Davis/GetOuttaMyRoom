@@ -11,6 +11,7 @@ class Uncle extends Enemy {
         return new Promise(async (resolve, reject) => {
             const gltf = await loaderService.loadGLTF("./resources/models/uncle.glb");
             this.model = gltf.scene;
+            this.model.renderOrder = 1;
             this.model.scale.set(1, 1.5, 1);
             this.animations = gltf.animations;
             resolve();

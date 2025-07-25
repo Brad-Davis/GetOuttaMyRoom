@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import loaderService from '../utils/loaderService.js';
 import interactionService from '../utils/interactionService.js';
+import gameState from '../gameState.js';
 
 class Bed {
   constructor(scene) {
@@ -23,6 +24,7 @@ class Bed {
                 return;
               }
               this.lookAtBed(camera, gsap);
+              gameState.goToStore();
               backButton.showBackButton();
             });
 

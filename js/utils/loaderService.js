@@ -1,8 +1,11 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from 'three';
 
 class LoaderService {
   constructor() {
     this.gltfLoader = new GLTFLoader();
+    this.textureLoader = new THREE.TextureLoader();
+
   }
 
   /**
@@ -24,7 +27,16 @@ class LoaderService {
       );
     });
   }
+
+  createSprite(url) {
+    const texture = this.textureLoader.load(url);
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, alphaTest: 0.5 }));
+    sprite.scale.set(1, 1, 1);
+    console.log(sprite);
+    return sprite;
+  }
 }
 
 // Export a singleton instance
-export default new LoaderService(); 
+const loaderService = new LoaderService();
+export default loaderService; 

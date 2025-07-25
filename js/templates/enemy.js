@@ -51,7 +51,36 @@ class Enemy {
     }
 
     takeDamage(damage) {
-        // Should trigger an animation
+        // Visual feedback when taking damage
+        if (this.model) {
+            // Store original material colors
+
+            // Damage shake animation
+            const originalPosition = {
+                x: this.model.position.x,
+                y: this.model.position.y,
+                z: this.model.position.z
+            };
+
+            gsap.timeline()
+                .to(this.model.position, {
+                    x: originalPosition.x + (Math.random() - 0.5) * 0.2,
+                    y: originalPosition.y + (Math.random() - 0.5) * 0.2,
+                    z: originalPosition.z + (Math.random() - 0.5) * 0.1,
+                    duration: 0.1,
+                    ease: "power2.out"
+                })
+                .to(this.model.position, {
+                    x: originalPosition.x,
+                    y: originalPosition.y,
+                    z: originalPosition.z,
+                    duration: 0.1,
+                    ease: "power2.out"
+                });
+        }
+
+        // Log the damage for debugging
+        console.log(`${this.name} took ${damage} damage! (${this.currentHp}/${this.maxHp} HP remaining)`);
     }
 
     getHpString () {

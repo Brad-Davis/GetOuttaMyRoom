@@ -178,15 +178,13 @@ class InventoryManager {
         const hasItem = targetContainer.classList.contains('has-item');
         
         if (source === 'inventory' && target === 'active') {
-            // Moving from inventory to active items
-            if (this.activeItems.isFull()) {
-                console.log('Active items full');
-                // TODO: SWAP ITEMS RIGHT HERE
-                return;
-            }
             
             this.inventory.removeItem(item);
-            this.activeItems.addItem(item, placementIndex);
+            const swapItem = this.activeItems.addItem(item, placementIndex)
+            if(swapItem) {
+                //We are swapping items
+                this.inventory.addItem(swapItem);
+            }
             
         } else if (source === 'active' && target === 'inventory') {
             // Moving from active items to inventory

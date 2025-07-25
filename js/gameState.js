@@ -5,6 +5,7 @@ import enemySpawner from "./events/enemySpawner.js";
 import player from "./templates/player.js";
 import sceneService from "./utils/sceneService.js";
 import interactionService from "./utils/interactionService.js";
+import store from "./enviroments/store.js";
 
 class GameState {
     constructor() {
@@ -16,11 +17,45 @@ class GameState {
         this.firstBattle = true;
         this.enemySpawner = enemySpawner;
         this.sceneService = sceneService;
+        this.store = store;
+        this.atStore = false;
+    }
+
+    // Add the global hurtEnemy function
+    hurtEnemy(damage) {
+        // Check if we're currently in a battle
+        if (!this.currentEvent || !this.currentEvent.enemy) {
+            console.warn('No enemy to hurt - not in battle');
+            return false;
+        }
+
+        // Check if battle is running
+        if (!this.currentEvent.battleRunning) {
+            console.warn('Battle is not currently running');
+            return false;
+        }
+
+        // Deal damage to the current enemy
+        console.log(`Dealing ${damage} damage to ${this.currentEvent.enemy.name}`);
+        this.currentEvent.enemy.changeHp(-damage);
+        this.currentEvent.enemy.takeDamage(damage);
+        
+        return true;
     }
 
 
     goToStore() {
+        if (!this.atStore) {
+            this.store.showSetup(this.sceneService.getScene());
+            this.atStore = true;
+        }
+    }
 
+    leaveStore() {
+        if (this.atStore) {
+            this.store.hideSetup();
+            this.atStore = false;
+        }
     }
 
     async goToBattle(door) {
@@ -58,7 +93,17 @@ class GameState {
 
     loseBattle() {
     }
+
+    resetPosition() {
+        this.leaveStore();
+    }
 }
 
 const gameState = new GameState();
+
+// Make hurtEnemy globally available for weapons
+window.hurtEnemy = (damage) => {
+    return gameState.hurtEnemy(damage);
+};
+
 export default gameState;
