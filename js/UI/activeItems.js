@@ -2,8 +2,6 @@ class ActiveItems {
     constructor() {
         this.items = [null, null];
         this.size = 2;
-        this.tickTimer = null; // Track the current tick timer
-        this.isTickingActive = false; // Prevent multiple tick loops
     }
     
     addItem(item, placementIndex) {
@@ -37,8 +35,50 @@ class ActiveItems {
         return oldItem;
     }
 
+    // Base renderItems method - subclasses should override with specific selectors
     renderItems() {
-        const containers = document.querySelectorAll('.active-item-container');
+        throw new Error("renderItems must be implemented by subclass");
+    }
+
+    isFull() {
+        return this.items.filter(item => item !== null).length >= this.size;
+    }
+
+    // Base tickItems method - subclasses can override with specific element selectors
+    tickItems(timeAmount) {
+        const activeItemsElement = this.getActiveItemsElement();
+        
+        this.items.forEach((item, index) => {
+            if (item) {
+                item.tick(timeAmount, index, activeItemsElement.children);
+                if (this instanceof EnemyActiveItems) {
+                    if (item.isReady) {
+                        const container = activeItemsElement.children[index + 1];
+                        item.onUse(container.children[0], container, true); // USE ITEM!
+                    }
+                }
+            } else {
+                // Handle empty slots - clear the container background
+                const container = activeItemsElement.children[index + 1];
+                if (container) {
+                    container.style.background = `rgba(192, 192, 192, 0)`;
+                }
+            }
+        });
+    }
+
+    // Method for subclasses to override to specify their DOM element
+    getActiveItemsElement() {
+        throw new Error("getActiveItemsElement must be implemented by subclass");
+    }
+
+    // Method for subclasses to override to specify their container class
+    getContainerSelector() {
+        throw new Error("getContainerSelector must be implemented by subclass");
+    }
+
+    renderItems(containerName) {
+        const containers = document.querySelectorAll(containerName);
         
         console.log(this.items);
         
@@ -72,56 +112,71 @@ class ActiveItems {
                 // This preserves existing DOM elements and their event handlers
             }
         });
-        
-        // Only start ticking if it's not already active
-        if (!this.isTickingActive) {
-            this.startTicking();
-        }
-    }
-
-    isFull() {
-        return this.items.filter(item => item !== null).length >= this.size;
-    }
-
-    startTicking() {
-        if (this.isTickingActive) {
-            return; // Already ticking
-        }
-        this.isTickingActive = true;
-        this.tickItems(0.1);
-    }
-
-    stopTicking() {
-        if (this.tickTimer) {
-            clearTimeout(this.tickTimer);
-            this.tickTimer = null;
-        }
-        this.isTickingActive = false;
-    }
-
-    tickItems(timeAmount) {
-        const activeItems = document.getElementById('active-items').children;
-
-        this.items.forEach((item, index) => {
-            if (item !== null) {
-                item.tick(timeAmount, index, activeItems);
-            } else {
-                // Handle empty slots - clear the container background
-                const container = activeItems[index + 1];
-                if (container) {
-                    container.style.background = `rgba(192, 192, 192, 0)`;
-                }
-            }
-        });
-        
-        // Schedule next tick only if still active
-        if (this.isTickingActive) {
-            this.tickTimer = setTimeout(() => {
-                this.tickItems(0.1);
-            }, 100);
-        }
     }
 }
 
-const activeItems = new ActiveItems();
-export default activeItems;
+class PlayerActiveItems extends ActiveItems {
+    constructor() {
+        super();
+    }
+
+    getActiveItemsElement() {
+        return document.getElementById('active-items');
+    }
+
+    getContainerSelector() {
+        return '.active-item-container';
+    }
+
+    renderItems() {
+        super.renderItems(this.getContainerSelector());
+    }
+}
+
+class EnemyActiveItems extends ActiveItems {
+    constructor() {
+        super(); // Properly call parent constructor
+    }
+
+    addItem(item, placementIndex) {
+        if (this.items[placementIndex] === null) {
+            this.items[placementIndex] = item;
+            this.renderItems();
+            return null;
+        }
+        // Note: Enemy active items don't support swapping like player items
+    }  
+
+    renderItems() {
+        super.renderItems(this.getContainerSelector());
+    }
+
+    getActiveItemsElement() {
+        return document.getElementById('enemy-active-items');
+    }
+
+    getContainerSelector() {
+        return '.enemy-active-item-container';
+    }
+
+    renderEnemyItems(enemy) {
+        this.items = enemy.items;
+        this.renderItems();
+        this.showEnemyItems();
+    }
+
+    showEnemyItems() {
+        document.getElementById('enemy-active-items').style.opacity = '1';
+        document.getElementById('enemy-active-items-title').style.opacity = '1';
+    }
+
+    hideEnemyItems() {
+        document.getElementById('enemy-active-items').style.opacity = '0';
+        document.getElementById('enemy-active-items-title').style.opacity = '0';
+    }
+}
+
+const enemyActiveItems = new EnemyActiveItems();
+const playerActiveItems = new PlayerActiveItems();
+
+export { ActiveItems, enemyActiveItems, playerActiveItems };

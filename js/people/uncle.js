@@ -1,9 +1,10 @@
 import Enemy from "../templates/enemy.js";
 import loaderService from "../utils/loaderService.js";
+import items from "../templates/items.js";
 
 class Uncle extends Enemy {
     constructor(hp, level, exp, gold) {
-        super("Uncle", [], hp, level, exp, gold, null, [0, -3, 0], null);
+        super("Uncle", [items["punch_002"], items["pentagram_002"]], hp, level, exp, gold, null, [0, -3, 0], null);
         this.animations;
     }
 

@@ -13,7 +13,6 @@ class HealthBar {
 
     updateHealthBar () {
         this.healthBarText.innerText = this.player.getHpString();
-        console.log(this.healthBarProgress);
         this.healthBarProgress.value = this.player.getHp();
         this.healthBarProgress.max = this.player.maxHp;
     }

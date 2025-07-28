@@ -1,7 +1,7 @@
 // Import Three.js library
 import * as THREE from 'three';
 import { InteractionManager } from 'three.interactive';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+// import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import gsap from 'gsap';
 import Room from './controls/room.js';
 import Door from './items/door.js';
@@ -56,8 +56,8 @@ const interactionManager = new InteractionManager(
 interactionService.setInteractionManager(interactionManager);
 
 // Set up OrbitControls
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.update();
+// const controls = new OrbitControls(camera, renderer.domElement);
+// controls.update();
 
 // const directionOfVision = new THREE.Vector3();
 // camera.getWorldDirection(directionOfVision);
@@ -244,7 +244,7 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  controls.update();
+  // controls.update();
 });
 
 

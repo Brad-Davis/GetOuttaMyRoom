@@ -1,6 +1,5 @@
 class Item {
-    constructor(name, description, value, rechargeTime = 0, image = null, id = null) {
-        this.id = id || this.generateId();
+    constructor(name, description, value, rechargeTime = 0, image = null, triggerFunction = null, id = null, phyDamage = 0, emoDamage = 0) {
         this.name = name;
         this.description = description;
         this.value = value;
@@ -9,14 +8,17 @@ class Item {
         this.currentCharge = 0;
         this.isReady = false;
         this.type = 'item';
+        this.painContainer = document.getElementById('pain-container');
+        this.selfPainContainer = document.getElementById('self-pain-container');
+        this.id = id || name;
+        this.triggerFunction = triggerFunction;
+        this.phyDamage = phyDamage;
+        this.emoDamage = emoDamage;
     }
 
-    generateId() {
-        return 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    use() {
+    use(fromEnemy = false) {
         console.log(`${this.name} is used.`);
+        this.triggerFunction(fromEnemy);
     }
 
     tick(timeAmount, index, activeItems) {
@@ -77,104 +79,126 @@ class Item {
 
                 // Add the click event handler
                 innerItemElement._readyClickHandler = () => {
-                    this.use();
-                    this.isReady = false;
-                    innerItemElement.style.boxShadow = "";
-                    innerItemElement.classList.remove('active-item-ready');
-                    innerItemElement.style.transform = "scale(1)";
-                    // Reset container background
-                    if (containerElement) {
-                        containerElement.style.background = `rgba(192, 192, 192, 0)`;
+                    this.onUse(innerItemElement, containerElement);                    
+                    // Remove the click event handler after use
+                    if (innerItemElement._readyClickHandler) {
+                        innerItemElement.removeEventListener('click', innerItemElement._readyClickHandler);
+                        innerItemElement._readyClickHandler = null;
                     }
                 };
                 innerItemElement.addEventListener('click', innerItemElement._readyClickHandler);
             }
         }
     }
-}
 
-class Weapon extends Item {
-    constructor(name, description, value, rechargeTime, triggerFunction, phyDamage, emoDamage = 0, image = null, id = null) {
-        super(name, description, value, rechargeTime, image, id);
-        this.triggerFunction = triggerFunction;
-        this.phyDamage = phyDamage;
-        this.emoDamage = emoDamage;
-        this.type = 'weapon';
+    generatePainText(fromEnemy = false) {
+        const painText = document.createElement('div');
+        painText.classList.add('pain-text');
+        if (this.phyDamage > 0) {
+            painText.textContent += `-${this.phyDamage} HP`;
+            painText.style.color = 'rgb(255, 0, 0, 0.75)';
+        }
+        if (this.emoDamage > 0) {
+            painText.textContent += `-${this.emoDamage} HP`;
+            painText.style.color = 'rgb(255, 43, 163, 0.75)';
+        }
+        if (fromEnemy) {
+            this.selfPainContainer.appendChild(painText);
+        } else {
+            this.painContainer.appendChild(painText);
+        }
+        // Remove the pain text after 2 seconds
+        setTimeout(() => {
+            if (painText.parentNode) {
+                painText.parentNode.removeChild(painText);
+            }
+        }, 2000);
     }
 
-    use() {
-        if (this.triggerFunction) {
-            this.triggerFunction();
+    onUse(innerItemElement, containerElement, fromEnemy = false) {
+        this.generatePainText(fromEnemy);
+        this.use(fromEnemy);
+        this.isReady = false;
+        innerItemElement.style.boxShadow = "";
+        innerItemElement.classList.remove('active-item-ready');
+        innerItemElement.style.transform = "scale(1)";
+        // Reset container background
+        if (containerElement) {
+            containerElement.style.background = `rgba(192, 192, 192, 0)`;
         }
     }
 }
 
-class Buffer extends Item {
-    constructor(name, description, value, rechargeTime, healing, phyMult, emoMult, image = null, id = null) {
-        super(name, description, value, rechargeTime, image, id);
-        this.healing = healing;
-        this.phyMult = phyMult || 1;
-        this.emoMult = emoMult || 1;
-        this.type = 'buffer';
-    }
 
-    use() {
-        console.log(`${this.name} restores ${this.healing} health.`);
+
+const itemPool = {
+    "punch": new Item(
+        "Punch",
+        "A basic punch that deals physical damage.",
+        /* value */ 2,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/hand.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            hurtEnemy(10, fromEnemy);
+        },
+        /* id */ "punch",
+        /* phyDamage */ 10,
+        /* emoDamage */ 0,
+    ),
+    "cd": new Item(
+        "CD",
+        "A shiny CD with unknown contents.",
+        /* value */ 5,
+        /* rechargeTime */ 0,
+        /* image */ "./resources/images/cd.jpg",
+        /* id */ "cd",
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+    ),
+    "pentagram": new Item(
+        "Pentagram",
+        "A mystical symbol that deals devastating damage but takes time to recharge.",
+        /* value */ 50,
+        /* rechargeTime */ 1,
+        /* image */ "./resources/images/pentagramV3.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            console.log("Pentagram unleashes dark energy!");
+            hurtEnemy(50, fromEnemy);
+        },
+        /* phyDamage */ 25,
+        /* emoDamage */ 5,
+        /* id */ "pentagram"
+    ),
+}
+
+function generateItem(itemName, id = null) {
+    const item = itemPool[itemName];
+    if (item) {
+        // Clone the item to avoid shared state (like currentCharge, isReady, etc.)
+        return new Item(
+            item.name,
+            item.description,
+            item.value,
+            item.rechargeTime,
+            item.image,
+            item.triggerFunction,
+            id || generateId(item.name),
+            item.phyDamage,
+            item.emoDamage
+        );
     }
+    return null;
+}
+
+function generateId(itemName) {
+    return itemName + "_" + Math.random().toString(36).substr(2, 9);
 }
 
 const items = {
-    "punch_001": new Weapon(
-        "Punch",
-        "A basic punch that deals physical damage.",
-        2,
-        5,
-        () => {
-            hurtEnemy(10);
-        },
-        10,
-        0,
-        "./resources/images/hand.png",
-        "punch_001"
-    ),
-    "phone_001": new Item(
-        "Phone",
-        "A mysterious old phone that might be useful.",
-        10,
-        0,
-        "./resources/images/phone.png",
-        "phone_001"
-    ),
-    "cd_001": new Item(
-        "CD",
-        "A shiny CD with unknown contents.",
-        5,
-        0,
-        "./resources/images/cd.jpg",
-        "cd_001"
-    ),
-    "pentagram_001": new Weapon(
-        "Pentagram",
-        "A mystical symbol that deals devastating damage but takes time to recharge.",
-        50,
-        15,
-        () => {
-            console.log("Pentagram unleashes dark energy!");
-            hurtEnemy(25);
-        },
-        25,
-        5,
-        "./resources/images/pentagramV3.png",
-        "pentagram_001"
-    ),
-    "rug_001": new Item(
-        "Rug",
-        "A soft rug for decoration.",
-        15,
-        0,
-        "./resources/images/rug.png",
-        "rug_001"
-    )
+    "punch_001": generateItem("punch", "punch_001"),
+    "cd_001": generateItem("cd", "cd_001"),
+    "punch_002": generateItem("punch", "punch_002"),
+    "pentagram_001": generateItem("pentagram", "pentagram_001"),
 }
 
 export default items;

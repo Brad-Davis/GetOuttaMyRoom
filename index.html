@@ -35,6 +35,12 @@
         <div class="status-bar-field inventory-item-container"></div>
         <div class="status-bar-field inventory-item-container"></div>
       </div>
+      <span id="enemy-active-items-title" style="color: white; position: absolute; top: 100px; left: 50%; transform: translateX(-50%);">Enemy's Active Items</span>
+      <div id="enemy-active-items" class="status-bar">
+        <span></span>
+        <div class="status-bar-field enemy-active-item-container"></div>
+        <div class="status-bar-field enemy-active-item-container"></div>
+      </div>
       <div id="active-items" class="status-bar">
         <!-- If you add shit here it breaks the charging system. -->
         <span style="color: white; padding-bottom: 10px;">Active Items</span>
@@ -72,7 +78,8 @@
         </div>
       </div>
     </div>
-    
+    <div id="pain-container"></div>
+    <div id="self-pain-container"></div>
 </div>
   
   <script type="module" src="./js/game.js"></script>

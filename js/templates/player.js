@@ -1,4 +1,5 @@
 import HealthBar from "../UI/healthBar.js";
+import { playerActiveItems } from "../UI/activeItems.js";
 
 class Player {
     constructor(name) {
@@ -44,13 +45,19 @@ class Player {
         return this.currentHp + "/" + this.maxHp;
     }
 
+    takeDamage(damage) {
+        // Visual feedback when taking damage
+    }
+
+
     startBattle() {
         this.HealthBar.showHealthBar();
         this.setHp(this.maxHp);
     }
 
     tick() {
-        this.changeHp(-1);
+        // this.changeHp(-1);
+        playerActiveItems.tickItems(0.1);
     }
 
 }

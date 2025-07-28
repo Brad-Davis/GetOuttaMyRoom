@@ -1,5 +1,6 @@
 import HealthBar from "../UI/healthBar.js";
 import sceneService from "../utils/sceneService.js";
+import { enemyActiveItems } from "../UI/activeItems.js";
 import gsap from 'gsap';
 
 class Enemy {
@@ -18,6 +19,8 @@ class Enemy {
         this.center = center;
         this.model = null;
         this.moveAnimation = null;
+        this.attackTimer = 2.5;
+        this.currentAttackTimer = 0;
     }
 
     getHp () {
@@ -102,6 +105,7 @@ class Enemy {
     enterScene() {
         this.model.position.set(this.startPosition[0] + this.center[0], this.startPosition[1] + this.center[1], this.startPosition[2] + this.center[2]);
         sceneService.getScene().add(this.model);
+        enemyActiveItems.renderEnemyItems(this);
         this.moveTo(this.endPosition);
     }
 
@@ -145,7 +149,14 @@ class Enemy {
     }
     
     tick() {
-        this.changeHp(-1);
+        // this.changeHp(-1)
+        enemyActiveItems.tickItems(0.1);
+
+        // It would be great to show enemy attacks and show them charging.
+        // For now every second we should have a low chance of the enemy attacking.
+        // if (Math.random() < 0.1) {
+        //     this.changeHp(-1);
+        // }
     }
 
 

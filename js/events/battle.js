@@ -1,7 +1,7 @@
 import gameState from "../gameState.js";
 
 class Battle {
-    constructor(player, enemy, gameState) {
+    constructor(player, enemy) {
         this.player = player;
         this.enemy = enemy;
         this.battleLog = [];
@@ -31,6 +31,7 @@ class Battle {
 
     startBattleLoop() {
         if (!this.battleRunning) return;
+        // Player tick handels item charging
         this.player.tick();
         this.enemy.tick();
         // this.showHealth(); THIS IS HANDLED IN PLAYER AND ENEMY
@@ -51,7 +52,7 @@ class Battle {
         
         setTimeout(() => {
             this.startBattleLoop();
-        }, 300);
+        }, 100);
     }
 
     endBattle(playerWon) {

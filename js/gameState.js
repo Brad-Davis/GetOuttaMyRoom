@@ -22,7 +22,7 @@ class GameState {
     }
 
     // Add the global hurtEnemy function
-    hurtEnemy(damage) {
+    hurtEnemy(damage, fromEnemy = false) {
         // Check if we're currently in a battle
         if (!this.currentEvent || !this.currentEvent.enemy) {
             console.warn('No enemy to hurt - not in battle');
@@ -35,11 +35,15 @@ class GameState {
             return false;
         }
 
+        if (fromEnemy) {
+            this.player.changeHp(-damage);
+            this.player.takeDamage(damage);
+        } else {
         // Deal damage to the current enemy
-        console.log(`Dealing ${damage} damage to ${this.currentEvent.enemy.name}`);
-        this.currentEvent.enemy.changeHp(-damage);
-        this.currentEvent.enemy.takeDamage(damage);
-        
+            console.log(`Dealing ${damage} damage to ${this.currentEvent.enemy.name}`);
+            this.currentEvent.enemy.changeHp(-damage);
+            this.currentEvent.enemy.takeDamage(damage);
+        }
         return true;
     }
 
@@ -84,11 +88,20 @@ class GameState {
     }
 
     winBattle() {
+        this.inventoryManager.resetAllActiveItems();
         interactionService.enable();
         this.textOverlay.showWindowOverlay("You have won the battle!", 
             "You have won the battle!!! What item do you want to take?", 
-            ["Okay I'll go talk to the bed goblin :/ ", "LET ME OUT OF HERE"], 
+            this.getCurrentEnemyItems().map(item => {
+                if (item) {
+                    return "<img src='" + item.image + "' alt='" + item.name + "'></img>";
+                }
+            }),
             [() => this.textOverlay.closeWindowOverlay(),() => {this.goToBattle(); this.textOverlay.closeWindowOverlay();}]);
+    }
+
+    getCurrentEnemyItems() {
+        return this.currentEvent.enemy.items;
     }
 
     loseBattle() {
@@ -102,8 +115,10 @@ class GameState {
 const gameState = new GameState();
 
 // Make hurtEnemy globally available for weapons
-window.hurtEnemy = (damage) => {
-    return gameState.hurtEnemy(damage);
+window.hurtEnemy = (damage, fromEnemy = false) => {
+    return gameState.hurtEnemy(damage, fromEnemy);
 };
+
+
 
 export default gameState;

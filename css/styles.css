@@ -98,8 +98,6 @@ canvas {
     height: 40px;
     width: 500px;
   }
-
-  #p
   
   .progress-value {
     animation: load 3s normal forwards;
@@ -250,10 +248,9 @@ canvas {
   flex-direction: column;
   gap: 0;
   align-items: center;
-
 }
 
-.active-item-container, .inventory-item-container {
+.active-item-container, .inventory-item-container, .enemy-active-item-container {
   width: 100px;
   height: 100px;
   background-color: rgba(0, 0, 0, 0.5);
@@ -372,4 +369,67 @@ canvas {
   width: 100px;
   height: 100px;
   object-fit: contain;
+}
+
+#pain-container {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  text-align: center;
+  height: 100px;
+  pointer-events: none;
+  z-index: 1001;
+}
+
+#self-pain-container {
+  position: absolute;
+  top: 75%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+}
+
+.pain-text {
+  font-size: 24px;
+  font-weight: bold;
+  animation: riseAndFade 2s ease-out forwards;
+  color: #ff2b43;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  text-align: center;
+  width: 100%;
+  
+}
+
+#enemy-active-items {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+  justify-items: space-around;
+  margin-top: 20px;
+}
+
+#enemy-active-items, #enemy-active-items-title {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes riseAndFade {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
 }

@@ -1,11 +1,12 @@
 import inventory from "../UI/inventory.js";
-import activeItems from "../UI/activeItems.js";
+import { playerActiveItems, enemyActiveItems } from "../UI/activeItems.js";
 import items from "../templates/items.js";
 
 class InventoryManager {
     constructor() {
         this.inventory = inventory;
-        this.activeItems = activeItems;
+        this.activeItems = playerActiveItems;
+        this.enemyActiveItems = enemyActiveItems;
         this.inventoryContainer = document.getElementById("inventory-container");
         this.inventoryButton = document.getElementById("inventory-button");
         this.inventoryItems = document.getElementById("inventory-items");
@@ -29,11 +30,8 @@ class InventoryManager {
 
     addTestItems() {
         // Add some test items to the inventory
-        this.inventory.addItem(items.phone_001);
-        this.inventory.addItem(items.cd_001);
         this.inventory.addItem(items.punch_001);
         this.inventory.addItem(items.pentagram_001);
-        this.inventory.addItem(items.rug_001);
     }
 
     setupDragAndDrop() {
@@ -211,6 +209,24 @@ class InventoryManager {
     showAllElements() {
         this.inventoryContainer.style.opacity = 1;
         this.inventoryContainer.style.pointerEvents = "auto";
+    }
+
+    resetAllActiveItems() {
+        this.activeItems.items.forEach(item => {
+            if (item) {
+                item.currentCharge = 0;
+                item.isReady = false;
+            }
+        });
+        this.activeItems.renderItems();
+
+        this.enemyActiveItems.items.forEach(item => {
+            if (item) {
+                item.currentCharge = 0;
+                item.isReady = false;
+            }
+        });
+        this.enemyActiveItems.hideEnemyItems();
     }
 }
 
