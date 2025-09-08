@@ -3,7 +3,6 @@ class BackButton {
     // constructor logic here
     this.noFocus = true;
     this.BackButtonEl = document.getElementById('backButton');
-    this.unsetFocus = unsetFocus;
     this.BackButtonEl.addEventListener('click', () => {
       this.returnToDefaultPos(camera, gsap, gameState); 
     });
@@ -34,7 +33,6 @@ class BackButton {
           ease: 'power2.inOut',
         });
         gameState.resetPosition();
-        this.unsetFocus();
   }
 
 }

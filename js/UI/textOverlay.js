@@ -6,10 +6,15 @@ class TextOverlay {
         this.fullOverlay = document.getElementById('full-overlay');
         this.bottomOverlay = document.getElementById('bottom-overlay');
         this.windowOverlay = document.getElementById('window-overlay');
+        this.dialogueOverlay = document.getElementById('dialogue-overlay');
+        this.dialogueBox = document.getElementById('dialogue-box');
+        this.dialogueTriangle = document.getElementById('dialogue-triangle');
         this.bottomText = '[Click on the CD to start]';
         this.fullText = '';
         this.isVisible = true;
         this.blink('1');
+        this.show("bottom");
+        // this.showTextBox("HELLO THIS IS MY FIRST TEXT BOX HELLO THIS IS MY FIRST TEXT BOX HELLO THIS IS MY FIRST TEXT BOX HELLO THIS IS MY FIRST TEXT BOX HELLO THIS IS MY FIRST TEXT BOX");
     }
 
     show(element) {
@@ -20,14 +25,22 @@ class TextOverlay {
             this.bottomOverlay.style.display = 'block';
             this.windowOverlay.style.display = 'none';
             this.fullOverlay.style.display = 'none';
+            this.dialogueOverlay.style.display = 'none';
         } else if (element === 'full') {
             this.fullOverlay.style.display = 'block';
             this.windowOverlay.style.display = 'none';
             this.bottomOverlay.style.display = 'none';
+            this.dialogueOverlay.style.display = 'none';
         } else if (element === 'window') {
             this.windowOverlay.style.display = 'block';
             this.bottomOverlay.style.display = 'none';
             this.fullOverlay.style.display = 'none';
+            this.dialogueOverlay.style.display = 'none';
+        } else if (element === 'dialogue') {
+            this.dialogueOverlay.style.display = 'block';
+            this.bottomOverlay.style.display = 'none';
+            this.fullOverlay.style.display = 'none';
+            this.windowOverlay.style.display = 'none';
         }
     }
 
@@ -66,8 +79,39 @@ class TextOverlay {
         this.hide();
     }
 
-    showEnemyTextBox(message, speaker, position, size, timeOnScreen ) {
+    showTextBox(message) {
+        this.show('dialogue');
+        this.dialogueOverlay
+        this.startTextScroll(message);
+        this.dialogueOverlay.style.pointerEvents = 'auto';
+        const clickHandler = () => {
+            console.log('clicked');
+            this.dialogueBox.textContent = message + "   ";
+            this.dialogueOverlay.removeEventListener('click', clickHandler);
+            this.showSolidTriangle();
+        };
+        this.dialogueOverlay.addEventListener('click', clickHandler);
+    }
 
+    startTextScroll(message) {
+        let textLength = this.dialogueBox.textContent.length;
+        this.showFlashingTriangle();
+        if (textLength < message.length) {
+            this.dialogueBox.textContent = message.substring(0, textLength + 1);
+            setTimeout(() => {
+                this.startTextScroll(message);
+            }, 20);
+        } else {
+            this.showSolidTriangle();
+        }
+    }
+
+    showFlashingTriangle() {
+        this.dialogueTriangle.classList.add('flashing');
+    }
+
+    showSolidTriangle() {
+        this.dialogueTriangle.classList.remove('flashing');
     }
 }
 

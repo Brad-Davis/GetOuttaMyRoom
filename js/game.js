@@ -10,6 +10,7 @@ import Bed from './items/bed.js';
 import Moon from './items/moon.js';
 import Bong from './items/bong.js';
 import Dresser from './items/dresser.js';
+import Computer from './items/computer.js';
 import Movement from './controls/movement.js';
 import BackButton from './controls/backButton.js';
 import Enemy from './templates/enemy.js';
@@ -31,8 +32,13 @@ sceneService.setScene(scene);
 
 // Set up the camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+//CD SETUP!!!
 camera.position.set(0.6486560300336698, -0.9197662709115966, 4.294323521853167);
 camera.rotation.set(0.21099405221382178, 0.14663965263345446, -0.031284905874686096);
+
+camera.position.set(0,0,0);
+camera.rotation.set(0, 0, 0);
+// ALSO THERE IS A CD ON CLICK THING TO FIX WHEN COMMENTHINN THIS
 
 // Set up the renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -118,20 +124,38 @@ const doorMesh = door.getDoorMesh()
 const rug = new Rug(gameGroup);
 rug.createRug(0, -3, -1.5);
 
-const backButton = new BackButton(camera, gsap, null, gameState);
+
 
 // Initialize models asynchronously
-let dresserMesh;
+let dresserMesh, dresser;
+let computerMesh, computer;
+window.gsap = gsap;
+window.camera = camera;
 async function initializeModels() {
+  const backButton = new BackButton(camera, gsap, unsetFocus, gameState);
   const bed = new Bed(gameGroup);
   await bed.createBed(3.5, -3, -1.5, gsap, camera, interactionManager, backButton);
 
   const bong = new Bong(gameGroup);
   await bong.createBong(-4, -1.5, -3);
 
-  const dresser = new Dresser(gameGroup);
+  dresser = new Dresser(gameGroup);
   await dresser.createDresser(-4, -3, -2);
   dresserMesh = dresser.getDresserMesh();
+
+  computer = new Computer(gameGroup);
+  await computer.createComputer(-4, -1.5, -0.9);
+  computerMesh = computer.getComputerMesh();
+
+  interactionManager.add(computerMesh);
+  computerMesh.addEventListener('click', () => {
+    if (!interactionService.checkEnabled()) {
+      return;
+    }
+    console.log('Computer clicked');
+    computer.lookAtComputer(camera, gsap, dresser.getDresserFocus());
+  });
+
   interactionManager.add(doorMesh);
   if (dresserMesh) {
     interactionManager.add(dresserMesh);
@@ -149,6 +173,12 @@ async function initializeModels() {
     console.error('dresserMesh is not valid');
   }
 
+  function unsetFocus() {
+    dresser.unsetFocus();
+    computer.unsetFocus();
+  }
+  
+  
   
 }
 
@@ -174,6 +204,11 @@ const movement = new Movement(camera, gameGroup);
 const cdMesh = cd.getCDMesh();
 if (cdMesh) {
   interactionManager.add(cdMesh);
+  cd.onClick();
+  textOverlay.hide();
+  setTimeout(() => {
+    interactionService.enable();
+  }, 2000);
   
   cdMesh.addEventListener('click', () => {
     console.log('CD clicked - exploding!');

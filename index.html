@@ -21,6 +21,10 @@
         <img src="./resources/images/hand.png" alt="Hand" id="handImage" style="pointer-events: none;"></img>
       </div>
     </div>
+    <div id="dopamine-container">
+      <span id="dopamine-count">0</span><img src="./resources/images/dopamine.svg" alt="Dopamine" id="dopamine-image">
+    </div>
+    
     <div id="inventory-container">
       <div id="item-info-block" class="window" style="display: none;"></div>
       <button id="inventory-button">Back<br>Pack</button>
@@ -77,7 +81,24 @@
           <div id="window-buttons"></div>
         </div>
       </div>
+      <div id="dialogue-overlay">
+        <div id="dialogue-box"></div>
+        <div id="dialogue-triangle">▼</div>
+      </div>
     </div>
+    <div id="shop">
+      <div id="shop-items">
+        <div class="shop-item-container" id="shop-item-container1"></div>
+        <div class="shop-item-container" id="shop-item-container2"></div>
+        <div class="shop-item-container" id="shop-item-container3"></div>
+      </div>
+      <div id="shop-controls">
+        <div class="shop-item-container" id="sell-spot">Place Item Here to Sell</div>
+        <button id="reroll-button">Reroll</button>
+      </div>
+      
+    </div>
+    <div id="computer"></div>
     <div id="pain-container"></div>
     <div id="self-pain-container"></div>
 </div>

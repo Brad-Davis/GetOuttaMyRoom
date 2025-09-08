@@ -66,6 +66,84 @@ class Bedroom extends Room {
       rotZ: 0,
       texture: 'wall.jpg'
     });
+    
+    const poster3 = this.createSurface('poster', {
+      width: 1,
+      height: 1.6,
+      x: -this.config.width/2 + 0.1,
+      y: this.config.wallHeight/4,
+      z: -3,
+      rotX: 0,
+      rotY: Math.PI / 2,
+      rotZ: 0,
+      texture: "alex.JPG"
+    });
+
+    surfaces.push(poster3);
+    scene.add(poster3);
+
+    const poster4 = this.createSurface('poster', {
+      width: 0.5,
+      height: 0.8,
+      x: -this.config.width/2 + 0.1,
+      y: this.config.wallHeight/4,
+      z: -1,
+      rotX: 0.1,
+      rotY: Math.PI / 2,
+      rotZ: 0,
+      texture: "dad.png"
+    });
+
+    const voidSurface1 = this.createSurface('void', {
+      width: 3,
+      height: 3,
+      x: -this.config.width/2 + 0.01,
+      y: this.config.wallHeight + 3.5,
+      z: -this.config.depth / 2 + 0.5,
+      rotX: 0,
+      rotY: Math.PI / 2,
+      rotZ: Math.PI,
+      texture: "void.png",
+      alphaMap: "voidAlpha.png"
+    });
+
+    surfaces.push(voidSurface1);
+    scene.add(voidSurface1);
+
+    const voidSurface2 = this.createSurface('void', {
+      width: 3,
+      height: 3,
+      x: -this.config.width/2,
+      y: this.config.wallHeight + 4,
+      z: -this.config.depth / 2 + 0.1,
+      rotX: 0,
+      rotY: 0,
+      rotZ: Math.PI/2,
+      texture: "void.png",
+      alphaMap: "voidAlpha.png"
+    });
+
+    surfaces.push(voidSurface2);
+    scene.add(voidSurface2);
+
+    const voidSurface3 = this.createSurface('void', {
+      width: 10,
+      height: 10,
+      x: -this.config.width/2,
+      y: this.config.ceilingLevel - 0.2,
+      z: -this.config.depth / 2 + 0.1,
+      rotX: Math.PI/2,
+      rotY: 0,
+      rotZ: 0,
+      texture: "void.png",
+      alphaMap: "voidAlpha.png"
+    });
+    surfaces.push(voidSurface3);
+    scene.add(voidSurface3);
+
+    surfaces.push(poster4);
+    scene.add(poster4);
+
     surfaces.push(leftWall);
     scene.add(leftWall);
 
@@ -103,7 +181,37 @@ class Bedroom extends Room {
         repeat: { x: 1, y: 1 }
       }
     });
+
+    const poster1 = this.createSurface('poster', {
+      width: 1.5,
+      height: 1.5,
+      x: -this.config.width / 4,
+      y: this.config.wallHeight/4,
+      z: -this.config.depth / 2 + 0.01,
+      rotX: 0,
+      rotY: 0,
+      rotZ: 0.2,
+      texture: 'cd2.jpeg'
+    });
+
+    surfaces.push(poster1);
+    scene.add(poster1);
+
+    const poster2 = this.createSurface('poster', {
+      width: 2.2,
+      height: 1.5,
+      x: this.config.width / 4 + 0.6,
+      y: this.config.wallHeight/4 - 0.8,
+      z: -this.config.depth / 2 + 0.01,
+      rotX: 0,
+      rotY: 0,
+      rotZ: 0,
+      texture: 'pullMeByTheNecktie.png'
+    });
     
+    surfaces.push(poster2);
+    scene.add(poster2);
+
     surfaces.push(backWall);
     scene.add(backWall);
 

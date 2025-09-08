@@ -6,7 +6,9 @@ class Store {
     constructor() {
         this.items = [];
         this.sprite = loaderService.createSprite("./resources/images/bedGoblin.png");
-
+        this.shop = document.getElementById('shop');
+        this.shop.style.pointerEvents = 'none';
+        this.shop.style.opacity = '0';
     }
 
     addItem(item) {
@@ -27,6 +29,8 @@ class Store {
         });
         this.sprite.visible = true;
         console.log("Store setup");
+        this.shop.style.pointerEvents = 'auto';
+        this.shop.style.opacity = '1';
     }
 
     hideSetup() {
@@ -38,6 +42,8 @@ class Store {
             duration: 1,
             ease: "power2.inOut"
         });
+        this.shop.style.pointerEvents = 'none';
+        this.shop.style.opacity = '0';
     }
 }
 

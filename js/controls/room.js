@@ -65,6 +65,8 @@ class Room {
     
     // Create material with optional transparency
     const materialOptions = { map: texture };
+    
+    // Handle alpha map for custom transparency masks
     if (config.alphaMap) {
       const alphaMap = this.loadTexture(config.alphaMap);
       
@@ -79,8 +81,19 @@ class Room {
       }
       
       materialOptions.alphaMap = alphaMap;
+      materialOptions.transparent = true;
     }
-    materialOptions.transparent = true;
+    
+    // Handle PNG transparency (check if texture file is PNG)
+    if (config.texture && config.texture.toLowerCase().endsWith('.png')) {
+      materialOptions.transparent = true;
+      materialOptions.alphaTest = 0.1; // Helps with PNG transparency
+    }
+    
+    // Force transparency for certain surface types
+    if (type === 'void' || config.forceTransparent) {
+      materialOptions.transparent = true;
+    }
     
     const material = new THREE.MeshLambertMaterial(materialOptions);
     const mesh = new THREE.Mesh(geometry, material);

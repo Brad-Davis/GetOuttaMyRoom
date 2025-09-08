@@ -21,6 +21,12 @@ class GameState {
         this.atStore = false;
     }
 
+    createGameEvents() {
+        this.allEvents = [
+            
+        ]
+    }
+
     // Add the global hurtEnemy function
     hurtEnemy(damage, fromEnemy = false) {
         // Check if we're currently in a battle
@@ -91,10 +97,15 @@ class GameState {
         this.inventoryManager.resetAllActiveItems();
         interactionService.enable();
         this.textOverlay.showWindowOverlay("You have won the battle!", 
-            "You have won the battle!!! What item do you want to take?", 
+            "e won the battle!!! What item do you want to take?", 
             this.getCurrentEnemyItems().map(item => {
                 if (item) {
-                    return "<img src='" + item.image + "' alt='" + item.name + "'></img>";
+                    return `
+                    <div class="item-container">    
+                    <img src="${item.image}" alt="${item.name}"></img>
+                    <p>${item.name}</p>
+                    </div>
+                    `;
                 }
             }),
             [() => this.textOverlay.closeWindowOverlay(),() => {this.goToBattle(); this.textOverlay.closeWindowOverlay();}]);
@@ -110,6 +121,8 @@ class GameState {
     resetPosition() {
         this.leaveStore();
     }
+
+
 }
 
 const gameState = new GameState();

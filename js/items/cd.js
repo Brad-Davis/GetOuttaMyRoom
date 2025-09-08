@@ -17,7 +17,7 @@ class CD {
     const cdGeometry = new THREE.BoxGeometry(1.5, 1.5, 0.1);
     
     // Load CD texture
-    const texture = new THREE.TextureLoader().load('./resources/images/cd.jpg');
+    const texture = new THREE.TextureLoader().load('./resources/images/cd2.jpeg');
     
     // Create materials: front and back with texture, sides (top, bottom, left, right) all white
     const cdMaterials = [
