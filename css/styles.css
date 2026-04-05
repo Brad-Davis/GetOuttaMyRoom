@@ -541,14 +541,23 @@ canvas {
   left: 50%;
   width: 60%;
   margin: 0 auto;
-  height: 250px;
+  height: 200px;
   background-color: rgba(0, 0, 0, 1);
   border-radius: 0;
   border: 5px solid #FFFFFF;
+  box-sizing: border-box;
   padding: 10px;
   color: white;
   text-align: center;
   font-size: 16px;
+}
+
+#dialogue-speaker {
+  font-weight: bold;
+  font-size: 14px;
+  text-align: left;
+  margin-bottom: 8px;
+  color: #ffe066;
 }
 
 #dialogue-triangle {
@@ -561,6 +570,11 @@ canvas {
 
 #dialogue-triangle.flashing {
   animation: flash 0.5s infinite;
+}
+
+#computer {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
 }
 
 

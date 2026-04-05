@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import loaderService from '../utils/loaderService.js';
+import cameraService from '../utils/cameraPresets.js';
+import iframeControls from '../UI/iframeControls.js';
 
 class Computer {
   constructor(scene) {
@@ -38,47 +40,21 @@ class Computer {
     return this.computerMesh;
   }
 
-  lookAtComputer(camera, gsap, dresserFocus) {
-    if (!dresserFocus) {
+  lookAtComputer() {
+    if (cameraService.getCameraPreset() !== cameraService.getCameraPreset('DRESSER_VIEW')) {
       return;
     }
     this.computerFocus = true;
-    gsap.to(camera.position, {
-      x: -3.63,
-      y: -0.8,
-      z: -6.3,
-      duration: 1,
-      ease: 'power2.inOut',
-    });
-    gsap.to(camera.rotation, {
-      x: 0.3,
-      y: Math.PI/2 + Math.PI/4,
-      z: -Math.PI/16 - 0.01,
-      duration: 1,
-      ease: 'power2.inOut',
-    });
-    this.showIframe('https://fritz.chessbase.com');
+    cameraService.lookAtComputer();
+    this.showIframe('https://pleasewakeupdaddy.com/');
   }
 
   showIframe(url) {
-    const computer = document.getElementById('computer');
-    computer.style.display = 'block';
-    computer.innerHTML = '';
-    const iframe = document.createElement('iframe');
-    iframe.src = url;
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.style.borderRadius = '10px';
-    iframe.style.overflow = 'hidden';
-    iframe.style.boxShadow = '0 0 10px 0 rgba(0, 0, 0, 0.5)';
-    computer.appendChild(iframe);
+    iframeControls.showIframe(url);
   }
 
   hideIframe() {
-    const computer = document.getElementById('computer');
-    computer.style.display = 'none';
-    computer.innerHTML = '';
+    iframeControls.hideIframe();
   }
 
   unsetFocus() {

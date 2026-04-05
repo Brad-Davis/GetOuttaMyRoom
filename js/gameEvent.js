@@ -32,4 +32,10 @@ class MiniEvent {
     }
 }
 
+const showEvents = [
+    new GameEvent('Event 1', 'event', [
+        new MiniEvent('dialog', 'Event 1'),
+    ]),
+];
+
 export default GameEvent;

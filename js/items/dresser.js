@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import loaderService from '../utils/loaderService.js';
+import cameraService from '../utils/cameraPresets.js';
 
 class Dresser {
   constructor(scene) {
@@ -53,21 +54,8 @@ class Dresser {
     return this.dresserMesh;
   }
 
-  lookAtDresser(camera, gsap, backButton) {
-    this.dresserFocus = true;
-    gsap.to(camera.position, {
-      x: -2,
-      z: -7,
-      y: -1,
-      duration: 1,
-      ease: 'power2.inOut',
-    });
-    gsap.to(camera.rotation, {
-      y: Math.PI/2,
-      duration: 1,
-      ease: 'power2.inOut',
-    });
-    backButton.showBackButton();
+  lookAtDresser() {
+    cameraService.lookAtDresser();
   }
 
   unsetFocus() {

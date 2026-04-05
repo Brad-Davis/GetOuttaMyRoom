@@ -20,6 +20,10 @@ class InteractionService {
         this.interactionManager.add(interaction);
     }
 
+    getInteractionManager() {
+        return this.interactionManager;
+    }
+
     checkEnabled() {
         return this.enabled;
     }

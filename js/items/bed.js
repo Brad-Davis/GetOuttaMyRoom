@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import loaderService from '../utils/loaderService.js';
 import interactionService from '../utils/interactionService.js';
 import gameState from '../gameState.js';
+import cameraService from '../utils/cameraPresets.js';
+import dialogService from '../utils/dialogService.js';
 
 class Bed {
   constructor(scene) {
@@ -9,7 +11,7 @@ class Bed {
     this.bedMesh = null;
   }
 
-    async createBed(x, y, z, gsap, camera, interactionManager, backButton) {
+    async createBed(x, y, z) {
         try {
             const gltf = await loaderService.loadGLTF('./resources/models/bed.glb');
             this.bedMesh = gltf.scene;
@@ -17,15 +19,16 @@ class Bed {
             this.bedMesh.scale.set(0.02, 0.02, 0.02); // Scale the model
             this.bedMesh.position.set(x, y, z);
             this.scene.add(this.bedMesh);
-            interactionManager.add(this.bedMesh);
+            interactionService.getInteractionManager().add(this.bedMesh);
 
-            this.bedMesh.addEventListener('click', () => {
+            this.bedMesh.addEventListener('click', async () => {
               if (!interactionService.checkEnabled()) {
                 return;
               }
-              this.lookAtBed(camera, gsap);
+
+              await dialogService.start('bed_goblin_intro');
               gameState.goToStore();
-              backButton.showBackButton();
+              cameraService.lookAtBed();
             });
 
         } catch (error) {
@@ -35,25 +38,6 @@ class Bed {
 
     getBedMesh() {
       return this.bedMesh;
-    }
-
-    lookAtBed(camera, gsap) {
-      this.dresserFocus = true;
-      gsap.to(camera.position, {
-        x: 0,
-        z: -7,
-        y: -1.5,
-        duration: 1,
-        ease: 'power2.inOut',
-      });
-      gsap.to(camera.rotation, {
-       
-        x: -Math.PI/2,
-        z: -Math.PI/2,
-        y: -Math.PI/4,
-        duration: 1,
-        ease: 'power2.inOut',
-      });
     }
 }
 

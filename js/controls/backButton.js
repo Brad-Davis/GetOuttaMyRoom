@@ -1,9 +1,10 @@
+import iframeControls from '../UI/iframeControls.js';
+
 class BackButton {
   constructor(camera, gsap, unsetFocus, gameState) {
     // constructor logic here
     this.noFocus = true;
     this.BackButtonEl = document.getElementById('backButton');
-    this.unsetFocus = unsetFocus;
     this.BackButtonEl.addEventListener('click', () => {
       this.returnToDefaultPos(camera, gsap, gameState); 
     });
@@ -34,7 +35,7 @@ class BackButton {
           ease: 'power2.inOut',
         });
         gameState.resetPosition();
-        this.unsetFocus();
+        iframeControls.hideIframe();
   }
 
 }

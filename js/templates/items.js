@@ -199,6 +199,7 @@ const items = {
     "cd_001": generateItem("cd", "cd_001"),
     "punch_002": generateItem("punch", "punch_002"),
     "pentagram_001": generateItem("pentagram", "pentagram_001"),
+    "pentagram_002": generateItem("pentagram", "pentagram_002"),
 }
 
 export default items;

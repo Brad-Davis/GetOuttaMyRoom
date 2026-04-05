@@ -5,6 +5,7 @@ import items from "../templates/items.js";
 class Uncle extends Enemy {
     constructor(hp, level, exp, gold) {
         super("Uncle", [items["punch_002"], items["pentagram_002"]], hp, level, exp, gold, null, [0, -3, 0], null);
+        // this.setSpritePaths(["updatedImages/uncle1.png", "updatedImages/uncle2.png", "updatedImages/uncle3.png", "updatedImages/uncle4.png", "updatedImages/uncle5.png"]);
         this.animations;
     }
 

@@ -202,7 +202,7 @@ class Bedroom extends Room {
       height: 1.5,
       x: this.config.width / 4 + 0.6,
       y: this.config.wallHeight/4 - 0.8,
-      z: -this.config.depth / 2 + 0.01,
+      z: -this.config.depth / 2 + 0.05,
       rotX: 0,
       rotY: 0,
       rotZ: 0,

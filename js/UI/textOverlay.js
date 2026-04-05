@@ -7,8 +7,11 @@ class TextOverlay {
         this.bottomOverlay = document.getElementById('bottom-overlay');
         this.windowOverlay = document.getElementById('window-overlay');
         this.dialogueOverlay = document.getElementById('dialogue-overlay');
+        this.dialogueSpeaker = document.getElementById('dialogue-speaker');
         this.dialogueBox = document.getElementById('dialogue-box');
         this.dialogueTriangle = document.getElementById('dialogue-triangle');
+        this._dialogScrollTimeout = null;
+        this._dialogLineClickHandler = null;
         this.bottomText = '[Click on the CD to start]';
         this.fullText = '';
         this.isVisible = true;
@@ -81,12 +84,12 @@ class TextOverlay {
 
     showTextBox(message) {
         this.show('dialogue');
-        this.dialogueOverlay
+        this.dialogueBox.textContent = '';
         this.startTextScroll(message);
         this.dialogueOverlay.style.pointerEvents = 'auto';
         const clickHandler = () => {
-            console.log('clicked');
-            this.dialogueBox.textContent = message + "   ";
+            this._cancelDialogScroll();
+            this.dialogueBox.textContent = message;
             this.dialogueOverlay.removeEventListener('click', clickHandler);
             this.showSolidTriangle();
         };
@@ -94,16 +97,102 @@ class TextOverlay {
     }
 
     startTextScroll(message) {
+        this._cancelDialogScroll();
         let textLength = this.dialogueBox.textContent.length;
         this.showFlashingTriangle();
         if (textLength < message.length) {
             this.dialogueBox.textContent = message.substring(0, textLength + 1);
-            setTimeout(() => {
+            this._dialogScrollTimeout = setTimeout(() => {
                 this.startTextScroll(message);
             }, 20);
         } else {
             this.showSolidTriangle();
         }
+    }
+
+    _cancelDialogScroll() {
+        if (this._dialogScrollTimeout != null) {
+            clearTimeout(this._dialogScrollTimeout);
+            this._dialogScrollTimeout = null;
+        }
+    }
+
+    /**
+     * One dialog line: typewriter, click to skip typing, click again to continue.
+     * @returns {Promise<void>}
+     */
+    runDialogLine({ speaker = '', text = '' }) {
+        return new Promise((resolve) => {
+            this.show('dialogue');
+            if (this.dialogueSpeaker) {
+                this.dialogueSpeaker.textContent = speaker;
+            }
+            this._cancelDialogScroll();
+            this.dialogueBox.textContent = '';
+
+            if (this._dialogLineClickHandler) {
+                this.dialogueOverlay.removeEventListener('click', this._dialogLineClickHandler);
+                this._dialogLineClickHandler = null;
+            }
+
+            let fullTextVisible = false;
+            const onClick = () => {
+                if (!fullTextVisible) {
+                    this._cancelDialogScroll();
+                    this.dialogueBox.textContent = text;
+                    this.showSolidTriangle();
+                    fullTextVisible = true;
+                    return;
+                }
+                this.dialogueOverlay.removeEventListener('click', onClick);
+                this._dialogLineClickHandler = null;
+                resolve();
+            };
+
+            this._dialogLineClickHandler = onClick;
+            this.dialogueOverlay.addEventListener('click', onClick);
+            this.dialogueOverlay.style.pointerEvents = 'auto';
+
+            const onTypingComplete = () => {
+                fullTextVisible = true;
+                this.showSolidTriangle();
+            };
+
+            if (!text) {
+                onTypingComplete();
+                return;
+            }
+
+            this._startDialogTypewriter(text, onTypingComplete);
+        });
+    }
+
+    _startDialogTypewriter(fullText, onComplete) {
+        let visible = 0;
+        const step = () => {
+            visible += 1;
+            if (visible > fullText.length) {
+                onComplete();
+                return;
+            }
+            this.dialogueBox.textContent = fullText.substring(0, visible);
+            this.showFlashingTriangle();
+            this._dialogScrollTimeout = setTimeout(step, 20);
+        };
+        step();
+    }
+
+    endDialog() {
+        this._cancelDialogScroll();
+        if (this._dialogLineClickHandler) {
+            this.dialogueOverlay.removeEventListener('click', this._dialogLineClickHandler);
+            this._dialogLineClickHandler = null;
+        }
+        if (this.dialogueSpeaker) {
+            this.dialogueSpeaker.textContent = '';
+        }
+        this.dialogueBox.textContent = '';
+        this.show('bottom');
     }
 
     showFlashingTriangle() {

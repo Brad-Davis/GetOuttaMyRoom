@@ -21,6 +21,15 @@ class Enemy {
         this.moveAnimation = null;
         this.attackTimer = 2.5;
         this.currentAttackTimer = 0;
+        this.spritePaths = [];
+    }
+
+    setSpritePaths(spritePaths) {
+        this.spritePaths = spritePaths;
+        this.spritePaths.forEach(path => {
+            const sprite = loaderService.createSprite("./resources/images/" + path);
+            this.sprites.push(sprite);
+        });
     }
 
     getHp () {
