@@ -1,5 +1,7 @@
+import effectsService from "../utils/effectsService.js";
+
 class Item {
-    constructor(name, description, value, rechargeTime = 0, image = null, triggerFunction = null, id = null, phyDamage = 0, emoDamage = 0) {
+    constructor(name, description, value, rechargeTime = 0, image = null, triggerFunction = null, id = null, phyDamage = 0, emoDamage = 0, effects = null) {
         this.name = name;
         this.description = description;
         this.value = value;
@@ -8,12 +10,11 @@ class Item {
         this.currentCharge = 0;
         this.isReady = false;
         this.type = 'item';
-        this.painContainer = document.getElementById('pain-container');
-        this.selfPainContainer = document.getElementById('self-pain-container');
         this.id = id || name;
         this.triggerFunction = triggerFunction;
         this.phyDamage = phyDamage;
         this.emoDamage = emoDamage;
+        this.effects = effects;
     }
 
     use(fromEnemy = false) {
@@ -39,11 +40,11 @@ class Item {
         }
 
         this.currentCharge+= timeAmount;
-        console.log("charge of " + this.name + " is " + this.currentCharge + " and recharge time is " + this.rechargeTime);
+        // console.log("charge of " + this.name + " is " + this.currentCharge + " and recharge time is " + this.rechargeTime);
 
         if (containerElement) {
             const gradient = this.currentCharge / this.rechargeTime * 100;
-            console.log(gradient);
+            // console.log(gradient);
             // Apply charging animation to the CONTAINER
             containerElement.style.background = `linear-gradient(
                     to right,
@@ -91,32 +92,10 @@ class Item {
         }
     }
 
-    generatePainText(fromEnemy = false) {
-        const painText = document.createElement('div');
-        painText.classList.add('pain-text');
-        if (this.phyDamage > 0) {
-            painText.textContent += `-${this.phyDamage} HP`;
-            painText.style.color = 'rgb(255, 0, 0, 0.75)';
-        }
-        if (this.emoDamage > 0) {
-            painText.textContent += `-${this.emoDamage} HP`;
-            painText.style.color = 'rgb(255, 43, 163, 0.75)';
-        }
-        if (fromEnemy) {
-            this.selfPainContainer.appendChild(painText);
-        } else {
-            this.painContainer.appendChild(painText);
-        }
-        // Remove the pain text after 2 seconds
-        setTimeout(() => {
-            if (painText.parentNode) {
-                painText.parentNode.removeChild(painText);
-            }
-        }, 2000);
-    }
+    
 
     onUse(innerItemElement, containerElement, fromEnemy = false) {
-        this.generatePainText(fromEnemy);
+        effectsService.apply(this.effects);
         this.use(fromEnemy);
         this.isReady = false;
         innerItemElement.style.boxShadow = "";
@@ -136,14 +115,57 @@ const itemPool = {
         "Punch",
         "A basic punch that deals physical damage.",
         /* value */ 2,
-        /* rechargeTime */ 5,
+        /* rechargeTime */ 0.5,
         /* image */ "./resources/images/hand.png",
         /* triggerFunction */ (fromEnemy = false) => {
-            hurtEnemy(10, fromEnemy);
+            hurt(3, fromEnemy);
         },
         /* id */ "punch",
+        /* phyDamage */ 3,
+        /* emoDamage */ 0,
+        /* effects */ {
+            sfx: "punchLight",
+            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            screenShake: { intensity: 6, duration: 120 },
+            flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
+        }
+    ),
+    "punch_heavy": new Item(
+        "Punch Heavy",
+        "A heavy punch that deals physical damage.",
+        /* value */ 2,
+        /* rechargeTime */ 4,
+        /* image */ "./resources/images/hand.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            hurt(10, fromEnemy, true);
+        },
+        /* id */ "punch_heavy",
         /* phyDamage */ 10,
         /* emoDamage */ 0,
+        /* effects */ {
+            sfx: "punchHeavy",
+            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            screenShake: { intensity: 6, duration: 120 },
+            flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
+        }
+    ),
+    "shot": new Item(
+        "Shot",
+        "A shot that boosts physical damage, but lowers emotional damage.",
+        /* value */ 2,
+        /* rechargeTime */ 2,
+        /* image */ "./resources/images/shot.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            buffPlayer(2, 0.5);
+        },
+        /* phyDamage */ 3,
+        /* emoDamage */ 0,
+        /* effects */ {
+            sfx: "punchLight",
+            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            screenShake: { intensity: 6, duration: 120 },
+            flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
+        }
     ),
     "cd": new Item(
         "CD",
@@ -154,6 +176,7 @@ const itemPool = {
         /* id */ "cd",
         /* phyDamage */ 0,
         /* emoDamage */ 0,
+        /* effects */ null
     ),
     "pentagram": new Item(
         "Pentagram",
@@ -162,13 +185,38 @@ const itemPool = {
         /* rechargeTime */ 1,
         /* image */ "./resources/images/pentagramV3.png",
         /* triggerFunction */ (fromEnemy = false) => {
-            console.log("Pentagram unleashes dark energy!");
-            hurtEnemy(50, fromEnemy);
+            // console.log("Pentagram unleashes dark energy!");
+            hurt(50, fromEnemy);
+            hurt(10, !fromEnemy);
         },
         /* phyDamage */ 25,
         /* emoDamage */ 5,
-        /* id */ "pentagram"
+        /* id */ "pentagram",
+        /* effects */ {
+            sfx: "darkBurst",
+            sfxOptions: { volume: 0.8, playbackRate: 0.95 },
+            screenShake: { intensity: 14, duration: 180 },
+            flash: { color: "#ff2ba3", alpha: 0.2, duration: 130 }
+        }
     ),
+    "podcast": new Item(
+        "Podcast",
+        "Creating a podcast will inflict huge emotional damage to your family.",
+        /* value */ 5,
+        /* rechargeTime */ 2,
+        /* image */ "./resources/images/mic.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            buffPlayer(0.5, 2);
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 3,
+        /* effects */ {
+            sfx: "punchLight",
+            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            screenShake: { intensity: 6, duration: 120 },
+            flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
+        }
+    )
 }
 
 function generateItem(itemName, id = null) {
@@ -184,7 +232,8 @@ function generateItem(itemName, id = null) {
             item.triggerFunction,
             id || generateId(item.name),
             item.phyDamage,
-            item.emoDamage
+            item.emoDamage,
+            item.effects
         );
     }
     return null;
@@ -196,10 +245,13 @@ function generateId(itemName) {
 
 const items = {
     "punch_001": generateItem("punch", "punch_001"),
+    "punch_heavy_001": generateItem("punch_heavy", "punch_heavy_001"),
+    "shot_001": generateItem("shot", "shot_001"),
     "cd_001": generateItem("cd", "cd_001"),
     "punch_002": generateItem("punch", "punch_002"),
     "pentagram_001": generateItem("pentagram", "pentagram_001"),
     "pentagram_002": generateItem("pentagram", "pentagram_002"),
+    "podcast_001": generateItem("podcast", "podcast_001"),
 }
 
 export default items;

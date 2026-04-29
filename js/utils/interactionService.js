@@ -2,6 +2,7 @@ class InteractionService {
     constructor() {
         this.interactionManager = null;
         this.enabled = false;
+        this.eyesClosed = false;
     }
 
     setInteractionManager(interactionManager) {
@@ -16,6 +17,14 @@ class InteractionService {
         this.enabled = false;
     }
 
+    setEyesClosed(closed) {
+        this.eyesClosed = !!closed;
+    }
+
+    areEyesClosed() {
+        return this.eyesClosed;
+    }
+
     addInteraction(interaction) {
         this.interactionManager.add(interaction);
     }
@@ -25,7 +34,7 @@ class InteractionService {
     }
 
     checkEnabled() {
-        return this.enabled;
+        return this.enabled && !this.eyesClosed;
     }
 }
 

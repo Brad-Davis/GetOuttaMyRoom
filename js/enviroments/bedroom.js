@@ -1,5 +1,6 @@
 import Room from '../controls/room.js';
 import Hallway from './hallway.js';
+import GpuRainEffect from '../utils/gpuRainEffect.js';
 
 class Bedroom extends Room {
   constructor(config = {}) {
@@ -13,8 +14,24 @@ class Bedroom extends Room {
       wallHeight: 1,
       ...config
     };
-    
+
+    const defaultRain = {
+      enabled: true,
+      /** Center of the rain volume in the same space as room meshes (gameGroup local). */
+      center: { x: -0.5, y: 1.2, z: 6.8 },
+      /** Axis-aligned box size around `center`. */
+      volume: { width: 5.5, height: 7, depth: 2.8 },
+      particleCount: 3200,
+      fallSpeed: 1.15,
+      wind: 0.06,
+      opacity: 0.34,
+      color: 0xa8c4ee,
+    };
+
     super('Bedroom', bedroomConfig);
+
+    this.rainEffect = null;
+    this.rainOptions = { ...defaultRain, ...(config.rain || {}) };
   }
 
   /**
@@ -273,8 +290,8 @@ class Bedroom extends Room {
         width: 12,
         height: 3,
         x: 0,
-        y: -3,
-        z: this.config.depth / 2 + 1,
+        y: -1.7,
+        z: this.config.depth / 2 +0.2,
         rotX: 0,
         rotY: 0,
         rotZ: 0,
@@ -300,7 +317,21 @@ class Bedroom extends Room {
     scene.add(bush);
     scene.add(grass);
 
-    const hallway = new Hallway(scene)
+    const hallway = new Hallway(scene);
+
+    if (this.rainOptions.enabled) {
+      const { center, volume, particleCount, fallSpeed, wind, opacity, color } = this.rainOptions;
+      this.rainEffect = new GpuRainEffect({
+        center,
+        volume,
+        particleCount,
+        fallSpeed,
+        wind,
+        opacity,
+        color,
+      });
+      scene.add(this.rainEffect.group);
+    }
 
     return surfaces;
   }

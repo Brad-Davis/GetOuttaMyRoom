@@ -3,7 +3,6 @@ import { InteractionManager } from 'three.interactive';
 import interactionService from '../utils/interactionService.js';
 import Movement from '../controls/movement.js';
 import BackButton from '../controls/backButton.js';
-import textOverlay from '../UI/textOverlay.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 class GameInteractionManager {
@@ -12,9 +11,11 @@ class GameInteractionManager {
         this.movement = null;
         this.backButton = null;
         this.orbitControls = null;
+        this._camera = null;
     }
 
     initialize(renderer, camera) {
+        this._camera = camera;
         // Setup Three.js interaction manager
         this.threeInteractionManager = new InteractionManager(
             renderer,
@@ -28,10 +29,11 @@ class GameInteractionManager {
         // Setup movement controls
         this.movement = new Movement(camera, null); // Will set gameGroup later
 
-        this.orbitControls = new OrbitControls(camera, renderer.domElement);
-        this.orbitControls.enableDamping = true;
-        this.orbitControls.dampingFactor = 0.05;
-        this.orbitControls.update();
+        //UNCOMMENT THIS TO ENABLE ORBIT CONTROLS
+        // this.orbitControls = new OrbitControls(camera, renderer.domElement);
+        // this.orbitControls.enableDamping = true;
+        // this.orbitControls.dampingFactor = 0.05;
+        // this.orbitControls.update();
 
         console.log('Interaction Manager initialized');
     }
@@ -47,11 +49,7 @@ class GameInteractionManager {
             this.setupObjectInteraction(key, item, camera, gameState);
         });
 
-        // Enable interactions after setup
-        setTimeout(() => {
-            interactionService.enable();
-            textOverlay.hide();
-        }, 2000);
+        // Stay disabled until the player clicks the CD and the intro finishes (GameEngine wires CD callback).
     }
 
     setupObjectInteraction(objectName, item, camera, gameState) {
@@ -130,16 +128,23 @@ class GameInteractionManager {
     setupCDInteraction(mesh, cd) {
         mesh.addEventListener('click', () => {
             console.log('CD clicked - exploding!');
+            this.beginProgrammaticCameraMove();
             cd.onClick();
-            textOverlay.hide();
-            setTimeout(() => {
-                interactionService.enable();
-            }, 2000);
+        });
+
+        mesh.addEventListener('mouseenter', () => {
+            cd.onHover();
+        });
+
+        mesh.addEventListener('mouseleave', () => {
+            cd.onHoverLeave();
         });
     }
 
     setupBongInteraction(mesh, bong) {
         mesh.addEventListener('click', () => {
+            if (!interactionService.checkEnabled()) return;
+
             console.log('Bong clicked!');
             bong.onClick();
         });
@@ -173,6 +178,10 @@ class GameInteractionManager {
         if (this.movement) {
             this.movement.gameGroup = gameGroup;
         }
+        this.syncOrbitToGameGroup(gameGroup);
+    }
+
+    syncOrbitToGameGroup(gameGroup) {
         if (this.orbitControls && gameGroup) {
             const worldPos = new THREE.Vector3();
             gameGroup.getWorldPosition(worldPos);
@@ -181,14 +190,37 @@ class GameInteractionManager {
         }
     }
 
-    /** Call once per frame (required for damping). */
-    frameUpdate() {
-        if (this.orbitControls) {
+    beginProgrammaticCameraMove() {
+        this._orbitUpdatesSuspended = true;
+    }
+
+    /**
+     * Call after GSAP (or other code) finishes moving the camera so OrbitControls
+     * internal state matches the new pose.
+     */
+    endProgrammaticCameraMove(gameGroup) {
+        this._orbitUpdatesSuspended = false;
+        if (gameGroup) {
+            this.syncOrbitToGameGroup(gameGroup);
+        } else if (this.orbitControls) {
             this.orbitControls.update();
         }
     }
 
+    /** Call once per frame (Orbit damping + three.interactive hover / enter-leave). */
+    frameUpdate() {
+        // three.interactive: mouseenter/mouseleave are emitted from update() (raycast vs last frame).
+        if (this.threeInteractionManager) {
+            this.threeInteractionManager.update();
+        }
+        if (this.orbitControls && !this._orbitUpdatesSuspended) {
+            this.orbitControls.update();
+        }
+        this.backButton?.updateVisibility();
+    }
+
     dispose() {
+        this._orbitUpdatesSuspended = false;
         if (this.orbitControls) {
             this.orbitControls.dispose();
             this.orbitControls = null;

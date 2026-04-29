@@ -10,9 +10,15 @@ class Door {
   createDoor(x, y, z) {
     // Create door mesh and add it to the scene
     const doorGeometry = new THREE.BoxGeometry(2, 4, 0.1);
-    // const doorMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const texture = new THREE.TextureLoader().load('./resources/images/door.png');
-    const doorMaterial = new THREE.MeshLambertMaterial({ map: texture });
+    const texture = new THREE.TextureLoader().load('./resources/images/door.png', (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+    });
+    // Standard (PBR) vs room Lambert: picks up directional specular and falls off differently when ambient flickers.
+    const doorMaterial = new THREE.MeshStandardMaterial({
+      map: texture,
+      roughness: 0.52,
+      metalness: 0.18,
+    });
     this.doorMesh = new THREE.Mesh(doorGeometry, doorMaterial);
     this.doorMesh.position.x = x;
     this.doorMesh.position.y = y;

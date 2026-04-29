@@ -7,6 +7,7 @@ import Dresser from '../items/dresser.js';
 import Computer from '../items/computer.js';
 import CD from '../items/cd.js';
 import Bedroom from '../enviroments/bedroom.js';
+import OpeningMenu from '../enviroments/openingMenu.js';
 import Enemy from '../templates/enemy.js';
 import gsap from 'gsap';
 
@@ -29,7 +30,7 @@ class AssetManager {
         console.log('Loading critical assets...');
     }
 
-    async loadGameObjects(gameGroup) {
+    async loadGameObjects(gameGroup, camera = null) {
         console.log('Loading game objects...');
         
         // Load static objects
@@ -39,7 +40,7 @@ class AssetManager {
         await this.loadInteractiveObjects(gameGroup);
         
         // Load animated objects
-        this.loadAnimatedObjects(gameGroup);
+        this.loadAnimatedObjects(gameGroup, camera);
         
         // Generate enemies
         // this.generateEnemies();
@@ -48,10 +49,32 @@ class AssetManager {
     }
 
     async loadStaticObjects(gameGroup) {
+        // Opening menu shell (invert box, camera goes inside — tune `width` / `height` / anchor `x` `y` `z`).
+        const openingMenu = new OpeningMenu({
+            width: 10,
+            height: 6,
+            depth: 10,
+            x: -22,
+            y: 1,
+            z: -2,
+            interiorTexture: 'sky.jpg',
+            textureRepeat: { x: 7, y: 7 },
+            wallColor: 0xffffff,
+            rotationSpeedY: 0.0001,
+        });
+        openingMenu.buildRoom(gameGroup);
+        this.gameObjects.set('openingMenu', openingMenu);
+        this.animatedObjects.push(openingMenu);
+
         // Room/Environment
         const bedroom = new Bedroom();
         bedroom.buildRoom(gameGroup);
         this.gameObjects.set('bedroom', bedroom);
+        if (bedroom.rainEffect) {
+            this.animatedObjects.push({
+                update: () => bedroom.rainEffect.update(),
+            });
+        }
 
         // Rug
         const rug = new Rug(gameGroup);
@@ -63,6 +86,9 @@ class AssetManager {
         // Door
         const door = new Door(gameGroup);
         door.createDoor(0, -1, -5);
+
+        const door2 = new Door(gameGroup);
+        door2.createDoor(-22,0,-6);
         this.gameObjects.set('door', door);
         this.interactableObjects.set('door', {
             object: door,
@@ -116,7 +142,7 @@ class AssetManager {
         }
     }
 
-    loadAnimatedObjects(gameGroup) {
+    loadAnimatedObjects(gameGroup, camera = null) {
         // Moon
         const moon = new Moon(gameGroup);
         moon.createMoon(7, 2, -6);
@@ -129,9 +155,9 @@ class AssetManager {
         });
 
         // CD
-        const cd = new CD(gameGroup, null); // Will set camera later
+        const cd = new CD(gameGroup, camera);
         // cd.createCD(0.25, -0.5, 7);
-        cd.createCD(0, -1, 2);
+        cd.createCD(-22,1,-2);
         this.gameObjects.set('cd', cd);
         this.animatedObjects.push(cd);
         this.interactableObjects.set('cd', {
@@ -145,6 +171,7 @@ class AssetManager {
         this.animatedObjects.forEach(obj => {
             if (obj.rotateMoon) obj.rotateMoon();
             if (obj.rotateCD) obj.rotateCD();
+            if (typeof obj.update === 'function') obj.update();
         });
     }
 

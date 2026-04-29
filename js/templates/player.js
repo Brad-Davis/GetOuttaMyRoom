@@ -8,6 +8,10 @@ class Player {
         this.maxHp = 100;
         this.currentHp = this.maxHp;
         this.level = 1;
+        this.basePhyDamage = 1;
+        this.baseEmoDamage = 1;
+        this.phyDamage = 1;
+        this.emoDamage = 1;
         this.HealthBar = new HealthBar(document.getElementById("playerHealthContainer"), this);
     }
 
@@ -58,6 +62,21 @@ class Player {
     tick() {
         // this.changeHp(-1);
         playerActiveItems.tickItems(0.1);
+    }
+
+    buffPhysical(amount) {
+        this.phyDamage *= amount;
+        console.log("Player physical damage buffed to " + this.phyDamage);
+    }
+
+    buffEmotional(amount) {
+        this.emoDamage *= amount;
+        console.log("Player emotional damage buffed to " + this.emoDamage);
+    }
+
+    resetBuffs() {
+        this.phyDamage = this.basePhyDamage;
+        this.emoDamage = this.baseEmoDamage;
     }
 
 }

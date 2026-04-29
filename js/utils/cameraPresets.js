@@ -1,7 +1,24 @@
 import gsap from 'gsap';
+import interactionService from './interactionService.js';
+
+const DEFAULT_VIEW_EPSILON = 0.12;
+
+function nearlyEqual(a, b, eps = DEFAULT_VIEW_EPSILON) {
+    return Math.abs(a - b) < eps;
+}
 
 export const CAMERA_PRESETS = {
     DEFAULT: {
+        position: { x: 0, y: 0, z: 0 },
+        rotation: { x: 0, y: Math.PI, z: 0 }
+    },
+    /** Before clicking the CD — in front of the room. */
+    OUTSIDE_INTRO: {
+        position: { x: 0, y: -0.5, z: 5 },
+        rotation: { x: 0, y: 0, z: 0 }
+    },
+    /** After the CD intro — same as original default “inside” view. */
+    INTERIOR_START: {
         position: { x: 0, y: 0, z: 0 },
         rotation: { x: 0, y: 0, z: 0 }
     },
@@ -16,6 +33,10 @@ export const CAMERA_PRESETS = {
     COMPUTER_VIEW: {
         position: { x: -3.63, y: -0.8, z: -6.3 },
         rotation: { x: 0.3, y: Math.PI/2 + Math.PI/4, z: -Math.PI/16 - 0.01 }
+    },
+    SLEEPING_VIEW: {
+        position: { x: 4.5, y: -1.5, z: -7 },
+        rotation: { x: 0, y: Math.PI/2, z: -Math.PI/2 }
     }
 };
 
@@ -93,6 +114,31 @@ class CameraService {
         });
     }
 
+    sleepInBed() {
+        if (!this.camera) return;
+        applyCameraPreset('SLEEPING_VIEW');
+        //APPLY CLOSE EYES
+        this.closeEyes();
+    }
+
+    closeEyes() {
+        interactionService.setEyesClosed(true);
+        const topEye = document.getElementById('topEye');
+        const bottomEye = document.getElementById('bottomEye');
+        if (topEye) topEye.style.transform = 'translate(0, 0)';
+        if (bottomEye) bottomEye.style.transform = 'translate(0, -10%)';
+    }
+
+    openEyes() {
+        const topEye = document.getElementById('topEye');
+        const bottomEye = document.getElementById('bottomEye');
+        if (topEye) topEye.style.transform = 'translate(0, -100%)';
+        if (bottomEye) bottomEye.style.transform = 'translate(0, 100%)';
+        setTimeout(() => {
+            interactionService.setEyesClosed(false);
+        }, 2000);
+    }
+
     // Smooth camera transitions with callbacks
     transitionTo(position, rotation, options = {}) {
         const { duration = 1, ease = 'power2.inOut', onComplete } = options;
@@ -141,6 +187,24 @@ class CameraService {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Matches the pose `BackButton.returnToDefaultPos` animates to (INTERIOR_START).
+     */
+    isAtInteriorDefault(cam = this.camera) {
+        if (!cam) return true;
+        const ref = CAMERA_PRESETS.INTERIOR_START;
+        const p = cam.position;
+        const r = cam.rotation;
+        return (
+            nearlyEqual(p.x, ref.position.x) &&
+            nearlyEqual(p.y, ref.position.y) &&
+            nearlyEqual(p.z, ref.position.z) &&
+            nearlyEqual(r.x, ref.rotation.x) &&
+            nearlyEqual(r.y, ref.rotation.y) &&
+            nearlyEqual(r.z, ref.rotation.z)
+        );
     }
 }
 

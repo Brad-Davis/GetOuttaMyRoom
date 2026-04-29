@@ -15,6 +15,10 @@ class TextOverlay {
         this.bottomText = '[Click on the CD to start]';
         this.fullText = '';
         this.isVisible = true;
+        this._stopBlinkLoop = false;
+        if (this.bottomOverlay) {
+            this.bottomOverlay.textContent = this.bottomText;
+        }
         this.blink('1');
         this.show("bottom");
         // this.showTextBox("HELLO THIS IS MY FIRST TEXT BOX HELLO THIS IS MY FIRST TEXT BOX HELLO THIS IS MY FIRST TEXT BOX HELLO THIS IS MY FIRST TEXT BOX HELLO THIS IS MY FIRST TEXT BOX");
@@ -50,13 +54,19 @@ class TextOverlay {
     hide() {
         this.isVisible = false;
         this.overlay.style.display = 'none';
+        this.stopBlink();
+    }
+
+    stopBlink() {
+        this._stopBlinkLoop = true;
     }
 
     blink(opacity) {
+        if (this._stopBlinkLoop) return;
         this.overlay.style.display = 'block';
         this.overlay.style.opacity = opacity;
         setTimeout(() => {
-            if (!this.isVisible) return;
+            if (!this.isVisible || this._stopBlinkLoop) return;
             this.overlay.style.opacity = opacity === '1' ? '0' : '1';
             this.blink(opacity === '1' ? '0' : '1');
         }, 1000);

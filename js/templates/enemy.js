@@ -22,6 +22,8 @@ class Enemy {
         this.attackTimer = 2.5;
         this.currentAttackTimer = 0;
         this.spritePaths = [];
+        this.phyDamage = 1;
+        this.emoDamage = 1;
     }
 
     setSpritePaths(spritePaths) {

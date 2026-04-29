@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import audioService from '../utils/audioService.js';
+import cameraService from '../utils/cameraPresets.js';
+import iframeControls from '../UI/iframeControls.js';
+import textOverlay from '../UI/textOverlay.js';
 
 class CD {
   constructor(scene, camera) {
@@ -10,6 +13,26 @@ class CD {
     this.rotationSpeed = 0.01;
     this.exploded = false;
     this.cdPieces = [];
+    this.onHouseEntered = null;
+    this.onImmediateBattle = null;
+    this.immediateBattleMode = false;
+    this._introSequenceFinished = false;
+  }
+
+  setCamera(camera) {
+    this.camera = camera;
+  }
+
+  setOnHouseEntered(callback) {
+    this.onHouseEntered = typeof callback === 'function' ? callback : null;
+  }
+
+  setOnImmediateBattle(callback) {
+    this.onImmediateBattle = typeof callback === 'function' ? callback : null;
+  }
+
+  setImmediateBattleMode(enabled) {
+    this.immediateBattleMode = !!enabled;
   }
 
   createCD(x, y, z) {
@@ -56,7 +79,7 @@ class CD {
   // Method to rotate the CD
   rotateCD() {
     if (this.cdMesh && !this.exploded) {
-      // this.cdMesh.rotation.y += this.rotationSpeed;
+      this.cdMesh.rotation.y += this.rotationSpeed;
     }
     
     // Animate exploded pieces
@@ -69,36 +92,41 @@ class CD {
 
   onClick() {
     if (this.exploded) return; // Prevent multiple explosions
-    
+
     this.exploded = true;
-    
+
     // Start background music on first user interaction
     audioService.startBackgroundMusic();
+
+    if (this.immediateBattleMode) {
+      this.onImmediateBattle?.();
+      this.animateExplosion();
+      return;
+    }
+
+    const cam = this.camera || (typeof window !== 'undefined' ? window.camera : null);
+    // GOING TO BE LOCATION
+    cameraService.sleepInBed();
     
-    // Smooth camera transition to CD position
-    gsap.to(this.camera.position, {
-      x: 0,
-      y: 0, // Slightly above the CD
-      z: 0, // Behind the CD
-      duration: 1.5,
-      ease: 'power2.inOut',
-    });
-    
-    gsap.to(this.camera.rotation, {
-      x: 0,
-      y: 0,
-      z: 0,
-      duration: 1.5,
-      ease: 'power2.inOut',
-    });
-    
-    // Remove the original CD
+    setTimeout(() => {
+      iframeControls.openSite('bedroomWelcome');
+      iframeControls.zoomIn();
+    }, 3000)
+
+    this.animateExplosion();
+
+  }
+
+  animateExplosion() {
+    const originalPosition = this.cdMesh ? this.cdMesh.position.clone() : new THREE.Vector3();
+
+    // Remove the original CD once
     if (this.cdMesh) {
       this.scene.remove(this.cdMesh);
+      this.cdMesh = null;
     }
-    
+
     // Create explosion pieces
-    const originalPosition = this.cdMesh.position.clone();
     const pieceCount = 8;
     
     for (let i = 0; i < pieceCount; i++) {
@@ -133,18 +161,19 @@ class CD {
       
       this.scene.add(piece);
       this.cdPieces.push(piece);
+      textOverlay.hide();
     }
     
-    // Animate the explosion
-    this.animateExplosion();
-    
+    // Start explosion physics loop
+    this._animateExplosionPieces();
+
     // Remove pieces after 2 seconds to save resources
     setTimeout(() => {
       this.cleanupPieces();
     }, 2000);
   }
 
-  animateExplosion() {
+  _animateExplosionPieces() {
     this.cdPieces.forEach(piece => {
       // Apply velocity
       piece.position.add(piece.velocity);
@@ -158,7 +187,7 @@ class CD {
     
     // Continue animation if pieces are still moving
     if (this.cdPieces.length > 0) {
-      requestAnimationFrame(() => this.animateExplosion());
+      requestAnimationFrame(() => this._animateExplosionPieces());
     }
   }
 
@@ -179,6 +208,11 @@ class CD {
     
     // Clear the pieces array
     this.cdPieces = [];
+
+    if (!this._introSequenceFinished) {
+      this._introSequenceFinished = true;
+      this.onHouseEntered?.();
+    }
   }
 
   // Method to set rotation speed
@@ -189,6 +223,43 @@ class CD {
   // Method to get the CD mesh
   getCDMesh() {
     return this.cdMesh;
+  }
+
+  _setCdMaterialsEmissive(colorHex, intensity) {
+    if (!this.cdMesh || this.exploded) return;
+    const m = this.cdMesh.material;
+    const apply = (mat) => {
+      if (!mat || !mat.emissive) return;
+      mat.emissive.setHex(colorHex);
+      if (typeof mat.emissiveIntensity === 'number') {
+        mat.emissiveIntensity = intensity;
+      }
+      mat.needsUpdate = true;
+    };
+    if (Array.isArray(m)) {
+      m.forEach(apply);
+    } else {
+      apply(m);
+    }
+  }
+
+  onHover() {
+   
+    // Scale the CD up slightly when hovered
+    if (this.cdMesh && !this.exploded) {
+      this._setCdMaterialsEmissive(0xffff00, 0.2);
+      this.cdMesh.scale.set(1.25, 1.25, 1.25);
+    }
+
+  }
+
+  onHoverLeave() {
+    
+    // Scale the CD up slightly when hovered
+    if (this.cdMesh && !this.exploded) {
+      this._setCdMaterialsEmissive(0x000000, 0);
+      this.cdMesh.scale.set(1, 1, 1);
+    }
   }
 }
 

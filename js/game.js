@@ -1,6 +1,7 @@
 // Import Three.js library
 import * as THREE from 'three';
 import GameEngine from './core/GameEngine.js';
+import './services/aiScoring.js'; // loads DEV-only `[aiScoring dev test]` log (see RUN_AI_SMOKE_TEST)
 
 // Initialize and start the game
 async function startGame() {

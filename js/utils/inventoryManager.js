@@ -30,8 +30,8 @@ class InventoryManager {
 
     addTestItems() {
         // Add some test items to the inventory
-        this.inventory.addItem(items.punch_001);
-        this.inventory.addItem(items.pentagram_001);
+        this.inventory.addItem(items.podcast_001);
+        this.inventory.addItem(items.shot_001);
     }
 
     setupDragAndDrop() {

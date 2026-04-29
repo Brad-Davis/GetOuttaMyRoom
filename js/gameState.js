@@ -19,6 +19,8 @@ class GameState {
         this.sceneService = sceneService;
         this.store = store;
         this.atStore = false;
+        this.painContainer = document.getElementById('pain-container');
+        this.selfPainContainer = document.getElementById('self-pain-container');
     }
 
     createGameEvents() {
@@ -28,7 +30,7 @@ class GameState {
     }
 
     // Add the global hurtEnemy function
-    hurtEnemy(damage, fromEnemy = false) {
+    hurt(damage, fromEnemy = false, physical = true) {
         // Check if we're currently in a battle
         if (!this.currentEvent || !this.currentEvent.enemy) {
             console.warn('No enemy to hurt - not in battle');
@@ -42,15 +44,58 @@ class GameState {
         }
 
         if (fromEnemy) {
+            if (physical) {
+                console.log("Player physical damage is " + this.player.phyDamage);
+                damage *= this.currentEvent.enemy.phyDamage;
+            } else {
+                console.log("Player emotional damage is " + this.player.emoDamage);
+                damage *= this.currentEvent.enemy.emoDamage;
+            }
             this.player.changeHp(-damage);
             this.player.takeDamage(damage);
         } else {
         // Deal damage to the current enemy
+            if (physical) {
+                damage *= this.player.phyDamage;
+            } else {
+                damage *= this.player.emoDamage;
+            }
             console.log(`Dealing ${damage} damage to ${this.currentEvent.enemy.name}`);
             this.currentEvent.enemy.changeHp(-damage);
             this.currentEvent.enemy.takeDamage(damage);
+            this.generatePainText(damage, fromEnemy, physical);
         }
+
+        
         return true;
+    }
+    
+    generatePainText(damage, fromEnemy = false, physical = true) {
+        const painText = document.createElement('div');
+        painText.classList.add('pain-text');
+        if (physical) {
+            painText.textContent += `-${damage} HP`;
+            painText.style.color = 'rgb(255, 0, 0, 0.75)';
+        }
+        if (!physical) {
+            painText.textContent += `-${damage * this.player.emoDamage} HP`;
+            painText.style.color = 'rgb(255, 43, 163, 0.75)';
+        }
+        if (fromEnemy) {
+            this.selfPainContainer.appendChild(painText);
+        } else {
+            this.painContainer.appendChild(painText);
+        }
+        // Remove the pain text after 2 seconds
+        setTimeout(() => {
+            if (painText.parentNode) {
+                painText.parentNode.removeChild(painText);
+            }
+        }, 2000);
+    }
+
+    hurtPlayer(damage) {
+        this.player.takeDamage(damage);
     }
 
 
@@ -68,16 +113,28 @@ class GameState {
         }
     }
 
-    async goToBattle(door) {
-        if (this.firstBattle) {
+    async goToBattle(door, options = {}) {
+        const { skipPrompt = false, openDoorOnStart = false } = options;
+        if (this.firstBattle && !skipPrompt) {
             this.showAreYouReadyForBattle(door);
             return false;
         }
         await this.enemySpawner.spawnEnemy();
+        if (!this.enemySpawner.curEnemy) {
+            return false;
+        }
         this.currentEvent = new Battle(this.player, this.enemySpawner.curEnemy);
         this.currentEvent.startBattle();
+        if (openDoorOnStart && door && !door.doorOpen) {
+            door.open();
+        }
         interactionService.disable();
         return true;
+    }
+
+    async startBattleNow(door) {
+        this.firstBattle = false;
+        return this.goToBattle(door, { skipPrompt: true, openDoorOnStart: true });
     }
 
     showAreYouReadyForBattle(door) {
@@ -128,10 +185,14 @@ class GameState {
 const gameState = new GameState();
 
 // Make hurtEnemy globally available for weapons
-window.hurtEnemy = (damage, fromEnemy = false) => {
-    return gameState.hurtEnemy(damage, fromEnemy);
+window.hurt = (damage, fromEnemy = false) => {
+    return gameState.hurt(damage, fromEnemy);
 };
 
-
+window.buffPlayer = (buffPhysical, buffEmotional = 1) => {
+    gameState.player.buffPhysical(buffPhysical);
+    gameState.player.buffEmotional(buffEmotional);
+    return true;
+};
 
 export default gameState;

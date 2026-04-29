@@ -1,0 +1,27 @@
+{
+    "uncle": {
+        "name": "Uncle",
+        "description": "A friendly uncle who is always there to help you.",
+        "image": "resources/images/uncle.png",
+        "items": [
+            "resources/images/uncle.png"
+        ],
+        "dialog": [
+            "Hello, how are you?",
+            "You look like",
+            "it's over now,"
+        ]
+
+    },
+    "thirties": {
+        "name": "YOUR 30s",
+        "description": "Your 30s are breathing down your neck.",
+        "image": "resources/images/thirties.png",
+        "items": [
+            "resources/images/thirties.png"
+        ],
+        "dialog": [
+            "Hello, how are you?"
+        ]
+    }
+}

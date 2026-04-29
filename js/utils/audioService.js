@@ -1,30 +1,45 @@
 class AudioService {
     constructor() {
-        this.audio = new Audio();   
-        this.audio.volume = 0.5;
-        this.audio.loop = true;
-        this.audio.src = 'resources/sounds/oybitcrushed.mp3';
+        this.bgmAudio = new Audio();
+        this.bgmAudio.volume = 0.5;
+        this.bgmAudio.loop = true;
+        this.bgmAudio.src = 'resources/sounds/oybitcrushed.mp3';
         this.isPlaying = false;
     }
 
     startBackgroundMusic() {
         if (!this.isPlaying) {
-            this.audio.play().catch(error => {
+            this.bgmAudio.play().catch(error => {
                 console.warn('Audio play failed:', error);
             });
             this.isPlaying = true;
         }
     }
 
-    playSound(sound) {
-        this.audio.src = sound;
-        this.audio.play().catch(error => {
+    setBackgroundMusic(trackPath) {
+        if (!trackPath) return;
+        this.bgmAudio.src = trackPath;
+    }
+
+    setBackgroundVolume(volume = 0.5) {
+        this.bgmAudio.volume = Math.max(0, Math.min(1, volume));
+    }
+
+    playSound(sound, options = {}) {
+        if (!sound) return;
+        const { volume = 0.7, playbackRate = 1 } = options;
+
+        // Use a fresh Audio instance so short SFX can overlap without cutting off BGM.
+        const sfx = new Audio(sound);
+        sfx.volume = Math.max(0, Math.min(1, volume));
+        sfx.playbackRate = playbackRate;
+        sfx.play().catch(error => {
             console.warn('Audio play failed:', error);
         });
     }
 
     stopSound() {
-        this.audio.pause();
+        this.bgmAudio.pause();
         this.isPlaying = false;
     }
 }

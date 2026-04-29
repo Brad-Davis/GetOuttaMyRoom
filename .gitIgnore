@@ -1,4 +1,6 @@
 node_modules/
 *.glb
 *.gltf
-
+.env
+public/sites/bedroom-welcome/*.mp4
+public/sites/bedroom-welcome/*.mov

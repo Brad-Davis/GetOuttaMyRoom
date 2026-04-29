@@ -46,11 +46,14 @@ class Computer {
     }
     this.computerFocus = true;
     cameraService.lookAtComputer();
+    setTimeout(() => {
     this.showIframe('https://pleasewakeupdaddy.com/');
+    }, 1000);
   }
 
   showIframe(url) {
     iframeControls.showIframe(url);
+    iframeControls.zoomIn();
   }
 
   hideIframe() {

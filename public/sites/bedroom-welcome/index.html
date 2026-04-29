@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title></title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        touch-action: manipulation;
+      }
+
+      #shake-root {
+        position: fixed;
+        inset: 0;
+        transform-origin: 50% 50%;
+        will-change: transform;
+      }
+
+      video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="shake-root">
+      <video
+        id="welcome-video"
+        playsinline
+        webkit-playsinline
+        autoplay
+        loop
+        preload="auto"
+      >
+        <source src="./nightmare.mp4" type="video/mp4" />
+        <source src="./nightmare.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <script>
+      (function () {
+        const WAKE_MSG = { type: 'GOMR_IFRAME_WAKE_UP', v: 1 };
+        const MAX_CLICKS = 10;
+
+        const root = document.getElementById('shake-root');
+        const video = document.getElementById('welcome-video');
+        if (!root || !video) return;
+
+        video.volume = 1;
+
+        video.addEventListener('error', function () {
+          const err = video.error;
+          const code = err ? err.code : 0;
+          console.warn('[bedroom-welcome] video error', code, err ? err.message : '');
+        });
+
+        function playWithSound() {
+          video.muted = false;
+          video.volume = 1;
+          const p = video.play();
+          if (p && typeof p.then === 'function') {
+            return p.catch(function () {});
+          }
+          return Promise.resolve();
+        }
+
+        function playMutedForAutoplay() {
+          video.muted = true;
+          video.volume = 1;
+          const p = video.play();
+          if (p && typeof p.then === 'function') {
+            return p.catch(function () {});
+          }
+          return Promise.resolve();
+        }
+
+        function bootstrapPlayback() {
+          playWithSound().catch(function () {
+            playMutedForAutoplay();
+          });
+        }
+
+        bootstrapPlayback();
+        video.addEventListener('loadeddata', bootstrapPlayback);
+        video.addEventListener('canplay', bootstrapPlayback);
+
+        let clickCount = 0;
+        let shakeToken = 0;
+        let soundUnlocked = false;
+
+        function runShake(amplitudePx, durationMs) {
+          shakeToken += 1;
+          const token = shakeToken;
+          const start = performance.now();
+
+          function frame(now) {
+            if (token !== shakeToken) return;
+            const t = (now - start) / durationMs;
+            if (t >= 1) {
+              root.style.transform = '';
+              return;
+            }
+            const damp = 1 - t;
+            const a = amplitudePx * damp;
+            const x = (Math.random() - 0.5) * 2 * a;
+            const y = (Math.random() - 0.5) * 2 * a;
+            const rot = (Math.random() - 0.5) * 0.04 * a;
+            root.style.transform =
+              'translate(' + x + 'px,' + y + 'px) rotate(' + rot + 'deg)';
+            requestAnimationFrame(frame);
+          }
+
+          requestAnimationFrame(frame);
+        }
+
+        function wakeUp() {
+          shakeToken += 1;
+          root.style.transform = '';
+          try {
+            video.pause();
+          } catch (e) {}
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage(WAKE_MSG, '*');
+            }
+          } catch (e) {}
+        }
+
+        document.addEventListener(
+          'pointerdown',
+          function () {
+            if (!soundUnlocked) {
+              soundUnlocked = true;
+              playWithSound();
+            }
+
+            if (clickCount >= MAX_CLICKS) return;
+
+            clickCount += 1;
+            const amp = 2 + (clickCount - 1) * 2.2;
+            const dur = 220 + clickCount * 35;
+            runShake(amp, dur);
+
+            if (clickCount >= MAX_CLICKS) {
+              window.setTimeout(wakeUp, dur + 40);
+            }
+          },
+          { passive: true }
+        );
+      })();
+    </script>
+  </body>
+</html>
