@@ -2,6 +2,20 @@ import * as THREE from 'three';
 import loaderService from '../utils/loaderService.js';
 import cameraService from '../utils/cameraPresets.js';
 import iframeControls from '../UI/iframeControls.js';
+import { linkedInScore } from '../services/aiScoring.js';
+import dialogService from '../utils/dialogService.js';
+import dopamineManager from '../managers/dopamineManager.js';
+import missionService from '../utils/missionService.js';
+import audioService from '../utils/audioService.js';
+
+/** Production iframe (must serve the same postMessage markup as `/evilLinkedIn/index.html`). */
+const COMPUTER_IFRAME_URL = '/evilLinkedIn/index.html';
+
+/** After LinkedIn submit, block re-opening the computer iframe for this long (ms). */
+const COMPUTER_REOPEN_COOLDOWN_MS = 4000;
+
+/** First computer open after cooldown loads this URL instead of Evil LinkedIn. */
+const POST_SUBMIT_COMPUTER_IFRAME_URL = 'https://noisebetweenstatic.com/';
 
 class Computer {
   constructor(scene) {
@@ -10,6 +24,16 @@ class Computer {
     this.scene.add(this.computerMesh); // Add the group to the scene
     this.computerFocus = false;
     this.computer = document.getElementById('computer');
+    /** Latest textarea value from the computer iframe Submit (cleared when unset if you prefer). */
+    this.lastIframeSubmitText = '';
+    /** `Date.now()` threshold: `lookAtComputer` no-ops while `Date.now() < this`. */
+    this._computerIframeOpensBlockedUntil = 0;
+    /** After first LinkedIn submit, computer uses this URL (external embed). */
+    this._postSubmitComputerIframeUrl = null;
+
+    iframeControls.setComputerSubmitCallback((text) => {
+      this.handleIframeSubmit(text);
+    });
   }
 
   async createComputer(x, y, z) {
@@ -44,15 +68,97 @@ class Computer {
     if (cameraService.getCameraPreset() !== cameraService.getCameraPreset('DRESSER_VIEW')) {
       return;
     }
+    if (Date.now() < this._computerIframeOpensBlockedUntil) {
+      return;
+    }
     this.computerFocus = true;
     cameraService.lookAtComputer();
     setTimeout(() => {
-    this.showIframe('https://pleasewakeupdaddy.com/');
+      const url = this._postSubmitComputerIframeUrl || COMPUTER_IFRAME_URL;
+      const externalEmbed = /^https?:\/\//i.test(url);
+      this.showIframe(url, { externalEmbed });
+      if (url === POST_SUBMIT_COMPUTER_IFRAME_URL) {
+        audioService.fadeOutBackgroundMusic();
+      }
     }, 1000);
   }
 
-  showIframe(url) {
-    iframeControls.showIframe(url);
+  handleIframeSubmit(text) {
+    this._computerIframeOpensBlockedUntil = Date.now() + COMPUTER_REOPEN_COOLDOWN_MS;
+    this._postSubmitComputerIframeUrl = POST_SUBMIT_COMPUTER_IFRAME_URL;
+    this.lastIframeSubmitText = text;
+    console.log(text);
+    this.unsetFocus();
+    // Call linkedInScore, then show a dialog with the result
+    this.gradeLinkedIn(text);
+
+  }
+
+  async gradeLinkedIn(text) {
+    try {
+      const scoreResult = await linkedInScore(text);
+      console.log('[LinkedIn score result]', scoreResult);
+
+      let responseText = `Your corporate self-worth score is ${scoreResult.score}.`;
+      if (typeof scoreResult.reason === 'string') {
+        responseText += `\n\n${scoreResult.reason}`;
+      }
+      // Show the result to the player via dialog box (assume dialogService is imported)
+      await dialogService.runLines([
+        {
+          speaker: 'The LinkedIn Algorithm',
+          text: responseText,
+        }
+      ]);
+
+      if (scoreResult.score > 50) {
+        // Give a dopamine boost
+        dopamineManager.giveDopamine(10);
+        missionService.completeCurrentMission();
+      } else {
+        await dialogService.runLines([
+          {
+            speaker: 'The LinkedIn Algorithm',
+            text: 'The LinkedIn Algorithm has determined that you are not worthy of employment.',
+          }
+        ]);
+        kill("You have died of unemployment.");
+      }
+    } catch (err) {
+      console.error('[gradeLinkedIn] Error:', err);
+      await dialogService.runLines([
+        {
+          speaker: 'The LinkedIn Algorithm',
+          text: "Something went wrong scoring your LinkedIn post. We're just gonna say you did fine.",
+        }
+      ]);
+      dopamineManager.giveDopamine(10);
+    } finally {
+      cameraService.defaultRoomView();
+      setTimeout(async () => {
+        await dialogService.runLines([
+          {
+            speaker: 'Inner Monologue',
+            text: 'You remember that your dad has a night shift tonight at Denny\'s.',
+          }, {
+            speaker: 'Inner Monologue',
+            text: 'You have to wake him, but you hear your extended family just outside the door.',
+          }, {
+            speaker: 'Inner Monologue',
+            text: 'Best talk to the Bed Goblin to get help.',
+          }
+        ]);
+        missionService.setCurrentMission('Go wake up your dad.');
+      }, 2000);
+    }
+  }
+
+  getLastIframeSubmitText() {
+    return this.lastIframeSubmitText;
+  }
+
+  showIframe(url, options = {}) {
+    iframeControls.showIframe(url, options);
     iframeControls.zoomIn();
   }
 

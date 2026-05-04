@@ -8,6 +8,7 @@ class TextOverlay {
         this.windowOverlay = document.getElementById('window-overlay');
         this.dialogueOverlay = document.getElementById('dialogue-overlay');
         this.dialogueSpeaker = document.getElementById('dialogue-speaker');
+        this.dialogueCountdown = document.getElementById('dialogue-countdown');
         this.dialogueBox = document.getElementById('dialogue-box');
         this.dialogueTriangle = document.getElementById('dialogue-triangle');
         this._dialogScrollTimeout = null;
@@ -89,7 +90,8 @@ class TextOverlay {
     closeWindowOverlay() {
         this.windowOverlay.style.display = 'none';
         interactionService.enable();
-        this.hide();
+        // Restore bottom HUD; do not call hide() — that hides the entire #overlay and makes the UI look broken next to inventory.
+        this.show('bottom');
     }
 
     showTextBox(message) {
@@ -125,6 +127,10 @@ class TextOverlay {
             clearTimeout(this._dialogScrollTimeout);
             this._dialogScrollTimeout = null;
         }
+    }
+
+    clearBottomOverlay() {
+        this.bottomOverlay.textContent = '';
     }
 
     /**
@@ -201,8 +207,22 @@ class TextOverlay {
         if (this.dialogueSpeaker) {
             this.dialogueSpeaker.textContent = '';
         }
+        this.hideDialogueCountdown();
         this.dialogueBox.textContent = '';
         this.show('bottom');
+    }
+
+    showDialogueCountdown(secondsRemaining) {
+        if (!this.dialogueCountdown) return;
+        const safeSeconds = Math.max(0, Math.ceil(Number(secondsRemaining) || 0));
+        this.dialogueCountdown.textContent = `Time left: ${safeSeconds}s`;
+        this.dialogueCountdown.style.display = 'block';
+    }
+
+    hideDialogueCountdown() {
+        if (!this.dialogueCountdown) return;
+        this.dialogueCountdown.style.display = 'none';
+        this.dialogueCountdown.textContent = '';
     }
 
     showFlashingTriangle() {

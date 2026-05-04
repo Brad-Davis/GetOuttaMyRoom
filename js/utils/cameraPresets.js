@@ -1,5 +1,6 @@
 import gsap from 'gsap';
 import interactionService from './interactionService.js';
+import audioService from './audioService.js';
 
 const DEFAULT_VIEW_EPSILON = 0.12;
 
@@ -37,6 +38,14 @@ export const CAMERA_PRESETS = {
     SLEEPING_VIEW: {
         position: { x: 4.5, y: -1.5, z: -7 },
         rotation: { x: 0, y: Math.PI/2, z: -Math.PI/2 }
+    },
+    ENTER_DOOR_VIEW: {
+        position: { x: -22, y: 1, z: -6 },
+        rotation: { x: 0, y: 0, z: 0 }
+    },
+    WOOSH_INTO_DOOR: {
+        position: { x: -22, y: 1, z: -10.5 },
+        rotation: { x: 0, y: 0, z: 0 }
     }
 };
 
@@ -116,7 +125,7 @@ class CameraService {
 
     sleepInBed() {
         if (!this.camera) return;
-        applyCameraPreset('SLEEPING_VIEW');
+        applyCameraPreset('SLEEPING_VIEW', { duration: 0.1, ease: 'power2.inOut' });
         //APPLY CLOSE EYES
         this.closeEyes();
     }
@@ -137,6 +146,24 @@ class CameraService {
         setTimeout(() => {
             interactionService.setEyesClosed(false);
         }, 2000);
+        audioService.startBackgroundMusic();
+    }
+
+    enterDoor(options = {}) {
+        if (!this.camera) return;
+        const { duration = 3, ease = 'power2.inOut', onComplete } = options;
+        applyCameraPreset('ENTER_DOOR_VIEW', { duration, ease, onComplete });
+    }
+
+    wooshIntoDoor(options = {}) {
+        if (!this.camera) return;
+        const { duration = 0.5, ease = 'power2.inOut', onComplete } = options;
+        applyCameraPreset('WOOSH_INTO_DOOR', { duration, ease, onComplete });
+    }
+
+    defaultRoomView() {
+        if (!this.camera) return;
+        applyCameraPreset('INTERIOR_START');
     }
 
     // Smooth camera transitions with callbacks
@@ -190,7 +217,7 @@ class CameraService {
     }
 
     /**
-     * Matches the pose `BackButton.returnToDefaultPos` animates to (INTERIOR_START).
+     * Matches the pose `backButtonManager.returnToDefaultPos` animates to (INTERIOR_START).
      */
     isAtInteriorDefault(cam = this.camera) {
         if (!cam) return true;

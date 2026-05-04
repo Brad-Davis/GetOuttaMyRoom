@@ -39,7 +39,6 @@
         playsinline
         webkit-playsinline
         autoplay
-        loop
         preload="auto"
       >
         <source src="./nightmare.mp4" type="video/mp4" />
@@ -92,6 +91,7 @@
         bootstrapPlayback();
         video.addEventListener('loadeddata', bootstrapPlayback);
         video.addEventListener('canplay', bootstrapPlayback);
+        video.addEventListener('ended', wakeUp);
 
         let clickCount = 0;
         let shakeToken = 0;

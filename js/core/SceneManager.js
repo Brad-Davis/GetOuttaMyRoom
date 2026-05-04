@@ -72,7 +72,7 @@ class SceneManager {
 
         // Lighting fixture with flickering effect
         this.lightingSystem = new LightingSystem(this.scene, ambientLight);
-        this.lightingSystem.createFixture(0, 5, 0);
+        this.lightingSystem.createFixture(10, 10, 0);
         this.lightingSystem.startFlickering();
     }
 
@@ -137,7 +137,7 @@ class LightingSystem {
     flickerLight() {
         if (!this.flickerActive) return;
         
-        this.targetIntensity = Math.random() * 0.05 + 0.01;
+        this.targetIntensity = Math.random() * 0.01 + 0.05;
         this.rampSpeed = 0.001;
         this.rampToValue();
     }

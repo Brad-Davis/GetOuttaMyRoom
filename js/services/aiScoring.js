@@ -18,8 +18,8 @@ const DEFAULT_MODEL = 'gpt-4o-mini';
  */
 
 function getApiKeyFromEnv() {
-    if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENAI_API_KEY)
-        return import.meta.env.VITE_OPENAI_API_KEY;
+    if (typeof import.meta !== 'undefined' && import.meta.env?.OPENAI_API_KEY)
+        return import.meta.env.OPENAI_API_KEY;
     if (typeof process !== 'undefined' && process.env?.OPENAI_API_KEY)
         return process.env.OPENAI_API_KEY;
     return '';
@@ -37,7 +37,7 @@ function getApiKeyFromEnv() {
  */
 export async function scoreFromPrompt(userPrompt, options = {}) {
     const apiKey = getApiKeyFromEnv().trim();
-    if (!apiKey) throw new Error('Missing API key (set VITE_OPENAI_API_KEY or OPENAI_API_KEY).');
+    if (!apiKey) throw new Error('Missing API key (set OPENAI_API_KEY or OPENAI_API_KEY).');
 
     const min = options.minScore ?? 0;
     const max = options.maxScore ?? 100;
@@ -121,21 +121,31 @@ export async function scoreFromPrompt(userPrompt, options = {}) {
 //     })();
 // }
 
-function podcastScore(userResponse, topic) {
-    (async () => {
-        try {
-            const result = await scoreFromPrompt(
-                userResponse,
-                {
-                    systemInstructions: `You are a deterministic scorer that scores how likely you would listen to a podcast about ${topic} based on this snippet of text. The score should be a number between 0 and 100.`,
-                },
-            );
-            return result;
-        } catch (err) {
-            console.error('[aiScoring dev test] failed:', err);
-            return null;
-        }
-    })();
+async function podcastScore(userResponse, topic) {
+    return scoreFromPrompt(
+        userResponse,
+        {
+            systemInstructions: `You are a deterministic scorer that scores how likely you would listen to a podcast about ${topic} based on this snippet of text. The score should be a number between 0 and 100.`,
+        },
+    );
 }
 
-export default podcastScore;
+async function insultScore(userResponse, insultTopic) {
+    return scoreFromPrompt(
+        userResponse,
+        {
+            systemInstructions: `You are a deterministic scorer that scores how mean of an insult this response is that is supposed to be about ${insultTopic} based on this snippet of text. The score should be a number between 0 and 100.`,
+        },
+    );
+}
+
+async function linkedInScore(userResponse) {
+    return scoreFromPrompt(
+        userResponse,
+        {
+            systemInstructions: `You are a deterministic scorer that scores how highly you would think of a person that posts this on LinkedIn based on this snippet of text. The score should be a number between 0 and 100.`,
+        },
+    );
+}
+
+export {podcastScore, insultScore, linkedInScore };

@@ -18,6 +18,8 @@ import Room from '../controls/room.js';
  * @param {string | null} [interiorTexture] — image filename under `resources/images/` (e.g. `wood.jpg`); `null` = solid `wallColor` only
  * @param {{ x?: number, y?: number }} [textureRepeat] — UV repeat for the interior map
  * @param {number} [rotationSpeedY=0] — radians per frame for menu-box Y rotation (set > 0 to spin)
+ * @param {string | null} [topTexture] — optional image filename for top face only
+ * @param {string | null} [bottomTexture] — optional image filename for bottom face only
  */
 class OpeningMenu extends Room {
     constructor(config = {}) {
@@ -42,6 +44,10 @@ class OpeningMenu extends Room {
         };
         /** @type {string | null} */
         this.interiorTexture = config.interiorTexture !== undefined ? config.interiorTexture : 'bush.jpg';
+        /** @type {string | null} */
+        this.topTexture = config.topTexture ?? null;
+        /** @type {string | null} */
+        this.bottomTexture = config.bottomTexture ?? null;
         const rep = config.textureRepeat ?? {};
         this.textureRepeat = { x: rep.x ?? 2, y: rep.y ?? 2 };
         this.wallColor = config.wallColor ?? (this.interiorTexture ? 0xffffff : 0x6a7585);
@@ -57,10 +63,9 @@ class OpeningMenu extends Room {
     buildRoom(scene) {
         const geometry = new THREE.BoxGeometry(this.config.width, this.config.height, this.config.depth);
 
-        const matOpts = { side: THREE.BackSide };
-        if (this.interiorTexture) {
+        const createTexture = (textureName) => {
             const map = new THREE.TextureLoader().load(
-                `./resources/images/${this.interiorTexture}`,
+                `./resources/images/${textureName}`,
                 (tex) => {
                     tex.colorSpace = THREE.SRGBColorSpace;
                     tex.minFilter = THREE.LinearMipmapLinearFilter;
@@ -71,13 +76,29 @@ class OpeningMenu extends Room {
             map.wrapS = THREE.RepeatWrapping;
             map.wrapT = THREE.RepeatWrapping;
             map.repeat.set(this.textureRepeat.x, this.textureRepeat.y);
-            matOpts.map = map;
-            matOpts.color = new THREE.Color(this.wallColor);
-        } else {
-            matOpts.color = this.wallColor;
-        }
+            return map;
+        };
 
-        const material = new THREE.MeshLambertMaterial(matOpts);
+        const createMaterial = (textureName = null) => {
+            const matOpts = {
+                side: THREE.BackSide,
+                color: new THREE.Color(this.wallColor),
+            };
+            if (textureName) {
+                matOpts.map = createTexture(textureName);
+            }
+            return new THREE.MeshLambertMaterial(matOpts);
+        };
+
+        // BoxGeometry material order: [right, left, top, bottom, front, back]
+        const material = [
+            createMaterial(this.interiorTexture),
+            createMaterial(this.interiorTexture),
+            createMaterial(this.topTexture ?? this.interiorTexture),
+            createMaterial(this.bottomTexture ?? this.interiorTexture),
+            createMaterial(this.interiorTexture),
+            createMaterial(this.interiorTexture),
+        ];
 
         const box = new THREE.Mesh(geometry, material);
         box.name = 'OpeningMenuBox';

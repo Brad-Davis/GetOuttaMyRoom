@@ -12,6 +12,8 @@ class Player {
         this.baseEmoDamage = 1;
         this.phyDamage = 1;
         this.emoDamage = 1;
+        this.healthBuff = 1;
+        this.baseHealthBuff = 1;
         this.HealthBar = new HealthBar(document.getElementById("playerHealthContainer"), this);
     }
 
@@ -74,9 +76,15 @@ class Player {
         console.log("Player emotional damage buffed to " + this.emoDamage);
     }
 
+    buffHealth(amount) {
+        this.healthBuff *= amount;
+        console.log("Player health buffed to " + this.healthBuff);
+    }
+
     resetBuffs() {
         this.phyDamage = this.basePhyDamage;
         this.emoDamage = this.baseEmoDamage;
+        this.healthBuff = this.baseHealthBuff;
     }
 
 }

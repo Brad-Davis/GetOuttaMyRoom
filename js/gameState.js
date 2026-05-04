@@ -6,6 +6,7 @@ import player from "./templates/player.js";
 import sceneService from "./utils/sceneService.js";
 import interactionService from "./utils/interactionService.js";
 import store from "./enviroments/store.js";
+import effectsService from "./utils/effectsService.js";
 
 class GameState {
     constructor() {
@@ -69,6 +70,19 @@ class GameState {
         
         return true;
     }
+
+    heal(healAmount, fromEnemy = false) {
+        // Mirrors `hurt`: `fromEnemy === false` means the player's action → in battle that
+        // damages the enemy but *healing* targets the player (e.g. chips). `true` heals the enemy.
+        if (!fromEnemy) {
+            healAmount *= this.player.healthBuff;
+            this.player.changeHp(healAmount);
+            this.generateHealText(healAmount, fromEnemy);
+        } else if (this.currentEvent?.enemy) {
+            this.currentEvent.enemy.changeHp(healAmount);
+            this.generateHealText(healAmount, fromEnemy);
+        }
+    }
     
     generatePainText(damage, fromEnemy = false, physical = true) {
         const painText = document.createElement('div');
@@ -90,6 +104,24 @@ class GameState {
         setTimeout(() => {
             if (painText.parentNode) {
                 painText.parentNode.removeChild(painText);
+            }
+        }, 2000);
+    }
+
+    generateHealText(healAmount, fromEnemy = false) {
+        const healText = document.createElement('div');
+        healText.classList.add('heal-text');
+        healText.textContent += `+${healAmount} HP`;
+        healText.style.color = 'rgb(0, 255, 0, 0.75)';
+        if (fromEnemy) {
+            this.selfPainContainer.appendChild(healText);
+        } else {
+            this.painContainer.appendChild(healText);
+        }
+        // Remove the heal text after 2 seconds
+        setTimeout(() => {
+            if (healText.parentNode) {
+                healText.parentNode.removeChild(healText);
             }
         }, 2000);
     }
@@ -179,7 +211,19 @@ class GameState {
         this.leaveStore();
     }
 
-
+    kill(reason) {
+        effectsService.playSfx('death');
+        this.player.die();
+        const message =
+            reason != null && String(reason).trim() !== ''
+                ? String(reason)
+                : 'You have died.';
+        this.textOverlay.showWindowOverlay(message, 'Game over', ['Okay'], [
+            () => {
+                window.location.reload();
+            },
+        ]);
+    }
 }
 
 const gameState = new GameState();
@@ -189,9 +233,20 @@ window.hurt = (damage, fromEnemy = false) => {
     return gameState.hurt(damage, fromEnemy);
 };
 
-window.buffPlayer = (buffPhysical, buffEmotional = 1) => {
+window.heal = (healAmount, fromEnemy = false) => {
+    gameState.heal(healAmount, fromEnemy);
+    return true;
+};
+
+window.buffPlayer = (buffPhysical, buffEmotional = 1, buffHealth = 1) => {
     gameState.player.buffPhysical(buffPhysical);
     gameState.player.buffEmotional(buffEmotional);
+    gameState.player.buffHealth(buffHealth);
+    return true;
+};
+
+window.kill = (reason) => {
+    gameState.kill(reason);
     return true;
 };
 

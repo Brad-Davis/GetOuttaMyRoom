@@ -1,7 +1,7 @@
 class AudioService {
     constructor() {
         this.bgmAudio = new Audio();
-        this.bgmAudio.volume = 0.5;
+        this.bgmAudio.volume = 0.3;
         this.bgmAudio.loop = true;
         this.bgmAudio.src = 'resources/sounds/oybitcrushed.mp3';
         this.isPlaying = false;
@@ -41,6 +41,13 @@ class AudioService {
     stopSound() {
         this.bgmAudio.pause();
         this.isPlaying = false;
+    }
+    fadeOutBackgroundMusic() {
+        gsap.to(this.bgmAudio, {
+            volume: 0,
+            duration: 1,
+            ease: 'power2.inOut',
+        });
     }
 }
 

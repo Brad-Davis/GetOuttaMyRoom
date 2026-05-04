@@ -1,4 +1,7 @@
 import effectsService from "../utils/effectsService.js";
+import voiceRecognition from "../services/voiceRecognition.js";
+import dialogService from "../utils/dialogService.js";
+import {podcastScore, insultScore} from "../services/aiScoring.js";
 
 class Item {
     constructor(name, description, value, rechargeTime = 0, image = null, triggerFunction = null, id = null, phyDamage = 0, emoDamage = 0, effects = null) {
@@ -109,14 +112,15 @@ class Item {
 }
 
 
+let speakingActive = false;
 
 const itemPool = {
     "punch": new Item(
         "Punch",
         "A basic punch that deals physical damage.",
-        /* value */ 2,
+        /* value */ 4,
         /* rechargeTime */ 0.5,
-        /* image */ "./resources/images/hand.png",
+        /* image */ "./resources/images/punch.png",
         /* triggerFunction */ (fromEnemy = false) => {
             hurt(3, fromEnemy);
         },
@@ -135,7 +139,7 @@ const itemPool = {
         "A heavy punch that deals physical damage.",
         /* value */ 2,
         /* rechargeTime */ 4,
-        /* image */ "./resources/images/hand.png",
+        /* image */ "./resources/images/punch.png",
         /* triggerFunction */ (fromEnemy = false) => {
             hurt(10, fromEnemy, true);
         },
@@ -152,7 +156,7 @@ const itemPool = {
     "shot": new Item(
         "Shot",
         "A shot that boosts physical damage, but lowers emotional damage.",
-        /* value */ 2,
+        /* value */ 6,
         /* rechargeTime */ 2,
         /* image */ "./resources/images/shot.png",
         /* triggerFunction */ (fromEnemy = false) => {
@@ -203,10 +207,48 @@ const itemPool = {
         "Podcast",
         "Creating a podcast will inflict huge emotional damage to your family.",
         /* value */ 5,
-        /* rechargeTime */ 2,
+        /* rechargeTime */ 6,
         /* image */ "./resources/images/mic.png",
-        /* triggerFunction */ (fromEnemy = false) => {
-            buffPlayer(0.5, 2);
+        /* triggerFunction */ async (fromEnemy = false) => {
+            if (speakingActive) {
+                // SHOULD BE AN ERROR MESSAGE HERE TO SAY THAT YOU ARE ALREADY SPEAKING
+                return;
+            }
+            speakingActive = true;
+            const lengthOfTime = 10;
+            const topics = ["Men's Rights", "The State of Stand Up Comedy", "World War II", "Dating in the modern age", "AI", "Looksmaxxing", "Israel", "Crypto"];
+            const topic = topics[Math.floor(Math.random() * topics.length)];
+
+            try {
+                await dialogService.runLines([
+                    {
+                        speaker: 'Podcast Producer',
+                        text: `Please speak on the topic of ${topic}. You have ${lengthOfTime} seconds. Start talking now.`,
+                    },
+                ]);
+            } catch (error) {
+                console.warn("[Podcast intro] failed:", error);
+            }
+
+            try {
+                const statement = await voiceRecognition.getAndPrintStatement(lengthOfTime);
+                const score = await podcastScore(statement, topic);
+                console.log("[Podcast score]", score);
+                hurt(score.score, fromEnemy, false);
+
+                let response = `Your podcast score is ${score.score}.`;
+                if (score.score > 50) {
+                    response += ` You now run a successful podcast! Your family is devastated!!`;
+                } else {
+                    response += ` You are a terrible speaker. Your family is relieved.`;
+                }
+                dialogService.runLines([{
+                    speaker: 'Podcast Producer',
+                    text: response,
+                }]);
+            } catch (error) {
+                console.warn("[Podcast item] failed:", error);
+            }
         },
         /* phyDamage */ 0,
         /* emoDamage */ 3,
@@ -216,6 +258,75 @@ const itemPool = {
             screenShake: { intensity: 6, duration: 120 },
             flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
         }
+    ),
+    "insult": new Item(
+        "Insult",
+        "A sharp insult that deals emotional damage.",
+        /* value */ 5,
+        /* rechargeTime */ 2,
+        /* image */ "./resources/images/insult.png",
+        /* triggerFunction */ async (fromEnemy = false) => {
+            if (speakingActive) {
+                // SHOULD BE AN ERROR MESSAGE HERE TO SAY THAT YOU ARE ALREADY SPEAKING
+                return;
+            }
+            speakingActive = true;
+            const lengthOfTime = 5;
+
+            const insultTopics = ["Their looks", "Their Identity", "Their personality", "Their intelligence", "Their wealth", "Their social status", "Their family", "Their friends", "Their job", "Their home", "Their car", "Their clothes", "Their shoes", "Their hair", "Their makeup", "Their body", "Their sex", "Their gender", "Their sexuality", "Their religion", "Their politics", "Their beliefs", "Their opinions", "Their values", "Their morals", "Their ethics", "Their behavior", "Their attitude", "Their personality", "Their intelligence", "Their wealth", "Their social status", "Their family", "Their friends", "Their job", "Their home", "Their car", "Their clothes", "Their shoes", "Their hair", "Their makeup", "Their body", "Their sex", "Their gender", "Their sexuality", "Their religion", "Their politics", "Their beliefs", "Their opinions", "Their values", "Their morals", "Their ethics", "Their behavior", "Their attitude"];
+            const insultTopic = insultTopics[Math.floor(Math.random() * insultTopics.length)];
+            try {
+                await dialogService.runLines([
+                    {
+                        speaker: 'Inner Monologue',
+                        text: `Please insult your opponent on ${insultTopic}. You have ${lengthOfTime} seconds. Start talking after clicking this box (your words will show up on the screen).`,
+                    },
+                ]);
+            } catch (error) {
+                console.warn("[Insult intro] failed:", error);
+            }
+
+            try {
+                const statement = await voiceRecognition.getAndPrintStatement(lengthOfTime);
+                const score = await insultScore(statement, insultTopic);
+                console.log("[Insult score]", score);
+                hurt(score.score, fromEnemy, false);
+
+                let response = `Your insult score is ${score.score}.`;
+                if (score.score > 50) {
+                    response += ` You are a mean and vicious person. CONGRATS<3<3<3`;
+                } else {
+                    response += ` You are kind. Learn from your mistakes.`;
+                }
+                dialogService.runLines([{
+                    speaker: 'Inner Monologue',
+                    text: response,
+                }]);
+            } catch (error) {
+                console.warn("[Insult item] failed:", error);
+            }
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 10,
+        /* effects */ {
+            sfx: "insult",
+            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            screenShake: { intensity: 6, duration: 120 },
+            flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
+        }
+    ),
+    "chips": new Item(
+        "Chips",
+        "Eating chips will heal you!",
+        /* value */ 5,
+        /* rechargeTime */ 2,
+        /* image */ "./resources/images/chips.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            heal(3, fromEnemy);
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null
     )
 }
 
@@ -252,6 +363,9 @@ const items = {
     "pentagram_001": generateItem("pentagram", "pentagram_001"),
     "pentagram_002": generateItem("pentagram", "pentagram_002"),
     "podcast_001": generateItem("podcast", "podcast_001"),
+    "insult_001": generateItem("insult", "insult_001"),
+    "chips_001": generateItem("chips", "chips_001"),
+
 }
 
 export default items;

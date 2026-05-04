@@ -41,6 +41,36 @@ class DialogService {
             this.active = false;
         }
     }
+
+    /**
+     * Plays ad-hoc dialog lines without requiring a script id.
+     * @param {Array<{speaker?: string, text?: string}>} lines
+     * @returns {Promise<void>}
+     */
+    async runLines(lines = []) {
+        if (this.active) {
+            return;
+        }
+        if (!Array.isArray(lines) || lines.length === 0) {
+            return;
+        }
+
+        this.active = true;
+        interactionService.disable();
+
+        try {
+            for (const line of lines) {
+                await textOverlay.runDialogLine({
+                    speaker: line?.speaker ?? '',
+                    text: line?.text ?? '',
+                });
+            }
+        } finally {
+            textOverlay.endDialog();
+            interactionService.enable();
+            this.active = false;
+        }
+    }
 }
 
 const dialogService = new DialogService();

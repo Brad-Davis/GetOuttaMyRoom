@@ -1,8 +1,9 @@
-import audioService from './audioService.js';
+import audioService from '../utils/audioService.js';
 
 const SFX_LIBRARY = {
     punchLight: './resources/sounds/punch-light.mp3',
     darkBurst: './resources/sounds/dark-burst.mp3',
+    notEnoughDopamine: './resources/sounds/not-enough-dopamine.mp3',
 };
 
 class EffectsService {

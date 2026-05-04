@@ -2,14 +2,13 @@ import * as THREE from 'three';
 import { InteractionManager } from 'three.interactive';
 import interactionService from '../utils/interactionService.js';
 import Movement from '../controls/movement.js';
-import BackButton from '../controls/backButton.js';
+import backButtonManager from '../controls/backButton.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 class GameInteractionManager {
     constructor() {
         this.threeInteractionManager = null;
         this.movement = null;
-        this.backButton = null;
         this.orbitControls = null;
         this._camera = null;
     }
@@ -41,8 +40,8 @@ class GameInteractionManager {
     setupGameInteractions(interactableObjects, camera, gameState) {
         console.log('Setting up game interactions...');
 
-        // Setup back button for focused interactions
-        this.backButton = new BackButton(camera, window.gsap, this.unsetAllFocus.bind(this), gameState);
+        // Setup back button for focused interactions (module singleton)
+        backButtonManager.init(camera, window.gsap, this.unsetAllFocus.bind(this), gameState);
 
         // Setup individual object interactions
         interactableObjects.forEach((item, key) => {
@@ -110,7 +109,7 @@ class GameInteractionManager {
 
             console.log('Dresser clicked');
             if (!dresser.getDresserFocus()) {
-                dresser.lookAtDresser(camera, window.gsap, this.backButton);
+                dresser.lookAtDresser();
             }
         });
     }
@@ -216,7 +215,7 @@ class GameInteractionManager {
         if (this.orbitControls && !this._orbitUpdatesSuspended) {
             this.orbitControls.update();
         }
-        this.backButton?.updateVisibility();
+        backButtonManager.updateVisibility();
     }
 
     dispose() {
@@ -227,7 +226,7 @@ class GameInteractionManager {
         }
         this.threeInteractionManager = null;
         this.movement = null;
-        this.backButton = null;
+        backButtonManager.dispose();
     }
 }
 

@@ -12,6 +12,12 @@
 <body>
   <div id="container">
     <button id="backButton" class="inactive">BACK</button>
+    <div id="mission-hud" class="mission-hud" aria-live="polite" hidden>
+      <label id="mission-hud-label" for="mission-checkbox">
+        <input type="checkbox" id="mission-checkbox" disabled tabindex="-1" aria-readonly="true" />
+        <span id="mission-text"></span>
+      </label>
+    </div>
     
     <div id="inventory">
       <div id="phone">
@@ -83,6 +89,7 @@
       </div>
       <div id="dialogue-overlay">
         <div id="dialogue-speaker"></div>
+        <div id="dialogue-countdown" aria-live="polite"></div>
         <div id="dialogue-box"></div>
         <div id="dialogue-triangle">▼</div>
       </div>
@@ -94,8 +101,8 @@
         <div class="shop-item-container" id="shop-item-container3"></div>
       </div>
       <div id="shop-controls">
-        <div class="shop-item-container" id="sell-spot">Place Item Here to Sell</div>
-        <button id="reroll-button">Reroll</button>
+        <!-- <div class="shop-item-container" id="sell-spot">Place Item Here to Sell</div> -->
+        <!-- <button id="reroll-button">Reroll</button> -->
       </div>
       
     </div>

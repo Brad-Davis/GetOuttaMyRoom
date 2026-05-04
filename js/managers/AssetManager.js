@@ -10,6 +10,7 @@ import Bedroom from '../enviroments/bedroom.js';
 import OpeningMenu from '../enviroments/openingMenu.js';
 import Enemy from '../templates/enemy.js';
 import gsap from 'gsap';
+import * as THREE from 'three';
 
 class AssetManager {
     constructor() {
@@ -57,10 +58,12 @@ class AssetManager {
             x: -22,
             y: 1,
             z: -2,
-            interiorTexture: 'sky.jpg',
-            textureRepeat: { x: 7, y: 7 },
+            interiorTexture: 'wall.jpg',
+            topTexture: 'ceiling.jpg',
+            bottomTexture: 'floor.jpg',
+            textureRepeat: { x: 1, y: 1   },
             wallColor: 0xffffff,
-            rotationSpeedY: 0.0001,
+            rotationSpeedY: -0.0025,
         });
         openingMenu.buildRoom(gameGroup);
         this.gameObjects.set('openingMenu', openingMenu);
@@ -89,7 +92,18 @@ class AssetManager {
 
         const door2 = new Door(gameGroup);
         door2.createDoor(-22,0,-6);
+
+        const door2PanelGeometry = new THREE.BoxGeometry(2, 4, 0.1);
+        const door2PanelMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const door2Panel = new THREE.Mesh(door2PanelGeometry, door2PanelMaterial);
+        door2Panel.position.set(-22, 0, -6.06);
+        gameGroup.add(door2Panel);
+
+        
+
         this.gameObjects.set('door', door);
+        this.gameObjects.set('door2', door2);
+        this.gameObjects.set('door2Panel', door2Panel);
         this.interactableObjects.set('door', {
             object: door,
             mesh: door.getDoorMesh(),

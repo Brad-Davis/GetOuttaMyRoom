@@ -1,6 +1,8 @@
 import inventory from "../UI/inventory.js";
 import { playerActiveItems, enemyActiveItems } from "../UI/activeItems.js";
 import items from "../templates/items.js";
+import store from "../enviroments/store.js";
+import dopamineManager from "../managers/dopamineManager.js";
 
 class InventoryManager {
     constructor() {
@@ -30,26 +32,28 @@ class InventoryManager {
 
     addTestItems() {
         // Add some test items to the inventory
-        this.inventory.addItem(items.podcast_001);
+        this.inventory.addItem(items.chips_001);
         this.inventory.addItem(items.shot_001);
     }
 
     setupDragAndDrop() {
         // Set up drag and drop event listeners
         document.addEventListener('mouseover', (e) => {
-            if (e.target.classList.contains('inventory-item') || e.target.classList.contains('active-item')) {
-                this.showItemInfo(e.target.dataset.itemId);
+            const rowEl = e.target.closest('.inventory-item, .active-item');
+            if (rowEl) {
+                this.showItemInfo(rowEl.dataset.itemId, rowEl);
             }
         });
 
         document.addEventListener('mouseout', (e) => {
-            if (e.target.classList.contains('inventory-item') || e.target.classList.contains('active-item')) {
+            const rowEl = e.target.closest('.inventory-item, .active-item');
+            if (rowEl && !rowEl.contains(e.relatedTarget)) {
                 this.removeItemInfo();
             }
         });
 
         document.addEventListener('dragstart', (e) => {
-            if (e.target.classList.contains('inventory-item') || e.target.classList.contains('active-item')) {
+            if (e.target.closest('.inventory-item, .active-item')) {
                 this.handleDragStart(e);
             }
         });
@@ -75,21 +79,39 @@ class InventoryManager {
     }
 
     handleDragStart(e) {
-        this.draggedItem = {
-            id: e.target.dataset.itemId,
-            type: e.target.dataset.itemType,
-            element: e.target
-        };
+        const rowEl = e.target.classList.contains('inventory-item') || e.target.classList.contains('active-item')
+            ? e.target
+            : e.target.closest('.inventory-item, .active-item');
+        if (!rowEl) return;
 
-        // Determine if dragging from inventory or active items
-        if (e.target.classList.contains('inventory-item')) {
+        const shopSlot = rowEl.closest('#shop-items .shop-item-container');
+        if (shopSlot) {
+            const item = store.items.find((i) => i.id === rowEl.dataset.itemId);
+            if (!item) {
+                e.preventDefault();
+                return;
+            }
+            if (!dopamineManager.canAfford(item.value)) {
+                e.preventDefault();
+                dopamineManager.notEnoughDopamine();
+                return;
+            }
+            this.dragSource = 'shop';
+        } else if (rowEl.classList.contains('inventory-item')) {
             this.dragSource = 'inventory';
-        } else if (e.target.classList.contains('active-item')) {
+        } else if (rowEl.classList.contains('active-item')) {
             this.dragSource = 'active';
+        } else {
+            return;
         }
 
-        // Add visual feedback
-        e.target.style.opacity = '0.5';
+        this.draggedItem = {
+            id: rowEl.dataset.itemId,
+            type: rowEl.dataset.itemType,
+            element: rowEl
+        };
+
+        rowEl.style.opacity = '0.5';
         e.dataTransfer.effectAllowed = 'move';
     }
 
@@ -111,19 +133,26 @@ class InventoryManager {
         const target = e.target.closest('.inventory-item-container, .active-item-container');
         if (target && this.draggedItem) {
             const targetType = target.classList.contains('inventory-item-container') ? 'inventory' : 'active';
-            
-            // Find the actual item object
+
+            if (this.dragSource === 'shop' && targetType !== 'active') {
+                document.querySelectorAll('.inventory-item-container, .active-item-container').forEach((container) => {
+                    container.classList.remove('drag-over');
+                });
+                return;
+            }
+
             const itemId = this.draggedItem.id;
             let item = null;
-            
+
             if (this.dragSource === 'inventory') {
                 item = this.inventory.items.find(i => i.id === itemId);
             } else if (this.dragSource === 'active') {
                 item = this.activeItems.items.find(i => i != null && i.id === itemId);
+            } else if (this.dragSource === 'shop') {
+                item = store.items.find(i => i.id === itemId);
             }
 
             if (item) {
-                // Get the index of the target container for placement
                 const containers = Array.from(document.querySelectorAll(
                     targetType === 'inventory' ? '.inventory-item-container' : '.active-item-container'
                 ));
@@ -139,23 +168,33 @@ class InventoryManager {
     }
 
     handleDragEnd(e) {
-        // Reset visual feedback
-        if (e.target.classList.contains('inventory-item') || e.target.classList.contains('active-item')) {
-            e.target.style.opacity = '1';
+        const rowEl = e.target.classList.contains('inventory-item') || e.target.classList.contains('active-item')
+            ? e.target
+            : e.target.closest('.inventory-item, .active-item');
+        if (rowEl) {
+            rowEl.style.opacity = '1';
         }
-        
+
         this.draggedItem = null;
         this.dragSource = null;
     }
 
-    showItemInfo(itemId) {
+    showItemInfo(itemId, sourceEl = null) {
         const item = items[itemId];
         const itemInfoBlock = document.getElementById('item-info-block');
+        if (!item || !itemInfoBlock) return;
+
+        const inShop = sourceEl && sourceEl.closest('#shop-items');
+        const costLine = inShop
+            ? `<p>Dopamine cost: ${item.value}</p>`
+            : '';
+
         itemInfoBlock.style.display = 'block';
         itemInfoBlock.innerHTML = `
             <img src="${item.image}" alt="${item.name}" title="${item.name}">
             <p>${item.description}</p>
             <p>Value: ${item.value}</p>
+            ${costLine}
             <p>Recharge Time: ${item.rechargeTime}</p>
         `;
     }
@@ -176,14 +215,21 @@ class InventoryManager {
         const hasItem = targetContainer.classList.contains('has-item');
         
         if (source === 'inventory' && target === 'active') {
-            
             this.inventory.removeItem(item);
-            const swapItem = this.activeItems.addItem(item, placementIndex)
-            if(swapItem) {
-                //We are swapping items
+            const swapItem = this.activeItems.addItem(item, placementIndex);
+            if (swapItem) {
                 this.inventory.addItem(swapItem);
             }
-            
+        } else if (source === 'shop' && target === 'active') {
+            const cost = item.value;
+            if (!dopamineManager.trySpend(cost)) {
+                return;
+            }
+            store.removeItem(item);
+            const swapItem = this.activeItems.addItem(item, placementIndex);
+            if (swapItem) {
+                this.inventory.addItem(swapItem);
+            }
         } else if (source === 'active' && target === 'inventory') {
             // Moving from active items to inventory
             this.activeItems.removeItem(item);

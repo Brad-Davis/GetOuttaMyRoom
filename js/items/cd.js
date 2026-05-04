@@ -4,12 +4,15 @@ import audioService from '../utils/audioService.js';
 import cameraService from '../utils/cameraPresets.js';
 import iframeControls from '../UI/iframeControls.js';
 import textOverlay from '../UI/textOverlay.js';
+import voiceRecognition from '../services/voiceRecognition.js';
 
 class CD {
   constructor(scene, camera) {
     this.scene = scene;
     this.camera = camera;
     this.cdMesh = null;
+    this.cdLight = null;
+    this.cdLight2 = null;
     this.rotationSpeed = 0.01;
     this.exploded = false;
     this.cdPieces = [];
@@ -40,7 +43,7 @@ class CD {
     const cdGeometry = new THREE.BoxGeometry(1.5, 1.5, 0.1);
     
     // Load CD texture
-    const texture = new THREE.TextureLoader().load('./resources/images/cd.jpg');
+    const texture = new THREE.TextureLoader().load('./resources/images/cd.png');
     
     // Create materials: front and back with texture, sides (top, bottom, left, right) all white
     const cdMaterials = [
@@ -71,6 +74,15 @@ class CD {
     this.cdMesh.position.x = x;
     this.cdMesh.position.y = y;
     this.cdMesh.position.z = z;
+
+    // Small glow so the CD emits light in the room.
+    this.cdLight = new THREE.PointLight(0xffffff, 0.35, 5.2, 3);
+    this.cdLight.position.set(0, 0, 0.6);
+    this.cdMesh.add(this.cdLight);
+
+    this.cdLight2 = new THREE.PointLight(0xffffff, 0.35, 5.2, 3);
+    this.cdLight2.position.set(0, 0, -0.6);
+    this.cdMesh.add(this.cdLight2);
     
     // Add the CD to the scene
     this.scene.add(this.cdMesh);
@@ -92,11 +104,12 @@ class CD {
 
   onClick() {
     if (this.exploded) return; // Prevent multiple explosions
+    textOverlay.clearBottomOverlay();
 
     this.exploded = true;
 
     // Start background music on first user interaction
-    audioService.startBackgroundMusic();
+    // audioService.startBackgroundMusic();
 
     if (this.immediateBattleMode) {
       this.onImmediateBattle?.();
@@ -104,14 +117,29 @@ class CD {
       return;
     }
 
-    const cam = this.camera || (typeof window !== 'undefined' ? window.camera : null);
-    // GOING TO BE LOCATION
-    cameraService.sleepInBed();
+    const door2 = window.gameEngine?.getAssetManager?.()?.getGameObject('door2');
+
+    cameraService.enterDoor({
+      onComplete: () => {
+        if (door2 && !door2.doorOpen) {
+          door2.open();
+        }
+      },
+    });
+    
     
     setTimeout(() => {
-      iframeControls.openSite('bedroomWelcome');
-      iframeControls.zoomIn();
-    }, 3000)
+      cameraService.wooshIntoDoor();
+      setTimeout(() => {
+          iframeControls.openSite('bedroomWelcome');
+          iframeControls.zoomIn();
+          setTimeout(() => {
+            cameraService.sleepInBed();
+            document.getElementById('active-items').style.display = 'block';
+            document.getElementById('inventory-button').style.display = 'block';
+          }, 1000);
+      }, 1000);
+    }, 3100)
 
     this.animateExplosion();
 
@@ -122,6 +150,14 @@ class CD {
 
     // Remove the original CD once
     if (this.cdMesh) {
+      if (this.cdLight) {
+        this.cdMesh.remove(this.cdLight);
+        this.cdLight = null;
+      }
+      if (this.cdLight2) {
+        this.cdMesh.remove(this.cdLight2);
+        this.cdLight2 = null;
+      }
       this.scene.remove(this.cdMesh);
       this.cdMesh = null;
     }
@@ -132,7 +168,7 @@ class CD {
     for (let i = 0; i < pieceCount; i++) {
       // Create smaller CD pieces
       const pieceGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.05);
-      const texture = new THREE.TextureLoader().load('./resources/images/cd.jpg');
+      const texture = new THREE.TextureLoader().load('./resources/images/cd.png');
       
       const pieceMaterials = [
         new THREE.MeshLambertMaterial({ color: 0x000000 }),

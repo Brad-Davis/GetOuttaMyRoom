@@ -1,8 +1,34 @@
 import iframeSites from '../config/iframeSites.js';
 import cameraService from '../utils/cameraPresets.js';
+import backButtonManager from '../controls/backButton.js';
+import dialogService from '../utils/dialogService.js';
+import missionService from '../utils/missionService.js';
+
+export const IFRAME_WAKE_MESSAGE = 'GOMR_IFRAME_WAKE_UP';
+
+/** Computer iframe only: close iframe and deliver textarea text to `setComputerSubmitCallback`. */
+export const IFRAME_COMPUTER_SUBMIT_MESSAGE = 'GOMR_COMPUTER_SUBMIT';
+
+const DEFAULT_IFRAME_SANDBOX =
+    'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-presentation';
+
+const DEFAULT_IFRAME_ALLOW =
+    'microphone *; camera *; autoplay *; encrypted-media *; fullscreen *; speaker-selection *';
+
+/** Origins allowed to close the computer iframe via postMessage (plus same origin). */
+function isAllowedComputerIframeOrigin(origin) {
+    if (origin === window.location.origin) return true;
+    try {
+        const host = new URL(origin).hostname.replace(/^www\./, '');
+        return host === 'daddywakeup.com';
+    } catch {
+        return false;
+    }
+}
 
 class IframeControls {
     constructor() {
+        this._computerSubmitCallback = null;
         this.iframe = document.getElementById('iframe');
         if (!this.iframe) {
             this.iframe = document.createElement('iframe');
@@ -19,21 +45,33 @@ class IframeControls {
         this.iframe.style.boxShadow = '0 0 10px 0 rgba(0, 0, 0, 0.5)';
         
         // Enable audio, microphone, and other media permissions
-        this.iframe.setAttribute('allow', 'microphone *; camera *; autoplay *; encrypted-media *; fullscreen *; speaker-selection *');
-        this.iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-presentation');
+        this.iframe.setAttribute('allow', DEFAULT_IFRAME_ALLOW);
+        this.iframe.setAttribute('sandbox', DEFAULT_IFRAME_SANDBOX);
         
         this.computer.appendChild(this.iframe);
     }
 
-    hideIframe() {
+    async hideIframe(firstTime = false) {
         this.zoomOut();
         if (this.iframe.parentNode !== this.computer) {
             this.computer.appendChild(this.iframe);
         }
         this.iframe.src = 'about:blank';
+        this.iframe.setAttribute('sandbox', DEFAULT_IFRAME_SANDBOX);
+        this.iframe.setAttribute('allow', DEFAULT_IFRAME_ALLOW);
         this.computer.style.display = 'none';
         this.computer.style.opacity = '0';
-        cameraService.openEyes();
+        if(firstTime) {
+            cameraService.openEyes();
+            backButtonManager.enable();
+            await dialogService.runLines([
+                {
+                    speaker: 'Inner Monologue',
+                    text: 'You have no dopamine or self worth. Your body is telling you to post on LinkedIn.',
+                }
+            ]);
+            missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
+        }
     }
 
     showIframe(url, options = {}) {
@@ -42,8 +80,13 @@ class IframeControls {
         }
         this.computer.style.display = 'block';
         this.computer.style.opacity = '1';
-        const allow = options.allow || 'microphone; camera; autoplay; encrypted-media';
+        const allow = options.allow ?? DEFAULT_IFRAME_ALLOW;
         this.iframe.setAttribute('allow', allow);
+        if (options.externalEmbed) {
+            this.iframe.removeAttribute('sandbox');
+        } else {
+            this.iframe.setAttribute('sandbox', DEFAULT_IFRAME_SANDBOX);
+        }
         this.iframe.src = url;
         this.iframe.style.display = 'block';
     }
@@ -112,6 +155,11 @@ class IframeControls {
         }, dur + 100);
     }
 
+    /** Called after the computer iframe posts GOMR_COMPUTER_SUBMIT with the textarea value. */
+    setComputerSubmitCallback(fn) {
+        this._computerSubmitCallback = typeof fn === 'function' ? fn : null;
+    }
+
     zoomOut() {
         if (this._zoomEndTimer) {
             clearTimeout(this._zoomEndTimer);
@@ -138,14 +186,24 @@ class IframeControls {
 
 const iframeControls = new IframeControls();
 
-const IFRAME_WAKE_MESSAGE = 'GOMR_IFRAME_WAKE_UP';
-
 window.addEventListener('message', (event) => {
     const data = event.data;
-    if (!data || typeof data !== 'object') return;
-    if (data.type !== IFRAME_WAKE_MESSAGE || data.v !== 1) return;
+    if (!data || typeof data !== 'object' || data.v !== 1) return;
     if (event.source !== iframeControls.iframe?.contentWindow) return;
-    iframeControls.hideIframe();
+    if (!isAllowedComputerIframeOrigin(event.origin)) return;
+
+    if (data.type === IFRAME_COMPUTER_SUBMIT_MESSAGE) {
+        const text = typeof data.text === 'string' ? data.text : '';
+        // Submit path: do not run first-time "close iframe" monologue/mission reset (that fights LinkedIn grading dialogs).
+        void iframeControls.hideIframe(false).then(() => {
+            iframeControls._computerSubmitCallback?.(text);
+        });
+        return;
+    }
+
+    if (data.type === IFRAME_WAKE_MESSAGE) {
+        iframeControls.hideIframe(true);
+    }
 });
 
 export default iframeControls;

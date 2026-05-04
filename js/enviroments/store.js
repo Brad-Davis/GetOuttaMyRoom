@@ -1,6 +1,6 @@
 import loaderService from "../utils/loaderService.js";
 import gsap from "gsap";
-
+import items from "../templates/items.js";
 
 class Store {
     constructor() {
@@ -12,7 +12,41 @@ class Store {
     }
 
     addItem(item) {
+        const maxSlots = document.querySelectorAll('#shop-items .shop-item-container').length;
+        if (this.items.length >= maxSlots) {
+            console.warn('Shop slots are full');
+            return;
+        }
         this.items.push(item);
+        this.renderShopItems();
+    }
+
+    removeItem(item) {
+        const idx = this.items.indexOf(item);
+        if (idx === -1) return;
+        this.items.splice(idx, 1);
+        this.renderShopItems();
+    }
+
+    renderShopItems() {
+        const containers = document.querySelectorAll('#shop-items .shop-item-container');
+        containers.forEach((container) => {
+            container.innerHTML = '';
+            container.classList.remove('has-item');
+        });
+        this.items.forEach((item, index) => {
+            if (index >= containers.length) return;
+            const container = containers[index];
+            const imgHtml = item.image
+                ? `<img src="${item.image}" alt="${item.name}" title="${item.name}">`
+                : `<span class="item-name">${item.name}</span>`;
+            container.innerHTML = `
+                <div class="inventory-item" draggable="true" data-item-id="${item.id}" data-item-type="${item.type}">
+                    ${imgHtml}
+                </div>
+            `;
+            container.classList.add('has-item');
+        });
     }
 
     showSetup(scene) {
@@ -31,6 +65,7 @@ class Store {
         console.log("Store setup");
         this.shop.style.pointerEvents = 'auto';
         this.shop.style.opacity = '1';
+        this.renderShopItems();
     }
 
     hideSetup() {
@@ -45,7 +80,14 @@ class Store {
         this.shop.style.pointerEvents = 'none';
         this.shop.style.opacity = '0';
     }
+
+    initialStoreSetup() {
+        this.addItem(items.punch_001);
+        this.addItem(items.podcast_001);
+        this.addItem(items.shot_001);
+    }
 }
 
 const store = new Store();
+store.initialStoreSetup();
 export default store;
