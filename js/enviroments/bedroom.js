@@ -18,11 +18,11 @@ class Bedroom extends Room {
     const defaultRain = {
       enabled: true,
       /** Center of the rain volume in the same space as room meshes (gameGroup local). */
-      center: { x: -0.5, y: 1.2, z: 6.8 },
+      center: { x: 6, y: 1.2, z: -3 },
       /** Axis-aligned box size around `center`. */
-      volume: { width: 5.5, height: 7, depth: 2.8 },
-      particleCount: 3200,
-      fallSpeed: 1.15,
+      volume: { width: 2, height: 7, depth: 2.8 },
+      particleCount: 100,
+      fallSpeed: 0.65,
       wind: 0.06,
       opacity: 0.34,
       color: 0xa8c4ee,

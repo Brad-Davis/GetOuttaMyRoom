@@ -148,7 +148,10 @@ class Computer {
             text: 'Best talk to the Bed Goblin to get help.',
           }
         ]);
-        missionService.setCurrentMission('Go wake up your dad.');
+        missionService.setCurrentMission([
+          'Go wake up your dad.',
+          'Go talk to the Bed Goblin to get help.',
+        ]);
       }, 2000);
     }
   }

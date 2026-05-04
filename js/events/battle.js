@@ -1,4 +1,5 @@
 import gameState from "../gameState.js";
+import interactionService from "../utils/interactionService.js";
 
 class Battle {
     constructor(player, enemy) {
@@ -14,6 +15,7 @@ class Battle {
 
     startBattle() {
         this.battleRunning = true;
+        interactionService.setBattleBlocking(true);
         this.enemy.startBattle();
         this.player.startBattle();
         this.showBattleElements();
@@ -30,6 +32,8 @@ class Battle {
     }
 
     startBattleLoop() {
+        document.getElementById('active-items').style.display = 'block';
+        document.getElementById('inventory-button').style.display = 'block';
         if (!this.battleRunning) return;
         // Player tick handels item charging
         this.player.tick();
@@ -63,6 +67,7 @@ class Battle {
         } else {
             this.gameState.loseBattle();
         }
+        interactionService.setBattleBlocking(false);
     }
 
     // showHealth() {

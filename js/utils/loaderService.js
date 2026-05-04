@@ -35,6 +35,14 @@ class LoaderService {
     console.log(sprite);
     return sprite;
   }
+
+  /**
+   * @param {string} url
+   * @returns {Promise<THREE.Texture>}
+   */
+  loadTexture(url) {
+    return this.textureLoader.loadAsync(url);
+  }
 }
 
 // Export a singleton instance

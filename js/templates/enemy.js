@@ -21,17 +21,45 @@ class Enemy {
         this.moveAnimation = null;
         this.attackTimer = 2.5;
         this.currentAttackTimer = 0;
-        this.spritePaths = [];
+        /** @type {THREE.Sprite | null} */
+        this._billboardSprite = null;
+        /** @type {THREE.Texture[] | null} */
+        this._frameTextures = null;
+        /** @type {number} */
+        this._currentSpriteFrame = 0;
         this.phyDamage = 1;
         this.emoDamage = 1;
     }
 
-    setSpritePaths(spritePaths) {
-        this.spritePaths = spritePaths;
-        this.spritePaths.forEach(path => {
-            const sprite = loaderService.createSprite("./resources/images/" + path);
-            this.sprites.push(sprite);
-        });
+    /**
+     * Use a single THREE.Sprite that swaps textures (see {@link setSpriteFrame}).
+     * @param {THREE.Sprite} sprite
+     * @param {THREE.Texture[]} textures
+     */
+    initBillboardSprite(sprite, textures) {
+        this.model = sprite;
+        this._billboardSprite = sprite;
+        this._frameTextures = textures;
+        this._currentSpriteFrame = 0;
+    }
+
+    /**
+     * Show frame `index` (0-based). No-op if this enemy was not set up with {@link initBillboardSprite}.
+     * @param {number} index
+     */
+    setSpriteFrame(index) {
+        if (!this._billboardSprite || !this._frameTextures?.length) return;
+        const max = this._frameTextures.length - 1;
+        const i = Math.max(0, Math.min(max, Math.floor(Number(index))));
+        const mat = this._billboardSprite.material;
+        mat.map = this._frameTextures[i];
+        mat.needsUpdate = true;
+        this._currentSpriteFrame = i;
+    }
+
+    /** @returns {number} Current 0-based frame, or 0 if not billboard-based */
+    getSpriteFrame() {
+        return this._frameTextures?.length ? this._currentSpriteFrame : 0;
     }
 
     getHp () {
@@ -45,6 +73,23 @@ class Enemy {
 
     changeHp (hp) {
         this.currentHp += hp;
+        if (hp < 0) {
+            // TAKING DAMAGE
+            if (this.damagePose) {
+                this.damagePose();
+                setTimeout(() => {
+                    this.normalPose();
+                }, 1000);
+            }
+        } else {
+            // HEALING
+            if (this.healPose) {
+                this.healPose();
+                setTimeout(() => {
+                    this.normalPose();
+                }, 1000);
+            }
+        }
         if (this.currentHp > this.maxHp) {
             this.currentHp = this.maxHp;
         } else {
@@ -62,7 +107,11 @@ class Enemy {
 
     die () {
         this.currentHp = 0;
+        if (this.deathPose) {
+            this.deathPose();
+        }
     }
+
 
     takeDamage(damage) {
         // Visual feedback when taking damage
@@ -169,6 +218,14 @@ class Enemy {
         //     this.changeHp(-1);
         // }
     }
+
+    /**
+     * Called right before an enemy active item fires (see EnemyActiveItems.tickItems).
+     * Override for poses / telegraphs.
+     * @param {import('./items.js').Item} item
+     * @param {number} slotIndex
+     */
+    onEnemyItemUsed(item, slotIndex) {}
 
 
 

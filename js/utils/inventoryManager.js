@@ -3,6 +3,8 @@ import { playerActiveItems, enemyActiveItems } from "../UI/activeItems.js";
 import items from "../templates/items.js";
 import store from "../enviroments/store.js";
 import dopamineManager from "../managers/dopamineManager.js";
+import dialogService from "./dialogService.js";
+import effectsService from "./effectsService.js";
 
 class InventoryManager {
     constructor() {
@@ -32,7 +34,7 @@ class InventoryManager {
 
     addTestItems() {
         // Add some test items to the inventory
-        this.inventory.addItem(items.chips_001);
+        this.inventory.addItem(items.punch_001);
         this.inventory.addItem(items.shot_001);
     }
 
@@ -94,6 +96,12 @@ class InventoryManager {
             if (!dopamineManager.canAfford(item.value)) {
                 e.preventDefault();
                 dopamineManager.notEnoughDopamine();
+                dialogService.runLines([
+                    {
+                        speaker: 'BED GOBLIN',
+                        text: 'YOU HAVE NO DOPAMINE! LEAVE ME BE!',
+                    },
+                ]);
                 return;
             }
             this.dragSource = 'shop';
@@ -223,8 +231,20 @@ class InventoryManager {
         } else if (source === 'shop' && target === 'active') {
             const cost = item.value;
             if (!dopamineManager.trySpend(cost)) {
+                dialogService.runLines([
+                    {
+                        speaker: 'BED GOBLIN',
+                        text: 'YOU HAVE NO DOPAMINE! LEAVE ME BE!',
+                    }
+                ]);
+                effectsService.playSfx('notEnoughDopamine');
                 return;
+                
             }
+            //BOUGHT ITEM FROM SHOP
+            
+
+
             store.removeItem(item);
             const swapItem = this.activeItems.addItem(item, placementIndex);
             if (swapItem) {

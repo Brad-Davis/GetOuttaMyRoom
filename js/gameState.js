@@ -4,9 +4,10 @@ import textOverlay from "./UI/textOverlay.js"
 import enemySpawner from "./events/enemySpawner.js";
 import player from "./templates/player.js";
 import sceneService from "./utils/sceneService.js";
-import interactionService from "./utils/interactionService.js";
 import store from "./enviroments/store.js";
 import effectsService from "./utils/effectsService.js";
+import missionService from "./utils/missionService.js";
+import dialogService from "./utils/dialogService.js";
 
 class GameState {
     constructor() {
@@ -136,6 +137,8 @@ class GameState {
             this.store.showSetup(this.sceneService.getScene());
             this.atStore = true;
         }
+
+        missionService.completeMissionContaining('bed goblin');
     }
 
     leaveStore() {
@@ -160,7 +163,6 @@ class GameState {
         if (openDoorOnStart && door && !door.doorOpen) {
             door.open();
         }
-        interactionService.disable();
         return true;
     }
 
@@ -182,22 +184,29 @@ class GameState {
 
     }
 
-    winBattle() {
+    async winBattle() {
         this.inventoryManager.resetAllActiveItems();
-        interactionService.enable();
-        this.textOverlay.showWindowOverlay("You have won the battle!", 
-            "e won the battle!!! What item do you want to take?", 
-            this.getCurrentEnemyItems().map(item => {
-                if (item) {
-                    return `
-                    <div class="item-container">    
-                    <img src="${item.image}" alt="${item.name}"></img>
-                    <p>${item.name}</p>
-                    </div>
-                    `;
-                }
-            }),
-            [() => this.textOverlay.closeWindowOverlay(),() => {this.goToBattle(); this.textOverlay.closeWindowOverlay();}]);
+        // this.textOverlay.showWindowOverlay("You have won the battle!", 
+        //     "e won the battle!!! What item do you want to take?", 
+        //     this.getCurrentEnemyItems().map(item => {
+        //         if (item) {
+        //             return `
+        //             <div class="item-container">    
+        //             <img src="${item.image}" alt="${item.name}"></img>
+        //             <p>${item.name}</p>
+        //             </div>
+        //             `;
+        //         }
+        //     }),
+        //     [() => this.textOverlay.closeWindowOverlay(),() => {this.goToBattle(); this.textOverlay.closeWindowOverlay();}]);
+        //SWITCH THIS IN REAL GAME
+        await dialogService.runLines([
+            {
+                speaker: 'Brad Davis, Game Developer',
+                text: 'Whoopsie the game isn\'t done yet! In the full game you will fight two more family members and level up along the way. For now, it is time for you to see your dad. Scroll to see him.',
+            },
+        ]);
+        window.gameEngine?.getInteractionManager?.()?.movement?.enable();
     }
 
     getCurrentEnemyItems() {
@@ -205,6 +214,7 @@ class GameState {
     }
 
     loseBattle() {
+        this.kill('You were defeated in battle.');
     }
 
     resetPosition() {

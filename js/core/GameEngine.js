@@ -94,7 +94,7 @@ class GameEngine {
                         this.sceneManager.gameGroup
                     );
                     interactionService.enable();
-                    this.interactionManager.movement?.enable();
+                    // Scroll (wheel) movement is enabled after beating the uncle — see gameState.winBattle.
 
                     this.interactionManager.syncOrbitToGameGroup(this.sceneManager.gameGroup);
 

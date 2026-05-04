@@ -122,7 +122,7 @@ const itemPool = {
         /* rechargeTime */ 0.5,
         /* image */ "./resources/images/punch.png",
         /* triggerFunction */ (fromEnemy = false) => {
-            hurt(3, fromEnemy);
+            hurt(100, fromEnemy);
         },
         /* id */ "punch",
         /* phyDamage */ 3,

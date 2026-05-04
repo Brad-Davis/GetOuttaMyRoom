@@ -28,6 +28,7 @@ class GameInteractionManager {
         // Setup movement controls
         this.movement = new Movement(camera, null); // Will set gameGroup later
 
+        this.movement.disable();
         //UNCOMMENT THIS TO ENABLE ORBIT CONTROLS
         // this.orbitControls = new OrbitControls(camera, renderer.domElement);
         // this.orbitControls.enableDamping = true;

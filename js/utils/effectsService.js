@@ -3,7 +3,8 @@ import audioService from '../utils/audioService.js';
 const SFX_LIBRARY = {
     punchLight: './resources/sounds/punch-light.mp3',
     darkBurst: './resources/sounds/dark-burst.mp3',
-    notEnoughDopamine: './resources/sounds/not-enough-dopamine.mp3',
+    notEnoughDopamine: './resources/sounds/notEnoughDopamine.mp3',
+    dead: './resources/sounds/dead.mp3',
 };
 
 class EffectsService {

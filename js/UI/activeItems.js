@@ -54,6 +54,7 @@ class ActiveItems {
                 if (this instanceof EnemyActiveItems) {
                     if (item.isReady) {
                         const container = activeItemsElement.children[index + 1];
+                        this._currentEnemy?.onEnemyItemUsed?.(item, index);
                         item.onUse(container.children[0], container, true); // USE ITEM!
                     }
                 }
@@ -136,6 +137,8 @@ class PlayerActiveItems extends ActiveItems {
 class EnemyActiveItems extends ActiveItems {
     constructor() {
         super(); // Properly call parent constructor
+        /** @type {import('../templates/enemy.js').default | null} */
+        this._currentEnemy = null;
     }
 
     addItem(item, placementIndex) {
@@ -160,6 +163,7 @@ class EnemyActiveItems extends ActiveItems {
     }
 
     renderEnemyItems(enemy) {
+        this._currentEnemy = enemy;
         this.items = enemy.items;
         this.renderItems();
         this.showEnemyItems();
@@ -173,6 +177,7 @@ class EnemyActiveItems extends ActiveItems {
     hideEnemyItems() {
         document.getElementById('enemy-active-items').style.opacity = '0';
         document.getElementById('enemy-active-items-title').style.opacity = '0';
+        this._currentEnemy = null;
     }
 }
 

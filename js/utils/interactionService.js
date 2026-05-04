@@ -3,6 +3,8 @@ class InteractionService {
         this.interactionManager = null;
         this.enabled = false;
         this.eyesClosed = false;
+        /** When true, {@link checkEnabled} is false even if `enabled` is true (e.g. during battle). */
+        this.battleBlocking = false;
     }
 
     setInteractionManager(interactionManager) {
@@ -21,6 +23,11 @@ class InteractionService {
         this.eyesClosed = !!closed;
     }
 
+    /** Block scene interactions while a battle is active (overrides `enable()` from other systems). */
+    setBattleBlocking(blocked) {
+        this.battleBlocking = !!blocked;
+    }
+
     areEyesClosed() {
         return this.eyesClosed;
     }
@@ -34,7 +41,7 @@ class InteractionService {
     }
 
     checkEnabled() {
-        return this.enabled && !this.eyesClosed;
+        return this.enabled && !this.eyesClosed && !this.battleBlocking;
     }
 }
 
