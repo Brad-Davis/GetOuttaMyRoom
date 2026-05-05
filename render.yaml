@@ -1,0 +1,13 @@
+# Deploy: Dashboard → New + → Blueprint → paste repo (or sync render.yaml)
+# Env: OPENAI_API_KEY (secret) — required for POST /api/score
+services:
+  - type: web
+    name: get-outta-my-room
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OPENAI_API_KEY
+        sync: false
