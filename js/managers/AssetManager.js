@@ -73,11 +73,7 @@ class AssetManager {
         const bedroom = new Bedroom();
         bedroom.buildRoom(gameGroup);
         this.gameObjects.set('bedroom', bedroom);
-        if (bedroom.rainEffect) {
-            this.animatedObjects.push({
-                update: () => bedroom.rainEffect.update(),
-            });
-        }
+        this.animatedObjects.push(bedroom);
 
         // Rug
         const rug = new Rug(gameGroup);

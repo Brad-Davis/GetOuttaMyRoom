@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node app.js",
     "test": "mocha",
-    "dev": "vite --host 127.0.0.1"
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview",
+    "dev:vercel": "npx vercel dev"
   },
   "dependencies": {
     "98.css": "^0.1.21",

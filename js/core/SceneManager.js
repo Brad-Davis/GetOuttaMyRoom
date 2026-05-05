@@ -45,6 +45,7 @@ class SceneManager {
         // Start outside the room; CD intro moves you inside (see CD + GameEngine).
         // OG POSTION: this.camera.position.set(1.5, 0.7, 2.3);
         this.camera.position.set(-22,1,-2);
+        // this.camera.position.set(0,0,0);
         this.camera.rotation.set(0,0,0);
 
         cameraService.initialize(this.camera);

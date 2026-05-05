@@ -1,9 +1,9 @@
 class AudioService {
     constructor() {
         this.bgmAudio = new Audio();
-        this.bgmAudio.volume = 0.3;
+        this.bgmAudio.volume = 0.7;
         this.bgmAudio.loop = true;
-        this.bgmAudio.src = 'resources/sounds/oybitcrushed.mp3';
+        this.bgmAudio.src = 'resources/sounds/ambient.mp3';
         this.isPlaying = false;
     }
 

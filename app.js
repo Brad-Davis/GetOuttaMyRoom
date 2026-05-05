@@ -2,12 +2,16 @@ const express = require('express');
 const socketIo = require('socket.io');
 const http = require('http');
 const path = require('path');
+const { serveScore } = require('./lib/openaiScoreApi');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
 // Middleware setup
-app.use(express.json());
+app.use(express.json({ limit: '64kb' }));
+
+app.post('/api/score', serveScore);
+
 app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from 'public' directory
 
 // Routes

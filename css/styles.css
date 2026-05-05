@@ -708,6 +708,19 @@ canvas {
   color: white;
   text-align: center;
   font-size: 16px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* user-select is not inherited; cover text nodes in children */
+#dialogue-overlay * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 #dialogue-speaker {

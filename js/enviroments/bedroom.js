@@ -1,6 +1,10 @@
+import * as THREE from 'three';
 import Room from '../controls/room.js';
 import Hallway from './hallway.js';
 import GpuRainEffect from '../utils/gpuRainEffect.js';
+
+const VIDEO_TAPES_PATH = './resources/images/videoTapes.mp4';
+const VIDEO_WALL_BACKING_TEXTURE = './resources/images/goldFrame.png';
 
 class Bedroom extends Room {
   constructor(config = {}) {
@@ -32,6 +36,83 @@ class Bedroom extends Room {
 
     this.rainEffect = null;
     this.rainOptions = { ...defaultRain, ...(config.rain || {}) };
+    /** @type {{ mesh: THREE.Mesh; backingMesh?: THREE.Mesh; videoTexture: THREE.VideoTexture; video: HTMLVideoElement } | null} */
+    this._videoWallScreen = null;
+  }
+
+  /**
+   * Called each frame (see AssetManager.updateAnimatedObjects).
+   */
+  update() {
+    if (this.rainEffect) {
+      this.rainEffect.update();
+    }
+    if (this._videoWallScreen) {
+      const { video, videoTexture } = this._videoWallScreen;
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        videoTexture.needsUpdate = true;
+      }
+    }
+  }
+
+  /**
+   * CRT / tape wall — slightly in front of the left (-X) wall, facing into the room.
+   */
+  _addVideoWallScreen(scene) {
+    const wallInsetX = -this.config.width / 2;
+    // Backing sits on the wall; video floats slightly outward (toward +X) so edges read cleanly.
+    const backingX = wallInsetX + 0.038;
+    const videoX = wallInsetX + 0.072;
+
+    const w = 2;
+    const h = w / (16 / 9);
+    const backingScale = 1.15;
+    const bw = w * backingScale;
+    const bh = h * backingScale;
+
+    const backingTexture = new THREE.TextureLoader().load(VIDEO_WALL_BACKING_TEXTURE);
+    backingTexture.colorSpace = THREE.SRGBColorSpace;
+    backingTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    backingTexture.magFilter = THREE.LinearFilter;
+    backingTexture.generateMipmaps = true;
+
+    const backingMaterial = new THREE.MeshBasicMaterial({
+      map: backingTexture,
+      transparent: true,
+      alphaTest: 0.1,
+    });
+    const backingGeometry = new THREE.PlaneGeometry(bw, bh);
+    const backingMesh = new THREE.Mesh(backingGeometry, backingMaterial);
+
+    backingMesh.position.set(backingX, -0.5, 1.2);
+    backingMesh.rotation.set(0, Math.PI / 2, 0);
+    scene.add(backingMesh);
+
+    const video = document.createElement('video');
+    video.src = VIDEO_TAPES_PATH;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.play().catch(() => {});
+
+    const videoTexture = new THREE.VideoTexture(video);
+    videoTexture.colorSpace = THREE.SRGBColorSpace;
+    videoTexture.minFilter = THREE.LinearFilter;
+    videoTexture.magFilter = THREE.LinearFilter;
+
+    const geometry = new THREE.PlaneGeometry(w, h);
+    const material = new THREE.MeshBasicMaterial({ map: videoTexture });
+    // `color` multiplies the video map (1 = full brightness).
+    material.color.multiplyScalar(0.15);
+
+    const mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(videoX, -0.5, 1.2);
+    mesh.rotation.set(0, Math.PI / 2, 0);
+
+    scene.add(mesh);
+    this._videoWallScreen = { mesh, backingMesh, videoTexture, video };
   }
 
   /**
@@ -164,6 +245,8 @@ class Bedroom extends Room {
     surfaces.push(leftWall);
     scene.add(leftWall);
 
+    this._addVideoWallScreen(scene);
+
     // Right wall (with window)
     const rightWall = this.createSurface('wall', {
       width: this.config.depth,
@@ -210,6 +293,8 @@ class Bedroom extends Room {
       rotZ: 0.2,
       texture: 'cd2.jpeg'
     });
+
+    
 
     surfaces.push(poster1);
     scene.add(poster1);
