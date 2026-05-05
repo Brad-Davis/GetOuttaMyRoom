@@ -1,5 +1,7 @@
 // Import Three.js library
 import * as THREE from 'three';
+import '../css/styles.css';
+import '98.css';
 import GameEngine from './core/GameEngine.js';
 import './utils/missionService.js';
 
