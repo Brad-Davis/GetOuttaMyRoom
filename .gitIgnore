@@ -1,5 +1,3 @@
 node_modules/
 dist/
 .env
-public/sites/bedroom-welcome/*.mp4
-public/sites/bedroom-welcome/*.mov
