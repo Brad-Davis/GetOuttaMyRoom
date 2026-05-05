@@ -834,3 +834,91 @@ canvas {
   80% { transform: translate(calc(var(--shake-intensity, 8px) * 0.5), 0); }
   100% { transform: translate(0, 0); }
 }
+
+/* ---------- Initial load: Win9x-style shell over three.js ---------- */
+.initial-loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: min(48px, 5vw);
+  box-sizing: border-box;
+  background-color: #008080;
+  background-image: radial-gradient(
+      circle at 50% 20%,
+      rgba(255, 255, 255, 0.12) 0%,
+      transparent 55%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.045) 0 2px,
+      transparent 2px 4px
+    );
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.48s ease-out,
+    visibility 0.48s ease-out;
+}
+
+.initial-loading-screen.initial-loading-screen--exit {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.initial-loading-window {
+  width: min(440px, 100%);
+  box-shadow: 4px 4px 14px rgba(0, 0, 0, 0.42);
+}
+
+.initial-loading-body {
+  padding: 14px 14px 12px;
+}
+
+.initial-loading-window .title-bar-text,
+.initial-loading-window .window-body,
+.initial-loading-window label,
+.initial-loading-window p,
+.initial-loading-window .status-bar,
+.initial-loading-window .status-bar-field,
+.initial-loading-window .btn {
+  font-family: Arial, "Helvetica Neue", "MS Sans Serif", "Segoe UI", sans-serif !important;
+  font-size: 12px !important;
+  letter-spacing: normal;
+}
+
+.initial-loading-disclaimer {
+  margin: 0 0 16px;
+  color: #111;
+  line-height: 1.65 !important;
+  font-size: 12px !important;
+}
+
+.initial-loading-row.initial-loading-row--stretch {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.initial-loading-row.initial-loading-row--stretch label {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.initial-loading-bar {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+}
+
+.initial-loading-caption {
+  margin: 0;
+  color: #505050;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}

@@ -5,6 +5,21 @@ import '98.css';
 import GameEngine from './core/GameEngine.js';
 import './utils/missionService.js';
 
+function dismissInitialLoadingScreen() {
+    const el = document.getElementById('initial-loading-screen');
+    if (!el || el.dataset.dismissed === '1') return;
+    el.dataset.dismissed = '1';
+    el.setAttribute('aria-busy', 'false');
+
+    const finalize = () => {
+        el.remove();
+    };
+
+    el.classList.add('initial-loading-screen--exit');
+    el.addEventListener('transitionend', finalize, { once: true });
+    setTimeout(finalize, 520);
+}
+
 // Initialize and start the game
 async function startGame() {
     try {
@@ -15,10 +30,13 @@ async function startGame() {
         
         console.log('Game started successfully!');
         
+        dismissInitialLoadingScreen();
+
         // Make game engine globally accessible for debugging
         window.gameEngine = gameEngine;
         
     } catch (error) {
+        dismissInitialLoadingScreen();
         console.error('Failed to start game:', error);
         
         // Show error message to user
@@ -33,7 +51,7 @@ async function startGame() {
             padding: 20px;
             border-radius: 10px;
             text-align: center;
-            z-index: 1000;
+            z-index: 250001;
         `;
         errorDiv.innerHTML = `
             <h2>Failed to load game</h2>
