@@ -1,5 +1,9 @@
 # Get Outta My Room
 
+## LOCAL PLAY NO LONGER REQUIRED
+
+just go here: https://getouttamyroom.onrender.com/
+
 ## Instructions to play locally
 
 1. Install [Node.js](https://nodejs.org/) (LTS is fine).
