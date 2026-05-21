@@ -6,7 +6,10 @@ import interactionService from '../utils/interactionService.js';
 import cameraService, { applyCameraPreset } from '../utils/cameraPresets.js';
 import textOverlay from '../UI/textOverlay.js';
 import Thirties from '../people/thirties.js';
-import { CD_STARTS_BATTLE_IMMEDIATELY } from '../config/gameFlow.js';
+import { CD_STARTS_BATTLE_IMMEDIATELY, SKIP_INTRO } from '../config/gameFlow.js';
+import effectsService from '../utils/effectsService.js';
+import iframeControls from '../UI/iframeControls.js';
+import { dismissInitialLoadingScreen } from '../utils/initialLoadingScreen.js';
 
 class GameEngine {
     constructor() {
@@ -28,7 +31,10 @@ class GameEngine {
             this.interactionManager = new InteractionManager();
 
             // Setup core systems
-            await this.sceneManager.initialize();
+            await Promise.all([
+                effectsService.preloadSfxLibrary(),
+                this.sceneManager.initialize(),
+            ]);
             await this.assetManager.initialize();
             this.interactionManager.initialize(
                 this.sceneManager.renderer,
@@ -44,6 +50,10 @@ class GameEngine {
             
             // Start game loop
             this.startGameLoop();
+
+            if (SKIP_INTRO) {
+                await this.applySkipIntroFlow();
+            }
             
             this.isInitialized = true;
             console.log('Game Engine initialized successfully');
@@ -63,6 +73,33 @@ class GameEngine {
         );
     }
 
+    async applySkipIntroFlow() {
+        // Stop constructor-started bottom-HUD blink ("Click the CD"); otherwise #overlay flashes the whole skip path.
+        textOverlay.clearBottomOverlay();
+        textOverlay.hide();
+
+        const cd = this.assetManager.getGameObject('cd');
+        cd?.skipIntroTeardown?.();
+
+        const door2 = this.assetManager.getGameObject('door2');
+        if (door2 && !door2.doorOpen) {
+            door2.open();
+        }
+
+        cameraService.sleepInBed({ fastEyelids: true });
+        const activeItems = document.getElementById('active-items');
+        const invBtn = document.getElementById('inventory-button');
+        if (activeItems) activeItems.style.display = 'block';
+        if (invBtn) invBtn.style.display = 'block';
+
+        // `hideIframe(true)` awaits dialog — dismiss loader first or it never leaves.
+        dismissInitialLoadingScreen();
+
+        await iframeControls.hideIframe(true);
+        // `endDialog()` shows bottom HUD again — keep overlay hidden during normal play.
+        textOverlay.hide();
+    }
+
     setupInteractions() {
         console.log('Setting up interactions...');
         this.interactionManager.setupGameInteractions(
@@ -80,6 +117,11 @@ class GameEngine {
                     duration: 1.1,
                     ease: 'power2.inOut',
                     onComplete: async () => {
+                        // Open door as soon as the intro camera lands — not after spawnEnemy()
+                        // (startBattleNow would otherwise delay sound + mesh until battle setup finishes).
+                        if (door && !door.doorOpen) {
+                            door.open();
+                        }
                         await gameState.startBattleNow(door);
                         this.interactionManager.endProgrammaticCameraMove(
                             this.sceneManager.gameGroup

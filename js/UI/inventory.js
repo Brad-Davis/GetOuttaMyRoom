@@ -2,10 +2,22 @@ class Inventory {
     constructor() {
         this.items = [];
     }
+
+    getMaxSize() {
+        return document.querySelectorAll('.inventory-item-container').length;
+    }
+
+    hasSpace() {
+        return this.items.length < this.getMaxSize();
+    }
     
     addItem(item) {
+        if (!item || !this.hasSpace()) {
+            return false;
+        }
         this.items.push(item);
         this.renderItems();
+        return true;
     }
 
     showInventory() {

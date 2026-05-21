@@ -75,6 +75,23 @@ class AssetManager {
         this.gameObjects.set('bedroom', bedroom);
         this.animatedObjects.push(bedroom);
 
+        bedroom.voidMeshes.forEach((mesh, index) => {
+            this.interactableObjects.set(`voidSurface${index + 1}`, {
+                object: bedroom,
+                mesh,
+                type: 'void'
+            });
+        });
+
+        const videoWallMesh = bedroom.getVideoWallScreenMesh();
+        if (videoWallMesh) {
+            this.interactableObjects.set('videoWallScreen', {
+                object: bedroom,
+                mesh: videoWallMesh,
+                type: 'videoWall'
+            });
+        }
+
         // Rug
         const rug = new Rug(gameGroup);
         rug.createRug(0, -3, -1.5);
@@ -116,6 +133,11 @@ class AssetManager {
             const bed = new Bed(gameGroup);
             await bed.createBed(3.5, -3, -1.5, gsap, null, null, null); // Will set camera/interaction later
             this.gameObjects.set('bed', bed);
+            this.interactableObjects.set('bed', {
+                object: bed,
+                mesh: bed.getBedMesh(),
+                type: 'bed'
+            });
 
             // Bong
             const bong = new Bong(gameGroup);

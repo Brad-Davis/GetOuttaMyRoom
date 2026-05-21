@@ -5,6 +5,15 @@ const SFX_LIBRARY = {
     darkBurst: './resources/sounds/dark-burst.mp3',
     notEnoughDopamine: './resources/sounds/notEnoughDopamine.mp3',
     dead: './resources/sounds/dead.mp3',
+    /** Alias used by gameState.kill */
+    death: './resources/sounds/dead.mp3',
+    doorOpen: './resources/sounds/doorOpen.mp3',
+    startupEffect: './resources/sounds/startupEffect.mp3',
+    punchHeavy: './resources/sounds/punch-heavy.mp3',
+    lightPunch: './resources/sounds/lightPunch.wav',
+    punchHeavy: './resources/sounds/punchHeavy.wav',
+    bite: './resources/sounds/bite.wav',
+    scream: './resources/sounds/scream.wav',
 };
 
 class EffectsService {
@@ -28,6 +37,11 @@ class EffectsService {
     playSfx(soundKeyOrPath, options = {}) {
         const resolvedPath = SFX_LIBRARY[soundKeyOrPath] || soundKeyOrPath;
         audioService.playSound(resolvedPath, options);
+    }
+
+    /** Preload all library SFX (see audioService.preloadSfx). */
+    preloadSfxLibrary() {
+        return audioService.preloadSfx(Object.values(SFX_LIBRARY));
     }
 
     shakeScreen(options = {}) {
@@ -58,4 +72,6 @@ class EffectsService {
 }
 
 const effectsService = new EffectsService();
+window.effectsService = effectsService;
 export default effectsService;
+

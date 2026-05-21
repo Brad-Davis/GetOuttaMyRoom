@@ -5,6 +5,7 @@ import cameraService from '../utils/cameraPresets.js';
 import iframeControls from '../UI/iframeControls.js';
 import textOverlay from '../UI/textOverlay.js';
 import voiceRecognition from '../services/voiceRecognition.js';
+import effectsService from '../utils/effectsService.js';
 
 class CD {
   constructor(scene, camera) {
@@ -36,6 +37,31 @@ class CD {
 
   setImmediateBattleMode(enabled) {
     this.immediateBattleMode = !!enabled;
+  }
+
+  /** Dev flow (`SKIP_INTRO`): remove CD and run `onHouseEntered` without explosion / iframe. */
+  skipIntroTeardown() {
+    if (this.exploded) {
+      if (!this._introSequenceFinished) {
+        this._introSequenceFinished = true;
+        this.onHouseEntered?.();
+      }
+      return;
+    }
+    if (this.cdMesh) {
+      if (this.cdLight) {
+        this.cdMesh.remove(this.cdLight);
+        this.cdLight = null;
+      }
+      if (this.cdLight2) {
+        this.cdMesh.remove(this.cdLight2);
+        this.cdLight2 = null;
+      }
+      this.scene.remove(this.cdMesh);
+      this.cdMesh = null;
+    }
+    this.exploded = true;
+    this.cleanupPieces();
   }
 
   createCD(x, y, z) {
@@ -121,6 +147,8 @@ class CD {
 
     cameraService.enterDoor({
       onComplete: () => {
+        // Same beat as door2 — startupEffect must not wait on the woosh timeouts below.
+        effectsService.playSfx('startupEffect');
         if (door2 && !door2.doorOpen) {
           door2.open();
         }
@@ -130,6 +158,7 @@ class CD {
     
     setTimeout(() => {
       cameraService.wooshIntoDoor();
+      effectsService.playSfx('startupEffect');
       setTimeout(() => {
           iframeControls.openSite('bedroomWelcome');
           iframeControls.zoomIn();

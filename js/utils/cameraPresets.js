@@ -1,6 +1,7 @@
 import gsap from 'gsap';
 import interactionService from './interactionService.js';
 import audioService from './audioService.js';
+import iframeControls from '../UI/iframeControls.js';
 
 const DEFAULT_VIEW_EPSILON = 0.12;
 
@@ -46,6 +47,15 @@ export const CAMERA_PRESETS = {
     WOOSH_INTO_DOOR: {
         position: { x: -22, y: 1, z: -10.5 },
         rotation: { x: 0, y: 0, z: 0 }
+    },
+    VOID_VIEW: {
+        position: { x: -3.8, y: 4, z: -8.3 },
+        rotation: { x: Math.PI/6, y: Math.PI/8, z: 0 }
+    },
+    /** CRT tape wall on the left (-X) wall, ~aligned with `_addVideoWallScreen` mesh pose. */
+    VIDEO_WALL_VIEW: {
+        position: { x: -3.35, y: -0.48, z: -3.8 },
+        rotation: { x: 0, y: Math.PI / 2, z: 0 }
     }
 };
 
@@ -56,6 +66,7 @@ class CameraService {
         this.currentPreset = null;
         this.defaultPosition = { x: 0, y: 0, z: 0 };
         this.defaultRotation = { x: 0, y: 0, z: 0 };
+        this._wasAtInteriorDefault = true;
     }
 
     initialize(camera) {
@@ -107,6 +118,20 @@ class CameraService {
         applyCameraPreset('COMPUTER_VIEW');
     }
 
+    lookAtVoid() {
+        if (!this.camera) return;
+        applyCameraPreset('VOID_VIEW');
+        setTimeout(() => {
+            iframeControls.openIframe('https://noisebetweenstatic.com/', { externalEmbed: true });
+        }, 1500);
+    }
+
+    lookAtVideoWall() {
+        if (!this.camera) return;
+        applyCameraPreset('VIDEO_WALL_VIEW');
+        audioService.fadeOutBackgroundMusic();
+    }
+
     resetToDefault() {
         if (!this.camera) return;
         this.currentPreset = null;
@@ -123,11 +148,12 @@ class CameraService {
         });
     }
 
-    sleepInBed() {
+    sleepInBed(options = {}) {
+        const fastEyelids = !!options.fastEyelids;
         if (!this.camera) return;
         applyCameraPreset('SLEEPING_VIEW', { duration: 0.1, ease: 'power2.inOut' });
-        //APPLY CLOSE EYES
-        this.closeEyes();
+        if (fastEyelids) this.closeEyesFast();
+        else this.closeEyes();
     }
 
     closeEyes() {
@@ -136,6 +162,28 @@ class CameraService {
         const bottomEye = document.getElementById('bottomEye');
         if (topEye) topEye.style.transform = 'translate(0, 0)';
         if (bottomEye) bottomEye.style.transform = 'translate(0, -10%)';
+    }
+
+    /** Snap lids shut, then restore transition so `openEyes()` still animates. */
+    closeEyesFast() {
+        interactionService.setEyesClosed(true);
+        const topEye = document.getElementById('topEye');
+        const bottomEye = document.getElementById('bottomEye');
+        const lids = [topEye, bottomEye].filter(Boolean);
+
+        for (const el of lids) {
+            el.style.transition = 'none';
+        }
+        if (topEye) topEye.style.transform = 'translate(0, 0)';
+        if (bottomEye) bottomEye.style.transform = 'translate(0, -10%)';
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                for (const el of lids) {
+                    el.style.transition = '';
+                }
+            });
+        });
     }
 
     openEyes() {
@@ -232,6 +280,34 @@ class CameraService {
             nearlyEqual(r.y, ref.rotation.y) &&
             nearlyEqual(r.z, ref.rotation.z)
         );
+    }
+
+    isAtVideoWallView(cam = this.camera) {
+        if (!cam) return false;
+        const ref = CAMERA_PRESETS.VIDEO_WALL_VIEW;
+        const p = cam.position;
+        const r = cam.rotation;
+        return (
+            nearlyEqual(p.x, ref.position.x) &&
+            nearlyEqual(p.y, ref.position.y) &&
+            nearlyEqual(p.z, ref.position.z) &&
+            nearlyEqual(r.x, ref.rotation.x) &&
+            nearlyEqual(r.y, ref.rotation.y) &&
+            nearlyEqual(r.z, ref.rotation.z)
+        );
+    }
+
+    /** Fade ambient BGM back in whenever the camera settles at the room's starting pose. */
+    updateInteriorBgm() {
+        if (!this.camera) return;
+
+        const atDefault = this.isAtInteriorDefault();
+        if (atDefault === this._wasAtInteriorDefault) return;
+
+        this._wasAtInteriorDefault = atDefault;
+        if (atDefault) {
+            audioService.fadeInBackgroundMusic();
+        }
     }
 }
 

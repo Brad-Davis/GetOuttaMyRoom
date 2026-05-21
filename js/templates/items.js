@@ -2,9 +2,10 @@ import effectsService from "../utils/effectsService.js";
 import voiceRecognition from "../services/voiceRecognition.js";
 import dialogService from "../utils/dialogService.js";
 import {podcastScore, insultScore} from "../services/aiScoring.js";
+import dopamineManager from "../managers/dopamineManager.js";
 
 class Item {
-    constructor(name, description, value, rechargeTime = 0, image = null, triggerFunction = null, id = null, phyDamage = 0, emoDamage = 0, effects = null) {
+    constructor(name, description, value, rechargeTime = 0, image = null, triggerFunction = null, id = null, phyDamage = 0, emoDamage = 0, effects = null, sfx = null, phyBuff = 0, emoBuff = 0) {
         this.name = name;
         this.description = description;
         this.value = value;
@@ -17,7 +18,10 @@ class Item {
         this.triggerFunction = triggerFunction;
         this.phyDamage = phyDamage;
         this.emoDamage = emoDamage;
+        this.phyBuff = phyBuff;
+        this.emoBuff = emoBuff;
         this.effects = effects;
+        this.sfx = sfx;
     }
 
     use(fromEnemy = false) {
@@ -99,6 +103,8 @@ class Item {
 
     onUse(innerItemElement, containerElement, fromEnemy = false) {
         effectsService.apply(this.effects);
+        console.log(this.sfx);
+        effectsService.playSfx(this.sfx);
         this.use(fromEnemy);
         this.isReady = false;
         innerItemElement.style.boxShadow = "";
@@ -132,7 +138,8 @@ const itemPool = {
             sfxOptions: { volume: 0.65, playbackRate: 1.05 },
             screenShake: { intensity: 6, duration: 120 },
             flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
-        }
+        },
+        /* sfx */ "lightPunch"
     ),
     "punch_heavy": new Item(
         "Punch Heavy",
@@ -151,7 +158,8 @@ const itemPool = {
             sfxOptions: { volume: 0.65, playbackRate: 1.05 },
             screenShake: { intensity: 6, duration: 120 },
             flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
-        }
+        },
+        /* sfx */ "punchHeavy"
     ),
     "shot": new Item(
         "Shot",
@@ -162,14 +170,18 @@ const itemPool = {
         /* triggerFunction */ (fromEnemy = false) => {
             buffPlayer(2, 0.5);
         },
-        /* phyDamage */ 3,
+        /* id */ "shot",
+        /* phyDamage */ 0,
         /* emoDamage */ 0,
         /* effects */ {
             sfx: "punchLight",
             sfxOptions: { volume: 0.65, playbackRate: 1.05 },
             screenShake: { intensity: 6, duration: 120 },
             flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
-        }
+        },
+        /* sfx */ "shot",
+        /* phyBuff */ 2,
+        /* emoBuff */ 0.5
     ),
     "cd": new Item(
         "CD",
@@ -223,7 +235,7 @@ const itemPool = {
                 await dialogService.runLines([
                     {
                         speaker: 'Podcast Producer',
-                        text: `Please speak on the topic of ${topic}. You have ${lengthOfTime} seconds. Start talking now.`,
+                        text: `Please speak on the topic of ${topic}. You have ${lengthOfTime} seconds. Start talking after clicking this box (your words will show up on the screen).`,
                     },
                 ]);
             } catch (error) {
@@ -257,7 +269,7 @@ const itemPool = {
             sfxOptions: { volume: 0.65, playbackRate: 1.05 },
             screenShake: { intensity: 6, duration: 120 },
             flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
-        }
+        },
     ),
     "insult": new Item(
         "Insult",
@@ -327,7 +339,247 @@ const itemPool = {
         /* phyDamage */ 0,
         /* emoDamage */ 0,
         /* effects */ null
-    )
+    ),
+    "bite": new Item(
+        "Bite",
+        "Bite your family members to hurt them and heal yourself.",
+        /* value */ 5,
+        /* rechargeTime */ 2,
+        /* image */ "./resources/images/bite.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            hurt(10, fromEnemy);
+            heal(10, fromEnemy);
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "bite"
+    ),
+    "scream": new Item(
+        "Scream",
+        "Scream at your family members to hurt them a lot and yourself a little.",
+        /* value */ 5,
+        /* rechargeTime */ 2,
+        /* image */ "./resources/images/scream.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+
+            //IMPLEMENT SCREAM LEVEL
+            hurt(10, fromEnemy);
+            heal(10, fromEnemy);
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "scream"
+    ),
+    "Vape": new Item(
+        "Vape",
+        "Vape to hurt yourself for dopamine.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/vape.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            //GIVE DOPAMINE
+            dopamineManager.giveDopamine(5);
+            heal(-10, fromEnemy);
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "vape"
+    ),
+    "Mania": new Item(
+        "Mania",
+        "Mania to hurt yourself for dopamine.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/mania.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            //GIVE DOPAMINE
+            dopamineManager.giveDopamine(5);
+            hurt(10, fromEnemy);
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "mania"
+    ),
+    "callEx": new Item(
+        "Call Ex",
+        "Grants a randomized outcome.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/callMom.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+            dopamineManager.giveDopamine(5);
+
+            // Define possible outcomes
+            const outcomes = [
+                {
+                    text: "They Didn't Respond",
+                    action: () => {
+                        // emotional damage debuff
+                        heal(-10, fromEnemy);
+                        dialogService.runLines([{speaker: "Inner Monologue", text: "silent treatment... that stings."}, {speaker: "Inner Monologue", text: "Ouchie you take 10 damage."}]);
+                    }
+                },
+                {
+                    text: "They pick up and they miss you.",
+                    action: () => {
+                        buffPlayer(1, 1.5);
+                        dialogService.runLines([{speaker: "Inner Monologue", text: "Aw, I do miss you."}, {speaker: "Inner Monologue", text: "You feel a weird power... physical buff"}]);
+                    }
+                },
+                {
+                    text: "They pick up and they say they're busy.",
+                    action: () => {
+                        dialogService.runLines([{speaker: "EX", text: "Sorry, I'm busy right now."}]);
+                    }
+                },
+                {
+                    text: "They pick up and say 'hey sexy u miss me?'",
+                    action: () => {
+                        // Physical damage buff
+                        buffPlayer(2, 0);
+                        dialogService.runLines([{speaker: "EX", text: "Hey sexy, you miss me?"}]);
+                    }
+                },
+                {
+                    text: "They pick up and you start arguing",
+                    action: () => {
+                        // Stunned for 3 seconds, 50/50 buff or debuff physical damage
+                        const buff = Math.random() < 0.5;
+                        if (buff) {
+                            buffPlayer(3, 0);
+                            dialogService.runLines([{speaker: "EX", text: "You always start this! (You feel a weird power... physical buff)"}]);
+                        } else {
+                            hurt(5, fromEnemy);
+                            dialogService.runLines([{speaker: "EX", text: "You always start this! (You feel drained)"}]);
+                        }
+                        // Optionally set a stun effect here
+                    }
+                },
+                {
+                    text: "They need you and they're on their way now",
+                    action: () => {
+                        // BIG EMOTIONAL DAMAGE TO YOUR FAMILY
+                        hurt(50, fromEnemy, false, true); // 'true' as last param to signal family harm
+                        dialogService.runLines([{speaker: "EX", text: "I'm coming over (your family is terrified of this beast)"}]);
+                    }
+                }
+            ];
+            
+            // Pick a random outcome
+            const outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+            outcome.action();
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "callMom"
+    ),
+    "Uninformed Political Discussion": new Item(
+        "Uninformed Political Discussion",
+        "Discuss politics with your family.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/political.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+            //Name a senetor you have 5 seconds.
+            //Name a woman politician you have 5 seconds.
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "political"
+    ),
+    "Facial Piercing": new Item(
+        "Facial Piercing",
+        "Pierce your face to hurt yourself and your family.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/facialPiercing.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "facialPiercing"
+    ),
+    "Instagram Story Trauma Dump": new Item(
+        "Instagram Story Trauma Dump",
+        "Dump your trauma on your family.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/instagramStoryTraumaDump.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "instagramStoryTraumaDump"
+    ),
+    "Music Taste": new Item(
+        "Music Taste",
+        "Change your music taste to hurt yourself and your family.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/musicTaste.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+            //Talk about a musician that your family would be disapointed in.
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "musicTaste"
+    ),
+    "Youtube Shorts": new Item(
+        "Youtube Shorts",
+        "Create a Youtube Short to hurt yourself and your family.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/youtubeShorts.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "youtubeShorts"
+    ),
+    "Sports Betting": new Item(
+        "Sports Better",
+        "Play a sport to hurt yourself and your family.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/sportsBetter.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+        },  
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "sportsBetter"
+    ),
+    "Hot Take": new Item(
+        "Hot Take",
+        "Make a hot take to hurt yourself or your family.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/hotTake.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "hotTake"
+    ),
 }
 
 function generateItem(itemName, id = null) {
@@ -344,7 +596,10 @@ function generateItem(itemName, id = null) {
             id || generateId(item.name),
             item.phyDamage,
             item.emoDamage,
-            item.effects
+            item.effects,
+            item.sfx,
+            item.phyBuff,
+            item.emoBuff
         );
     }
     return null;
@@ -365,6 +620,8 @@ const items = {
     "podcast_001": generateItem("podcast", "podcast_001"),
     "insult_001": generateItem("insult", "insult_001"),
     "chips_001": generateItem("chips", "chips_001"),
+    "bite_001": generateItem("bite", "bite_001"),
+    "callEx_001": generateItem("callEx", "callEx_001"),
 
 }
 

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { InteractionManager } from 'three.interactive';
 import interactionService from '../utils/interactionService.js';
+import dialogService from '../utils/dialogService.js';
+import cameraService from '../utils/cameraPresets.js';
 import Movement from '../controls/movement.js';
 import backButtonManager from '../controls/backButton.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
@@ -83,6 +85,15 @@ class GameInteractionManager {
             case 'moon':
                 this.setupMoonInteraction(mesh, object);
                 break;
+            case 'void':
+                this.setupVoidInteraction(mesh, object);
+                break;
+            case 'videoWall':
+                this.setupVideoWallInteraction(mesh, object);
+                break;
+            case 'bed':
+                this.setupBedInteraction(mesh, object, gameState);
+                break;
             default:
                 console.warn(`Unknown interaction type: ${type}`);
         }
@@ -102,6 +113,38 @@ class GameInteractionManager {
                 }
             }
         });
+        this.addCursorListener(mesh);
+    }
+
+    setupVoidInteraction(mesh) {
+        mesh.addEventListener('click', () => {
+            if (!interactionService.checkEnabled()) return;
+
+            cameraService.lookAtVoid();
+        });
+        this.addCursorListener(mesh);
+    }
+
+    setupVideoWallInteraction(mesh, bedroom) {
+        mesh.addEventListener('click', () => {
+            if (!interactionService.checkEnabled()) return;
+
+            bedroom?.enableVideoWallAudio();
+            cameraService.lookAtVideoWall();
+        });
+        this.addCursorListener(mesh);
+    }
+
+
+    setupBedInteraction(mesh, _bed, gameState) {
+        mesh.addEventListener('click', async () => {
+            if (!interactionService.checkEnabled()) return;
+
+            await dialogService.start('bed_goblin_intro');
+            gameState.goToStore();
+            cameraService.lookAtBed();
+        });
+        this.addCursorListener(mesh);
     }
 
     setupDresserInteraction(mesh, dresser, camera) {
@@ -113,6 +156,8 @@ class GameInteractionManager {
                 dresser.lookAtDresser();
             }
         });
+        this.addCursorListener(mesh);
+        
     }
 
     setupComputerInteraction(mesh, computer, camera) {
@@ -123,6 +168,7 @@ class GameInteractionManager {
             const dresser = this.getGameObject('dresser');
             computer.lookAtComputer(camera, window.gsap, dresser?.getDresserFocus());
         });
+        this.addCursorListener(mesh);
     }
 
     setupCDInteraction(mesh, cd) {
@@ -139,6 +185,7 @@ class GameInteractionManager {
         mesh.addEventListener('mouseleave', () => {
             cd.onHoverLeave();
         });
+        this.addCursorListener(mesh);
     }
 
     setupBongInteraction(mesh, bong) {
@@ -148,6 +195,7 @@ class GameInteractionManager {
             console.log('Bong clicked!');
             bong.onClick();
         });
+        this.addCursorListener(mesh);
     }
 
     setupMoonInteraction(mesh, moon) {
@@ -157,6 +205,7 @@ class GameInteractionManager {
             console.log('Moon clicked!');
             moon.onClick();
         });
+        this.addCursorListener(mesh);
     }
 
     unsetAllFocus() {
@@ -217,6 +266,7 @@ class GameInteractionManager {
             this.orbitControls.update();
         }
         backButtonManager.updateVisibility();
+        cameraService.updateInteriorBgm();
     }
 
     dispose() {
@@ -228,6 +278,15 @@ class GameInteractionManager {
         this.threeInteractionManager = null;
         this.movement = null;
         backButtonManager.dispose();
+    }
+
+    addCursorListener(mesh) {
+        mesh.addEventListener('mouseenter', () => {
+            document.body.style.cursor = 'pointer';
+        });
+        mesh.addEventListener('mouseleave', () => {
+            document.body.style.cursor = '';
+        });
     }
 }
 

@@ -30,6 +30,7 @@ class Computer {
     this._computerIframeOpensBlockedUntil = 0;
     /** After first LinkedIn submit, computer uses this URL (external embed). */
     this._postSubmitComputerIframeUrl = null;
+    this.computerTimeUsed = false;
 
     iframeControls.setComputerSubmitCallback((text) => {
       this.handleIframeSubmit(text);
@@ -64,22 +65,30 @@ class Computer {
     return this.computerMesh;
   }
 
-  lookAtComputer() {
+  async lookAtComputer() {
     if (cameraService.getCameraPreset() !== cameraService.getCameraPreset('DRESSER_VIEW')) {
       return;
     }
     if (Date.now() < this._computerIframeOpensBlockedUntil) {
       return;
     }
+    if (this.computerTimeUsed) {
+      await dialogService.runLines([
+        {
+          speaker: 'Inner Monologue',
+          text: 'Your mom has rightfully limited your computer time ever since the incident.',
+        }
+      ]);
+      return;
+    }
     this.computerFocus = true;
     cameraService.lookAtComputer();
     setTimeout(() => {
-      const url = this._postSubmitComputerIframeUrl || COMPUTER_IFRAME_URL;
+      const url = COMPUTER_IFRAME_URL;
+
+      // Check if the URL starts with "http://" or "https://", indicating it's an external embed
       const externalEmbed = /^https?:\/\//i.test(url);
       this.showIframe(url, { externalEmbed });
-      if (url === POST_SUBMIT_COMPUTER_IFRAME_URL) {
-        audioService.fadeOutBackgroundMusic();
-      }
     }, 1000);
   }
 
@@ -91,7 +100,12 @@ class Computer {
     this.unsetFocus();
     // Call linkedInScore, then show a dialog with the result
     this.gradeLinkedIn(text);
+    this.computerTimeUsed = true;
 
+  }
+
+  resetComputerTimeUsed() {
+    this.computerTimeUsed = false;
   }
 
   async gradeLinkedIn(text) {

@@ -1,7 +1,9 @@
 import * as THREE from 'three';
+import gsap from 'gsap';
 import Room from '../controls/room.js';
 import Hallway from './hallway.js';
 import GpuRainEffect from '../utils/gpuRainEffect.js';
+import cameraService from '../utils/cameraPresets.js';
 
 const VIDEO_TAPES_PATH = './resources/images/videoTapes.mp4';
 const VIDEO_WALL_BACKING_TEXTURE = './resources/images/goldFrame.png';
@@ -38,6 +40,67 @@ class Bedroom extends Room {
     this.rainOptions = { ...defaultRain, ...(config.rain || {}) };
     /** @type {{ mesh: THREE.Mesh; backingMesh?: THREE.Mesh; videoTexture: THREE.VideoTexture; video: HTMLVideoElement } | null} */
     this._videoWallScreen = null;
+    /** User has clicked the CRT; volume fades with camera view. */
+    this._videoWallAudioUnlocked = false;
+    this._videoWallWasAtView = false;
+    /** @type {gsap.core.Tween | null} */
+    this._videoWallVolumeTween = null;
+    /** Meshes registered for scene clicks (see AssetManager). */
+    this.voidMeshes = [];
+  }
+
+  /** CRT video plane for scene clicks (see AssetManager). */
+  getVideoWallScreenMesh() {
+    return this._videoWallScreen?.mesh ?? null;
+  }
+
+  /**
+   * Call from a click handler: browsers allow audible playback after a user gesture.
+   */
+  enableVideoWallAudio() {
+    const video = this._videoWallScreen?.video;
+    if (!video) return;
+    this._videoWallAudioUnlocked = true;
+    this._videoWallWasAtView = cameraService.isAtVideoWallView();
+    video.muted = false;
+    video.volume = this._videoWallWasAtView ? 1 : 0;
+    video.play().catch(() => {});
+  }
+
+  _fadeVideoWallVolume(targetVolume, duration = 1) {
+    const video = this._videoWallScreen?.video;
+    if (!video || !this._videoWallAudioUnlocked) return;
+
+    this._videoWallVolumeTween?.kill();
+
+    if (targetVolume <= 0) {
+      this._videoWallVolumeTween = gsap.to(video, {
+        volume: 0,
+        duration,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          video.muted = true;
+        },
+      });
+      return;
+    }
+
+    video.muted = false;
+    this._videoWallVolumeTween = gsap.to(video, {
+      volume: targetVolume,
+      duration,
+      ease: 'power2.inOut',
+    });
+  }
+
+  _updateVideoWallAudio() {
+    if (!this._videoWallAudioUnlocked) return;
+
+    const atView = cameraService.isAtVideoWallView();
+    if (atView === this._videoWallWasAtView) return;
+
+    this._videoWallWasAtView = atView;
+    this._fadeVideoWallVolume(atView ? 1 : 0);
   }
 
   /**
@@ -53,6 +116,7 @@ class Bedroom extends Room {
         videoTexture.needsUpdate = true;
       }
     }
+    this._updateVideoWallAudio();
   }
 
   /**
@@ -120,6 +184,7 @@ class Bedroom extends Room {
    */
   buildRoom(scene) {
     const surfaces = [];
+    this.voidMeshes = [];
     
     // Floor
     const floor = this.createSurface('floor', {
@@ -207,6 +272,7 @@ class Bedroom extends Room {
 
     surfaces.push(voidSurface1);
     scene.add(voidSurface1);
+    this.voidMeshes.push(voidSurface1);
 
     const voidSurface2 = this.createSurface('void', {
       width: 3,
@@ -223,6 +289,7 @@ class Bedroom extends Room {
 
     surfaces.push(voidSurface2);
     scene.add(voidSurface2);
+    this.voidMeshes.push(voidSurface2);
 
     const voidSurface3 = this.createSurface('void', {
       width: 10,
@@ -238,6 +305,7 @@ class Bedroom extends Room {
     });
     surfaces.push(voidSurface3);
     scene.add(voidSurface3);
+    this.voidMeshes.push(voidSurface3);
 
     surfaces.push(poster4);
     scene.add(poster4);

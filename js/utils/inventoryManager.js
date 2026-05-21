@@ -36,6 +36,7 @@ class InventoryManager {
         // Add some test items to the inventory
         this.inventory.addItem(items.punch_001);
         this.inventory.addItem(items.shot_001);
+        this.inventory.addItem(items.callEx_001);
     }
 
     setupDragAndDrop() {
@@ -190,21 +191,69 @@ class InventoryManager {
     showItemInfo(itemId, sourceEl = null) {
         const item = items[itemId];
         const itemInfoBlock = document.getElementById('item-info-block');
-        if (!item || !itemInfoBlock) return;
+        const contentEl = document.getElementById('item-info-content');
+        const titleEl = document.getElementById('item-info-title');
+        if (!item || !itemInfoBlock || !contentEl) return;
 
-        const inShop = sourceEl && sourceEl.closest('#shop-items');
-        const costLine = inShop
-            ? `<p>Dopamine cost: ${item.value}</p>`
+        if (titleEl) {
+            titleEl.textContent = item.name;
+        }
+
+        const inShop = Boolean(sourceEl?.closest('#shop-items'));
+        const stats = [];
+
+        if (item.phyDamage > 0) {
+            stats.push({ label: 'PHY', value: item.phyDamage, modifier: 'item-stat--phy' });
+        }
+        if (item.emoDamage > 0) {
+            stats.push({ label: 'EMO', value: item.emoDamage, modifier: 'item-stat--emo' });
+        }
+        if (item.phyBuff > 0) {
+            stats.push({ label: 'PHY BUFF', value: item.phyBuff, modifier: 'item-stat--phy' });
+        }
+        if (item.emoBuff > 0) {
+            stats.push({ label: 'EMO BUFF', value: item.emoBuff, modifier: 'item-stat--emo' });
+        }
+
+        const statsHtml = stats.length
+            ? `<div class="item-info-stats">${stats.map((stat) => `
+                    <span class="item-stat ${stat.modifier}">
+                        <span class="item-stat-label">${stat.label}</span>
+                        <span class="item-stat-value">${stat.value}</span>
+                    </span>
+                `).join('')}</div>`
             : '';
 
-        itemInfoBlock.style.display = 'block';
-        itemInfoBlock.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" title="${item.name}">
-            <p>${item.description}</p>
-            <p>Value: ${item.value}</p>
-            ${costLine}
-            <p>Recharge Time: ${item.rechargeTime}</p>
+        const metaFields = [];
+
+        if (inShop) {
+            metaFields.push({ label: 'Dopamine', value: item.value, highlight: true });
+        }
+        metaFields.push(
+            { label: 'Value', value: item.value },
+            { label: 'Recharge', value: `${item.rechargeTime}s` },
+        );
+
+        const metaHtml = metaFields.map((field) => `
+            <span class="status-bar-field item-info-meta-field${field.highlight ? ' item-info-meta-field--highlight' : ''}">
+                ${field.label}: <strong>${field.value}</strong>
+            </span>
+        `).join('');
+
+        contentEl.innerHTML = `
+            <div class="item-info-layout${stats.length ? '' : ' item-info-layout--solo'}">
+                <div class="item-info-visual panel-inset">
+                    <img src="${item.image}" alt="">
+                </div>
+                ${statsHtml ? `<div class="item-info-details">${statsHtml}</div>` : ''}
+            </div>
+            <div class="item-info-description panel-inset">
+                <p>${item.description}</p>
+            </div>
+            <div class="item-info-meta">${metaHtml}</div>
         `;
+
+        itemInfoBlock.style.display = 'block';
     }
 
     removeItemInfo() {
@@ -225,8 +274,10 @@ class InventoryManager {
         if (source === 'inventory' && target === 'active') {
             this.inventory.removeItem(item);
             const swapItem = this.activeItems.addItem(item, placementIndex);
-            if (swapItem) {
-                this.inventory.addItem(swapItem);
+            if (swapItem && !this.inventory.addItem(swapItem)) {
+                this.activeItems.removeItem(item);
+                this.inventory.addItem(item);
+                this.activeItems.addItem(swapItem, placementIndex);
             }
         } else if (source === 'shop' && target === 'active') {
             const cost = item.value;
@@ -247,11 +298,17 @@ class InventoryManager {
 
             store.removeItem(item);
             const swapItem = this.activeItems.addItem(item, placementIndex);
-            if (swapItem) {
-                this.inventory.addItem(swapItem);
+            if (swapItem && !this.inventory.addItem(swapItem)) {
+                this.activeItems.removeItem(item);
+                this.activeItems.addItem(swapItem, placementIndex);
+                store.addItem(item);
+                dopamineManager.giveDopamine(cost);
+                return;
             }
         } else if (source === 'active' && target === 'inventory') {
-            // Moving from active items to inventory
+            if (!this.inventory.hasSpace()) {
+                return;
+            }
             this.activeItems.removeItem(item);
             this.inventory.addItem(item);
         }

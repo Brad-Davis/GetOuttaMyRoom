@@ -4,21 +4,7 @@ import '../css/styles.css';
 import '98.css';
 import GameEngine from './core/GameEngine.js';
 import './utils/missionService.js';
-
-function dismissInitialLoadingScreen() {
-    const el = document.getElementById('initial-loading-screen');
-    if (!el || el.dataset.dismissed === '1') return;
-    el.dataset.dismissed = '1';
-    el.setAttribute('aria-busy', 'false');
-
-    const finalize = () => {
-        el.remove();
-    };
-
-    el.classList.add('initial-loading-screen--exit');
-    el.addEventListener('transitionend', finalize, { once: true });
-    setTimeout(finalize, 520);
-}
+import { dismissInitialLoadingScreen } from './utils/initialLoadingScreen.js';
 
 // Initialize and start the game
 async function startGame() {

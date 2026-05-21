@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import effectsService from '../utils/effectsService';
 
 class Door {
   constructor(scene) {
@@ -34,6 +35,7 @@ class Door {
 
     open() {
         // Open the door
+        effectsService.playSfx('doorOpen');
         this.doorMesh.rotation.y = Math.PI / 2;
         this.doorMesh.position.x -= 1; // Move the door to the right to align the rotation point to the left edge
         this.doorMesh.position.z += 1; // Move the door to the right to align the rotation point to the left edge

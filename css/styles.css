@@ -410,7 +410,7 @@ canvas {
   position: absolute;
   right: 0px;
   width: 300px;
-  height: 300px;
+  height: 200px;
   top: 50%;
   transform: translate(100%, -50%);
   transition: transform 0.5s ease-in-out;
@@ -496,17 +496,121 @@ canvas {
   margin: 0 5px;
 }
 
-#item-info-block {
+#item-info-block.item-info-window {
   position: absolute;
-  top: 30px;
+  top: 45px;
   right: 30px;
-  width: 300px;
+  width: 280px;
+  z-index: 1002;
+  font-size: 12px;
+  pointer-events: none;
 }
 
-#item-info-block img {
-  width: 100px;
-  height: 100px;
+.item-info-body {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-info-layout {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.item-info-visual {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.item-info-visual img {
+  width: 56px;
+  height: 56px;
   object-fit: contain;
+}
+
+.item-info-layout--solo {
+  justify-content: center;
+}
+
+.item-info-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+}
+
+.item-info-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.item-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  line-height: 1;
+  border: 1px solid #808080;
+  background: #dfdfdf;
+  box-shadow: inset 1px 1px #fff, inset -1px -1px #808080;
+}
+
+.item-stat-label {
+  font-weight: bold;
+  letter-spacing: 0.04em;
+}
+
+.item-stat--phy .item-stat-value {
+  color: #8b0000;
+}
+
+.item-stat--emo .item-stat-value {
+  color: #4b0082;
+}
+
+.panel-inset {
+  background: #fff;
+  box-shadow: inset 1px 1px #0a0a0a, inset -1px -1px #fff;
+}
+
+.item-info-description {
+  padding: 6px 8px;
+  margin: 0;
+}
+
+.item-info-description p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #111;
+}
+
+.item-info-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.item-info-meta-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11px;
+  text-align: center;
+}
+
+.item-info-meta-field--highlight {
+  font-weight: bold;
+  color: #000080;
 }
 
 #pain-container {

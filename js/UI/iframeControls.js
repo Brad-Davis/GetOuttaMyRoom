@@ -62,15 +62,20 @@ class IframeControls {
         this.computer.style.display = 'none';
         this.computer.style.opacity = '0';
         if(firstTime) {
-            cameraService.openEyes();
-            backButtonManager.enable();
-            await dialogService.runLines([
-                {
-                    speaker: 'Inner Monologue',
-                    text: 'You have no dopamine or self worth. Your body is telling you to post on LinkedIn.',
-                }
-            ]);
-            missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
+            setTimeout(async () => {
+                cameraService.openEyes();
+                setTimeout(async () => {
+                    await dialogService.runLines([
+                        {
+                            speaker: 'Inner Monologue',
+                            text: 'You have no dopamine or self worth. Your body is telling you to post on LinkedIn.',
+                        }
+                    ]);
+                    backButtonManager.enable();
+                    missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
+                }, 1000);
+            }, 1000);
+            
         }
     }
 
@@ -89,6 +94,12 @@ class IframeControls {
         }
         this.iframe.src = url;
         this.iframe.style.display = 'block';
+    }
+
+    /** Show an iframe URL and zoom to fullscreen (same pattern as movement / CD flows). */
+    openIframe(url, options = {}) {
+        this.showIframe(url, options);
+        this.zoomIn();
     }
 
     openSite(siteKey) {

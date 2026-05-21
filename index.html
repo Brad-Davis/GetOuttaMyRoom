@@ -50,12 +50,14 @@
     </div>
     
     <div id="inventory-container">
-      <div id="item-info-block" class="window" style="display: none;"></div>
+      <div id="item-info-block" class="window item-info-window" style="display: none;" aria-live="polite">
+        <div class="title-bar">
+          <div class="title-bar-text" id="item-info-title">Item</div>
+        </div>
+        <div class="window-body item-info-body" id="item-info-content"></div>
+      </div>
       <button id="inventory-button">Back<br>Pack</button>
       <div id="inventory-items" class="window">
-        <div class="status-bar-field inventory-item-container"></div>
-        <div class="status-bar-field inventory-item-container"></div>
-        <div class="status-bar-field inventory-item-container"></div>
         <div class="status-bar-field inventory-item-container"></div>
         <div class="status-bar-field inventory-item-container"></div>
         <div class="status-bar-field inventory-item-container"></div>
