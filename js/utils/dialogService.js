@@ -71,6 +71,12 @@ class DialogService {
             this.active = false;
         }
     }
+
+    clearDialog() {
+        textOverlay.endDialog();
+        interactionService.enable();
+        this.active = false;
+    }
 }
 
 const dialogService = new DialogService();

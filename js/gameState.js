@@ -200,12 +200,9 @@ class GameState {
         //     }),
         //     [() => this.textOverlay.closeWindowOverlay(),() => {this.goToBattle(); this.textOverlay.closeWindowOverlay();}]);
         //SWITCH THIS IN REAL GAME
-        await dialogService.runLines([
-            {
-                speaker: 'Brad Davis, Game Developer',
-                text: 'Whoopsie the game isn\'t done yet! In the full game you will fight two more family members and level up along the way. For now, it is time for you to see your dad. Scroll to see him.',
-            },
-        ]);
+        this.currentEvent.enemy.dieEvent()
+
+
         window.gameEngine?.getInteractionManager?.()?.movement?.enable();
     }
 

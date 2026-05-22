@@ -1,5 +1,6 @@
 import gameState from "../gameState.js";
 import interactionService from "../utils/interactionService.js";
+import dialogService from "../utils/dialogService.js";
 
 class Battle {
     constructor(player, enemy) {
@@ -11,6 +12,7 @@ class Battle {
         this.enemyHpBar = document.getElementById("enemyHealthText");
         this.battleElements = document.getElementById("battleMode");
         this.gameState = gameState;
+        this.randomDialogTime = 1000;
     }
 
     startBattle() {
@@ -31,6 +33,12 @@ class Battle {
         this.battleElements.style.opacity = 0;
     }
 
+    sayRandomDialog() {
+        const dialog = this.enemy.getRandomDialog();
+        console.log(dialog);
+        dialogService.runLines(dialog);
+    }
+
     startBattleLoop() {
         document.getElementById('active-items').style.display = 'block';
         document.getElementById('inventory-button').style.display = 'block';
@@ -39,7 +47,14 @@ class Battle {
         this.player.tick();
         this.enemy.tick();
         // this.showHealth(); THIS IS HANDLED IN PLAYER AND ENEMY
-        
+        if (this.randomDialogTime <= 0) {
+            this.enemy.sayRandomDialog();
+            this.randomDialogTime = 10000;
+        } else {
+            this.randomDialogTime -= 1;
+        }
+
+        this.randomDialogTime -= 100;
         // In event of tie the player wins
         if (this.enemy.getHp() <= 0) {
             this.battleLog.push("Enemy has died!");

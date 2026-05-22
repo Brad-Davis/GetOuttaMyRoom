@@ -5,7 +5,7 @@ class Player {
     constructor(name) {
         this.name = name;
         this.items = [];
-        this.maxHp = 100;
+        this.maxHp = 1000;
         this.currentHp = this.maxHp;
         this.level = 1;
         this.basePhyDamage = 1;

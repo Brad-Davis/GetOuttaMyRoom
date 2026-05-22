@@ -257,6 +257,20 @@ class Bedroom extends Room {
       texture: "dad.png"
     });
 
+    const poster5 = this.createSurface('poster', {
+      width: 1,
+      height: 1.6,
+      x: this.config.width/2 - 0.1,
+      y: this.config.wallHeight/4 - 0.4,
+      z: 1,
+      rotX: 0,
+      rotY: -Math.PI / 2,
+      rotZ: 0,
+      texture: "grandpa.jpeg"
+    });
+    surfaces.push(poster5);
+    scene.add(poster5);
+
     const voidSurface1 = this.createSurface('void', {
       width: 3,
       height: 3,

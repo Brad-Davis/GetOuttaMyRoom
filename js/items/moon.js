@@ -34,7 +34,7 @@ class Moon {
 
     // Create a point light to simulate moonlight
     this.moonLight = new THREE.DirectionalLight(0xffffff, 0.1, 0);
-    this.moonLight.position.set(x, y, z);
+    this.moonLight.position.set(x, y, z + 5);
 
     // Add the light to the scene
     this.scene.add(this.moonLight);

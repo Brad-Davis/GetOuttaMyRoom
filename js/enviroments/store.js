@@ -1,6 +1,8 @@
 import loaderService from "../utils/loaderService.js";
 import gsap from "gsap";
 import items from "../templates/items.js";
+import dialogService from "../utils/dialogService.js";
+import dopamineManager from "../managers/dopamineManager.js";
 
 class Store {
     constructor() {
@@ -9,6 +11,7 @@ class Store {
         this.shop = document.getElementById('shop');
         this.shop.style.pointerEvents = 'none';
         this.shop.style.opacity = '0';
+        this.storeVisited = false;
     }
 
     addItem(item) {
@@ -51,6 +54,11 @@ class Store {
 
     showSetup(scene) {
         // window.goblin = this.sprite;
+        dopamineManager.getDopamine()
+        if (this.storeVisited === false && dopamineManager.getDopamine() > 0) {
+            
+            this.firstTimeWithDopamine();
+        }
         scene.add(this.sprite);
         this.sprite.scale.set(0.8, 0.8, 0.8)
         this.sprite.position.set(3.5, -3.5, -7);
@@ -68,6 +76,23 @@ class Store {
         this.renderShopItems();
     }
 
+    async firstTimeWithDopamine() {
+        await dialogService.runLines([
+            {
+                speaker: 'BED GOBLIN',
+                text: 'GOOD YOU HAVE DOPAMINE. PURCHASE THE PUNCH THEN CONFRONT THAT UGLY LOUD MAN IN THE HALLWAY.',
+            },
+            {
+                speaker: 'BED GOBLIN',
+                text: 'DRAG IT INTO THE ACTIVE SLOT',
+            },
+            {
+                speaker: 'BED GOBLIN',
+                text: 'YOU CAN ALSO STORE YOUR OBJECTS IN YOUR BACKPACK BUT THEY WONT CHARGE IN BATTLE.',
+            }
+        ]);
+    }
+
     hideSetup() {
         this.sprite.position.set(0.8, -1.9, -7);
         gsap.to(this.sprite.position, {
@@ -83,8 +108,8 @@ class Store {
 
     initialStoreSetup() {
         this.addItem(items.punch_001);
-        this.addItem(items.podcast_001);
-        this.addItem(items.shot_001);
+        items.punch_001.value = 10;
+
     }
 }
 

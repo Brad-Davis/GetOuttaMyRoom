@@ -1,5 +1,6 @@
 import HealthBar from "../UI/healthBar.js";
 import sceneService from "../utils/sceneService.js";
+import dialogService from "../utils/dialogService.js";
 import { enemyActiveItems } from "../UI/activeItems.js";
 import gsap from 'gsap';
 
@@ -110,6 +111,12 @@ class Enemy {
         if (this.deathPose) {
             this.deathPose();
         }
+    }
+
+    sayRandomDialog() {
+        const dialog = this.getRandomDialog();
+        console.log(dialog);
+        dialogService.runLines(dialog);
     }
 
 

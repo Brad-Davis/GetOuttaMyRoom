@@ -4,6 +4,7 @@ import Enemy from "../templates/enemy.js";
 import loaderService from "../utils/loaderService.js";
 import items from "../templates/items.js";
 import effectsService from "../utils/effectsService.js";
+import dialogService from "../utils/dialogService.js";
 
 /**
  * Pose name → 0-based frame index (same order as uncle1.png … uncle5.png).
@@ -158,6 +159,26 @@ class Uncle extends Enemy {
 
     takeDamage(damage) {
         super.takeDamage(damage);
+    }
+
+    dieEvent() {
+        dialogService.clearDialog();
+        dialogService.runLines([
+            {
+                speaker: 'Uncle',
+                text: "it\'s chill u don\'t even like sports we didn't have anything to talk about"
+            },
+        ]);
+    }
+
+    getRandomDialog() {
+        const dialogs = [
+            [{"speaker": "Uncle", "text": "What do you do now. Been outta college for a bit now huh?"}, {"speaker": "Uncle", "text": "Best years of my life"}],
+            [{"speaker": "Uncle", "text": "I'm just gonna go to the bar do you want anything?"}, {"speaker": "Uncle", "text": "Oh I'm not grocery shopping. Did u want like bar peanuts or something."}],
+            [{"speaker": "Uncle", "text": "It smells kinda weird in here"}, {"speaker": "Uncle", "text": "Yeah it does smell kinda weird in here. I'm not sure why."}],
+        ]
+        const randomDialog = dialogs[Math.floor(Math.random() * dialogs.length)];
+        return randomDialog
     }
 }
 

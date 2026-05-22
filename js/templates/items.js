@@ -128,7 +128,7 @@ const itemPool = {
         /* rechargeTime */ 0.5,
         /* image */ "./resources/images/punch.png",
         /* triggerFunction */ (fromEnemy = false) => {
-            hurt(100, fromEnemy);
+            hurt(10, fromEnemy);
         },
         /* id */ "punch",
         /* phyDamage */ 3,
@@ -409,7 +409,7 @@ const itemPool = {
         "Grants a randomized outcome.",
         /* value */ 5,
         /* rechargeTime */ 5,
-        /* image */ "./resources/images/callMom.png",
+        /* image */ "./resources/images/callFromEx.png",
         /* triggerFunction */ (fromEnemy = false) => {
             // GIVE DOPAMINE
             dopamineManager.giveDopamine(5);
@@ -434,7 +434,7 @@ const itemPool = {
                 {
                     text: "They pick up and they say they're busy.",
                     action: () => {
-                        dialogService.runLines([{speaker: "EX", text: "Sorry, I'm busy right now."}]);
+                        dialogService.runLines([{speaker: "EX", text: "Sorry, I'm busy right now."}, {speaker: "Inner Monologue", text: "Alright, they at least respect you enough to pick up. No effect "}]);
                     }
                 },
                 {
@@ -443,15 +443,18 @@ const itemPool = {
                         // Physical damage buff
                         buffPlayer(2, 0);
                         dialogService.runLines([{speaker: "EX", text: "Hey sexy, you miss me?"}]);
+                        dialogService.runLines([{speaker: "Inner Monologue", text: "You are bricked up... physical buff"}]);
                     }
                 },
                 {
                     text: "They pick up and you start arguing",
                     action: () => {
+                        //NEED TO ADD STUN EFFECT!
                         // Stunned for 3 seconds, 50/50 buff or debuff physical damage
                         const buff = Math.random() < 0.5;
+
                         if (buff) {
-                            buffPlayer(3, 0);
+                            buffPlayer(2, 0);
                             dialogService.runLines([{speaker: "EX", text: "You always start this! (You feel a weird power... physical buff)"}]);
                         } else {
                             hurt(5, fromEnemy);
@@ -465,7 +468,8 @@ const itemPool = {
                     action: () => {
                         // BIG EMOTIONAL DAMAGE TO YOUR FAMILY
                         hurt(50, fromEnemy, false, true); // 'true' as last param to signal family harm
-                        dialogService.runLines([{speaker: "EX", text: "I'm coming over (your family is terrified of this beast)"}]);
+                        dialogService.runLines([{speaker: "EX", text: "I'm coming over <3"}]);
+                        dialogService.runLines([{speaker: "Inner Monologue", text: "Your family is terrified of this beast. They take BIG damage."}]);
                     }
                 }
             ];
