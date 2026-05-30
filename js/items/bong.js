@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import loaderService from '../utils/loaderService.js';
 import cameraService from '../utils/cameraPresets.js';
+import effectsService from '../utils/effectsService.js';
 import gsap from 'gsap';
 
 class Bong {
@@ -48,6 +49,7 @@ class Bong {
     if (this.active) return;
     if (!cameraService.checkCameraPreset('DRESSER_VIEW')) return;
     this.active = true;
+    
     // Animate up first
     gsap.to(this.bongMesh.position, {
       y: this.bongMesh.position.y - 0.2,
@@ -56,9 +58,17 @@ class Bong {
       duration: 1,
       ease: 'power2.inOut',
       onComplete: () => {
+        effectsService.smokeEffect({
+          duration: 3,
+          growthPower: 4,
+          numSprites: 18,
+          sizeStart: 0.006,
+          sizeEnd: 1.5,
+          radiusStart: 0.003,
+          radiusEnd: 1.2,
+        });
         console.log('Animation up finished!');
         setTimeout(() => {
-        // Then animate back down to original position
           gsap.to(this.bongMesh.position, {
             y: this.originalPosition.y,
             x: this.originalPosition.x,

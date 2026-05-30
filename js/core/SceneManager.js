@@ -57,7 +57,12 @@ class SceneManager {
     setupRenderer() {
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(this.renderer.domElement);
+        const container = document.getElementById('container');
+        if (container) {
+            container.prepend(this.renderer.domElement);
+        } else {
+            document.body.appendChild(this.renderer.domElement);
+        }
     }
 
     setupLighting() {

@@ -32,11 +32,16 @@ async function scoreViaProxy(task, payload) {
         body: JSON.stringify({ task, ...payload }),
     });
 
+    const raw = await res.text();
     let data = {};
     try {
-        data = await res.json();
+        data = raw ? JSON.parse(raw) : {};
     } catch {
-        throw new Error(`Scoring service returned invalid JSON (${res.status})`);
+        const hint =
+            res.status === 500 && /ECONNREFUSED|proxy error/i.test(raw)
+                ? ' — is the API server running? Restart with npm run dev (or run npm start in another terminal).'
+                : '';
+        throw new Error(`Scoring service returned invalid JSON (${res.status})${hint}`);
     }
 
     if (!res.ok) {
@@ -59,6 +64,10 @@ async function podcastScore(userResponse, topic) {
     return scoreViaProxy('podcast', { text: userResponse, topic });
 }
 
+async function musicTasteScore(userResponse, musician) {
+    return scoreViaProxy('musictaste', { text: userResponse, musician });
+}
+
 async function insultScore(userResponse, insultTopic) {
     return scoreViaProxy('insult', { text: userResponse, insultTopic });
 }
@@ -67,4 +76,4 @@ async function linkedInScore(userResponse) {
     return scoreViaProxy('linkedin', { text: userResponse });
 }
 
-export { podcastScore, insultScore, linkedInScore };
+export { podcastScore, insultScore, linkedInScore, musicTasteScore };

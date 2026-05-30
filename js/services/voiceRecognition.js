@@ -1,5 +1,3 @@
-import textOverlay from '../UI/textOverlay.js';
-
 class VoiceRecognitionService {
     constructor() {
         this.RecognitionClass =
@@ -168,7 +166,9 @@ class VoiceRecognitionService {
         });
     }
 
-    getAndPrintStatement(lengthOfTime = 10, onResult) {
+    async getAndPrintStatement(lengthOfTime = 10, onResult) {
+        const { default: textOverlay } = await import('../UI/textOverlay.js');
+
         return new Promise((resolve, reject) => {
             if (!this.isSupported()) {
                 reject(new Error('Speech recognition is not supported in this browser.'));

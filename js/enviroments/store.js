@@ -9,7 +9,7 @@ class Store {
         this.items = [];
         this.sprite = loaderService.createSprite("./resources/images/bedGoblin.png");
         this.shop = document.getElementById('shop');
-        this.shop.style.pointerEvents = 'none';
+        this.shop.classList.remove('is-open');
         this.shop.style.opacity = '0';
         this.storeVisited = false;
     }
@@ -71,7 +71,7 @@ class Store {
         });
         this.sprite.visible = true;
         console.log("Store setup");
-        this.shop.style.pointerEvents = 'auto';
+        this.shop.classList.add('is-open');
         this.shop.style.opacity = '1';
         this.renderShopItems();
     }
@@ -102,7 +102,7 @@ class Store {
             duration: 1,
             ease: "power2.inOut"
         });
-        this.shop.style.pointerEvents = 'none';
+        this.shop.classList.remove('is-open');
         this.shop.style.opacity = '0';
     }
 

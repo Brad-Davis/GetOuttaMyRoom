@@ -1,9 +1,15 @@
 import * as THREE from 'three';
+import { clone as cloneSkinnedModel } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import gsap from 'gsap';
 import Room from '../controls/room.js';
 import Hallway from './hallway.js';
 import GpuRainEffect from '../utils/gpuRainEffect.js';
 import cameraService from '../utils/cameraPresets.js';
+import loaderService from '../utils/loaderService.js';
+
+const OUTSIDE_MODEL_PATH = './resources/models/Outside.glb';
+const GUY_MODEL_PATH = './resources/models/guy.glb';
+const HEAD_MODEL_PATH = './resources/models/head.glb';
 
 const VIDEO_TAPES_PATH = './resources/images/videoTapes.mp4';
 const VIDEO_WALL_BACKING_TEXTURE = './resources/images/goldFrame.png';
@@ -38,6 +44,12 @@ class Bedroom extends Room {
 
     this.rainEffect = null;
     this.rainOptions = { ...defaultRain, ...(config.rain || {}) };
+    /** @type {THREE.Object3D | null} */
+    this.outsideModel = null;
+    /** @type {THREE.Object3D | null} */
+    this.passerByModel = null;
+
+    this.headModel = null;
     /** @type {{ mesh: THREE.Mesh; backingMesh?: THREE.Mesh; videoTexture: THREE.VideoTexture; video: HTMLVideoElement } | null} */
     this._videoWallScreen = null;
     /** User has clicked the CRT; volume fades with camera view. */
@@ -47,11 +59,27 @@ class Bedroom extends Room {
     this._videoWallVolumeTween = null;
     /** Meshes registered for scene clicks (see AssetManager). */
     this.voidMeshes = [];
+    /** @type {THREE.Mesh | null} */
+    this._rightWindowClickMesh = null;
+    /** @type {THREE.Mesh | null} */
+    this._poster2Mesh = null;
+
+    this.questionForPasserBy = false;
+  }
+
+  /** Invisible click target in front of the right-wall window (see AssetManager). */
+  getRightWindowClickMesh() {
+    return this._rightWindowClickMesh;
   }
 
   /** CRT video plane for scene clicks (see AssetManager). */
   getVideoWallScreenMesh() {
     return this._videoWallScreen?.mesh ?? null;
+  }
+
+  /** Grandpa poster on the back wall (see AssetManager). */
+  getPoster2Mesh() {
+    return this._poster2Mesh;
   }
 
   /**
@@ -117,6 +145,200 @@ class Bedroom extends Room {
       }
     }
     this._updateVideoWallAudio();
+  }
+
+  _configureOutsideModel(model) {
+    model.scale.setScalar(1);
+    model.rotation.y = Math.PI / 2;
+
+    model.traverse((child) => {
+      if (!child.isMesh) return;
+      child.frustumCulled = false;
+      if (Array.isArray(child.material)) {
+        child.material.forEach((mat) => {
+          mat.side = THREE.DoubleSide;
+        });
+      } else if (child.material) {
+        child.material.side = THREE.DoubleSide;
+      }
+    });
+  }
+
+  _placeOutsideModel(model, z) {
+    model.position.set(
+      15 + this.config.width,
+      this.config.floorLevel - 0.2,
+      z
+    );
+  }
+
+  /**
+   * Cityscape GLB just beyond the right-wall window (+X), visible through the alpha cutout.
+   */
+  async _loadOutsideBeyondWindow(scene) {
+    try {
+      const gltf = await loaderService.loadGLTF(OUTSIDE_MODEL_PATH);
+      const baseZ = -2.8;
+      const duplicateZOffset = 30;
+
+      const model = gltf.scene;
+      this.outsideModel = model;
+      this._configureOutsideModel(model);
+      this._placeOutsideModel(model, baseZ);
+      scene.add(model);
+
+      const duplicate = cloneSkinnedModel(model);
+      this._placeOutsideModel(duplicate, baseZ - duplicateZOffset);
+      scene.add(duplicate);
+    } catch (error) {
+      console.error('Error loading outside view model:', error);
+    }
+  }
+
+  async _loadPasserby(scene) {
+    try {
+      const gltf = await loaderService.loadGLTF(GUY_MODEL_PATH);
+      const model = gltf.scene;
+      this.passerByModel = model;
+
+      model.scale.setScalar(2);
+      model.position.set(
+        7.5,
+        this.config.floorLevel + 2,
+        -5
+      );
+
+      const head = await loaderService.loadGLTF(HEAD_MODEL_PATH);
+      this.headModel = head.scene;
+      this.headModel.scale.setScalar(1);
+      this.headModel.position.set(
+        6,
+        this.config.floorLevel - 1,
+        -2
+      );
+      this.headModel.rotation.y = -Math.PI / 2;
+
+      scene.add(model);
+      scene.add(this.headModel);
+      this.walkByPasserby();
+    } catch (error) {
+      console.error('Error loading outside view model:', error);
+    }
+  }
+
+  //PASSERBY QUESTION LOGIC
+  walkByPasserby() {
+    const walkSpeed = 1.8; // z-units/sec (-20 → -2 in 10s)
+    this.passerByDefaultLocation();
+
+    const startZ = -20;
+    const pauseZ = -2.2;
+
+    gsap.to(this.passerByModel.position, {
+      z: pauseZ,
+      duration: Math.abs(pauseZ - startZ) / walkSpeed,
+      ease: 'none',
+      onComplete: () => {
+        if (this.questionForPasserBy) {
+          this.passerByApproach();
+        } else {
+          const exitZ = 5;
+          gsap.to(this.passerByModel.position, {
+            z: exitZ,
+            duration: Math.abs(exitZ - pauseZ) / walkSpeed,
+            ease: 'none',
+            onComplete: () => {
+              this.walkByPasserby();
+            },
+          });
+        }
+      },
+    });
+  }
+
+
+  passerByApproach() {
+    gsap.to(this.passerByModel.rotation, {
+      y: -Math.PI/2,
+      duration: 1,
+      ease: 'power2.inOut',
+      onComplete: () => {
+        gsap.to(this.passerByModel.position, {
+          y: -10,
+          duration: 1,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            gsap.to(this.headModel.position, {
+              y: -0.7,
+              duration: 0.1,
+              ease: 'power2.inOut',
+              onComplete: () => {
+                this.questionForPasserBy = false;
+              }
+            })
+          }
+        })
+      }
+    })
+  }
+
+
+  passerByDefaultLocation(){
+    this.passerByModel.position.set(
+      7.5,
+      this.config.floorLevel + 2,
+      -20
+    );
+  }
+
+  /**
+   * Road strip visible through the right (+X) wall window, just outside the building.
+   */
+  _addOutsideRoad(scene) {
+    const wallX = this.config.width / 2;
+    const roadLength = 4;
+    const roadWidth = 20;
+
+    const road = this.createSurface('road', {
+      width: roadLength,
+      height: roadWidth,
+      x: wallX + roadLength / 2 + 0.6,
+      y: this.config.floorLevel + 0.5,
+      z: -4.5,
+      rotX: -Math.PI / 2,
+      rotY: 0,
+      rotZ: 0,
+      texture: 'road.jpg',
+      textureOptions: { repeat: { x: 1, y: 1 } },
+    });
+
+    scene.add(road);
+    return road;
+  }
+
+  /**
+   * Transparent raycast plane just inside the right (+X) window wall.
+   */
+  _addRightWindowClickPlane(scene) {
+    const wallX = this.config.width / 2;
+    const w = 4.2;
+    const h = 4.8;
+
+    const geometry = new THREE.PlaneGeometry(w, h);
+    const material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(wallX - 0.08, 0.6, -2.6);
+    mesh.rotation.set(0, -Math.PI / 2, 0);
+    mesh.name = 'rightWindowClick';
+
+    scene.add(mesh);
+    this._rightWindowClickMesh = mesh;
   }
 
   /**
@@ -185,6 +407,7 @@ class Bedroom extends Room {
   buildRoom(scene) {
     const surfaces = [];
     this.voidMeshes = [];
+    this._poster2Mesh = null;
     
     // Floor
     const floor = this.createSurface('floor', {
@@ -229,7 +452,72 @@ class Bedroom extends Room {
       rotZ: 0,
       texture: 'wall.jpg'
     });
-    
+
+    const longLeftWall = this.createSurface('wall', {
+      width: 1000,
+      height: this.config.height,
+      x: -this.config.width / 2,
+      y: this.config.wallHeight,
+      z: 500 + this.config.depth / 2,
+      rotX: 0,
+      rotY: Math.PI / 2,
+      rotZ: 0,
+      texture: 'wall.jpg',
+      textureOptions: { repeat: { x: 100, y: 1 } }
+    });
+    surfaces.push(longLeftWall);
+    scene.add(longLeftWall);
+
+    const longRightWall = this.createSurface('wall', {
+      width: 1000,
+      height: this.config.height,
+      x: this.config.width / 2,
+      y: this.config.wallHeight,
+      z: 500 + this.config.depth / 2,
+      rotX: 0,
+      rotY: -Math.PI / 2,
+      rotZ: 0,
+      texture: 'wall.jpg',
+      textureOptions: { repeat: { x: 100, y: 1 } }
+    });
+    surfaces.push(longRightWall);
+    scene.add(longRightWall);
+
+    // Horizontal plane: `width` = X, `height` = Z (after rotX −π/2).
+    // Same Z center as long walls; length 1000 on Z like their `width`.
+    const longRunLength = 1000;
+    const longFloor = this.createSurface('floor', {
+      width: this.config.width,
+      height: longRunLength,
+      x: 0,
+      y: this.config.floorLevel,
+      z: 500 + this.config.depth / 2,
+      rotX: -Math.PI / 2,
+      rotY: 0,
+      rotZ: 0,
+      texture: 'floor.jpg',
+      textureOptions: { repeat: { x: 4, y: 400 } }
+    });
+    longFloor.frustumCulled = false;
+    surfaces.push(longFloor);
+    scene.add(longFloor);
+
+    const longCeiling = this.createSurface('ceiling', {
+      width: this.config.width,
+      height: longRunLength,
+      x: 0,
+      y: this.config.ceilingLevel,
+      z: 500 + this.config.depth / 2,
+      rotX: Math.PI / 2,
+      rotY: 0,
+      rotZ: 0,
+      texture: 'ceiling.jpg',
+      textureOptions: { repeat: { x: 1, y: 100 } }
+    });
+    longCeiling.frustumCulled = false;
+    surfaces.push(longCeiling);
+    scene.add(longCeiling);
+
     const poster3 = this.createSurface('poster', {
       width: 1,
       height: 1.6,
@@ -257,19 +545,19 @@ class Bedroom extends Room {
       texture: "dad.png"
     });
 
-    const poster5 = this.createSurface('poster', {
-      width: 1,
-      height: 1.6,
-      x: this.config.width/2 - 0.1,
-      y: this.config.wallHeight/4 - 0.4,
-      z: 1,
-      rotX: 0,
-      rotY: -Math.PI / 2,
-      rotZ: 0,
-      texture: "grandpa.jpeg"
-    });
-    surfaces.push(poster5);
-    scene.add(poster5);
+    // const poster5 = this.createSurface('poster', {
+    //   width: 1,
+    //   height: 1.6,
+    //   x: this.config.width/2 - 0.1,
+    //   y: this.config.wallHeight/4 - 0.4,
+    //   z: 1,
+    //   rotX: 0,
+    //   rotY: -Math.PI / 2,
+    //   rotZ: 0,
+    //   texture: "grandpa.png"
+    // });
+    // surfaces.push(poster5);
+    // scene.add(poster5);
 
     const voidSurface1 = this.createSurface('void', {
       width: 3,
@@ -346,6 +634,12 @@ class Bedroom extends Room {
     surfaces.push(rightWall);
     scene.add(rightWall);
 
+    this._addRightWindowClickPlane(scene);
+
+    this._addOutsideRoad(scene);
+    this._loadOutsideBeyondWindow(scene);
+    this._loadPasserby(scene);
+
     // Back wall (with door)
     const backWall = this.createSurface('wall', {
       width: this.config.width,
@@ -383,105 +677,121 @@ class Bedroom extends Room {
 
     const poster2 = this.createSurface('poster', {
       width: 2.2,
-      height: 1.5,
+      height: 3,
       x: this.config.width / 4 + 0.6,
-      y: this.config.wallHeight/4 - 0.8,
+      y: this.config.wallHeight/4 - 0.2,
       z: -this.config.depth / 2 + 0.05,
       rotX: 0,
       rotY: 0,
       rotZ: 0,
-      texture: 'pullMeByTheNecktie.png'
+      texture: 'grandpa.png'
     });
-    
+
+    this._poster2Mesh = poster2;
     surfaces.push(poster2);
     scene.add(poster2);
+
+    const turnLeft = this.createSurface('poster', {
+      width: 1.3,
+      height: 1,
+      x: this.config.width / 2 - 2.9,
+      y: this.config.wallHeight/4 - 1,
+      z: -this.config.depth / 2 + 0.01,
+      rotX: 0,
+      rotY: 0,
+      rotZ: 0,
+      texture: 'turnLeft2.png'
+    });
+    surfaces.push(turnLeft);
+    scene.add(turnLeft);
 
     surfaces.push(backWall);
     scene.add(backWall);
 
-    // Front wall (window)
-    const frontWall = this.createSurface('wall', {
-      width: 7,
-      height: 4.1,
-      x: -0.5,
-      y: this.config.wallHeight - 1.5,
-      z: this.config.depth / 2 + 0.1,
-      rotX: 0,
-      rotY: 0,
-      rotZ: 0,
-      texture: 'outdoorWindow.webp',
-      alphaMap: 'outdoorAlpha.jpg',
-      textureOptions: {
-        repeat: { x: 1, y: 1 },
-        offset: { x: 0, y: 0 }
-      }
-    });
+    // // Front wall (window)
+    // const frontWall = this.createSurface('wall', {
+    //   width: 7,
+    //   height: 4.1,
+    //   x: -0.5,
+    //   y: this.config.wallHeight - 1.5,
+    //   z: this.config.depth / 2 + 0.1,
+    //   rotX: 0,
+    //   rotY: 0,
+    //   rotZ: 0,
+    //   texture: 'outdoorWindow.webp',
+    //   alphaMap: 'outdoorAlpha.jpg',
+    //   textureOptions: {
+    //     repeat: { x: 1, y: 1 },
+    //     offset: { x: 0, y: 0 }
+    //   }
+    // });
 
-    const frontWall2 = this.createSurface('wall', {
-        width: this.config.width + 1,
-        height: this.config.height,
-        x: -0.5,
-        y: this.config.wallHeight,
-        z: this.config.depth / 2,
-        rotX: 0,
-        rotY: 0,
-        rotZ: 0,
-        texture: "outdoorWood.jpg",
-        alphaMap: "frontAlpha.jpg",
-        textureOptions: { repeat: { x: 3, y: 3 } }
-    });
+    // const frontWall2 = this.createSurface('wall', {
+    //     width: this.config.width + 1,
+    //     height: this.config.height,
+    //     x: -0.5,
+    //     y: this.config.wallHeight,
+    //     z: this.config.depth / 2,
+    //     rotX: 0,
+    //     rotY: 0,
+    //     rotZ: 0,
+    //     texture: "outdoorWood.jpg",
+    //     alphaMap: "frontAlpha.jpg",
+    //     textureOptions: { repeat: { x: 3, y: 3 } }
+    // });
 
-    if (frontWall2.material) {
-        // Option 1: Reduce the overall brightness
-        frontWall2.material.color.multiplyScalar(0.6); // 60% brightness
+    // if (frontWall2.material) {
+    //     // Option 1: Reduce the overall brightness
+    //     frontWall2.material.color.multiplyScalar(0.6); // 60% brightness
         
-        // Option 2: Add a dark tint while preserving texture
-        frontWall2.material.color.setHex(0x888888);
+    //     // Option 2: Add a dark tint while preserving texture
+    //     frontWall2.material.color.setHex(0x888888);
         
-        // Option 3: Adjust the material's overall intensity
-        // frontWall2.material.opacity = 0.7; // Makes it more transparent/dim
-    }
+    //     // Option 3: Adjust the material's overall intensity
+    //     // frontWall2.material.opacity = 0.7; // Makes it more transparent/dim
+    // }
 
-    // Make the frontWall texture brighter by increasing material emissive
-    if (frontWall.material && frontWall.material.emissive) {
-    //   frontWall.material.emissive.set(0xffffff); // white emissive color
-      frontWall.material.emissiveIntensity = 0.5; // adjust intensity as needed
-    }
+    // // Make the frontWall texture brighter by increasing material emissive
+    // if (frontWall.material && frontWall.material.emissive) {
+    // //   frontWall.material.emissive.set(0xffffff); // white emissive color
+    //   frontWall.material.emissiveIntensity = 0.5; // adjust intensity as needed
+    // }
 
-    surfaces.push(frontWall);
-    scene.add(frontWall);
-    surfaces.push(frontWall2);
-    scene.add(frontWall2);
+    // surfaces.push(frontWall);
+    // scene.add(frontWall);
+    // surfaces.push(frontWall2);
+    // scene.add(frontWall2);
 
-    const bush = this.createSurface('bush', {
-        width: 12,
-        height: 3,
-        x: 0,
-        y: -1.7,
-        z: this.config.depth / 2 +0.2,
-        rotX: 0,
-        rotY: 0,
-        rotZ: 0,
-        texture: "bush.jpg",
-        textureOptions: { repeat: { x: 8, y: 1 } },
-        alphaMap: "bushAlpha.jpg"
-    });
+    // const bush = this.createSurface('bush', {
+    //     width: 12,
+    //     height: 3,
+    //     x: 0,
+    //     y: -1.7,
+    //     z: this.config.depth / 2 +0.2,
+    //     rotX: 0,
+    //     rotY: 0,
+    //     rotZ: 0,
+    //     texture: "bush.jpg",
+    //     textureOptions: { repeat: { x: 8, y: 1 } },
+    //     alphaMap: "bushAlpha.jpg"
+    // });
+    // surfaces.push(bush);
+    // scene.add(bush);
 
     const grass = this.createSurface('grass', {
-        width: 30,
-        height: 30,
+        width: 1000,
+        height: 1000,
         x: 0,
         y: -3.1,
         z: this.config.depth / 2 + 1,
         rotX: -Math.PI / 2,
         rotY: 0,
         rotZ: 0,
-        texture: "grass.jpg",
+        texture: "grass2.jpg",
         textureOptions: { repeat: { x: 10, y: 10 } }
     });
     surfaces.push(grass);
-    surfaces.push(bush);
-    scene.add(bush);
+    // 
     scene.add(grass);
 
     const hallway = new Hallway(scene);

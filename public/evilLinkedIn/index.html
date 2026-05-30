@@ -119,6 +119,24 @@
       .overlay button:hover {
         background: #004182;
       }
+      .overlay-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .overlay button.is-listening {
+        background: #b24020;
+      }
+      .overlay button.is-listening:hover {
+        background: #8a3018;
+      }
+      .overlay button[type='submit'] {
+        background: #057642;
+      }
+      .overlay button[type='submit']:hover {
+        background: #046139;
+      }
     </style>
   </head>
   <body>
@@ -133,23 +151,15 @@
 
         <form class="overlay" id="evil-form" aria-label="Comment">
           <label for="comment">Prove your self worth!!!</label>
-          <textarea id="comment" name="comment" rows="4" placeholder="Type here…"></textarea>
-          <button type="submit">Submit</button>
+          <textarea id="comment" name="comment" rows="4" placeholder="Type or speak here…"></textarea>
+          <div class="overlay-actions">
+            <button type="button" id="speak-btn" aria-pressed="false">Speak</button>
+            <button type="submit">Submit</button>
+          </div>
         </form>
       </div>
     </div>
 
-    <script>
-      (function () {
-        var GOMR_COMPUTER_SUBMIT = 'GOMR_COMPUTER_SUBMIT';
-        document.getElementById('evil-form').addEventListener('submit', function (e) {
-          e.preventDefault();
-          var text = document.getElementById('comment').value;
-          if (window.parent !== window) {
-            window.parent.postMessage({ type: GOMR_COMPUTER_SUBMIT, v: 1, text: text }, '*');
-          }
-        });
-      })();
-    </script>
+    <script type="module" src="/js/evilLinkedIn/evilLinkedInVoice.js"></script>
   </body>
 </html>

@@ -36,20 +36,20 @@ class InventoryManager {
         // Add some test items to the inventory
         this.inventory.addItem(items.punch_001);
         this.inventory.addItem(items.shot_001);
-        this.inventory.addItem(items.callEx_001);
+        this.inventory.addItem(items.scream_001);
     }
 
     setupDragAndDrop() {
         // Set up drag and drop event listeners
         document.addEventListener('mouseover', (e) => {
-            const rowEl = e.target.closest('.inventory-item, .active-item');
+            const rowEl = e.target.closest('.inventory-item, .active-item, .enemy-active-item');
             if (rowEl) {
                 this.showItemInfo(rowEl.dataset.itemId, rowEl);
             }
         });
 
         document.addEventListener('mouseout', (e) => {
-            const rowEl = e.target.closest('.inventory-item, .active-item');
+            const rowEl = e.target.closest('.inventory-item, .active-item, .enemy-active-item');
             if (rowEl && !rowEl.contains(e.relatedTarget)) {
                 this.removeItemInfo();
             }
@@ -189,7 +189,10 @@ class InventoryManager {
     }
 
     showItemInfo(itemId, sourceEl = null) {
-        const item = items[itemId];
+        let item = items[itemId];
+        if (!item) {
+            item = this.findItemById(itemId);
+        }
         const itemInfoBlock = document.getElementById('item-info-block');
         const contentEl = document.getElementById('item-info-content');
         const titleEl = document.getElementById('item-info-title');
@@ -254,6 +257,17 @@ class InventoryManager {
         `;
 
         itemInfoBlock.style.display = 'block';
+    }
+
+    findItemById(itemId) {
+        if (!itemId) return null;
+        const fromInventory = this.inventory.items.find((i) => i?.id === itemId);
+        if (fromInventory) return fromInventory;
+        const fromActive = this.activeItems.items.find((i) => i?.id === itemId);
+        if (fromActive) return fromActive;
+        const fromEnemy = this.enemyActiveItems.items.find((i) => i?.id === itemId);
+        if (fromEnemy) return fromEnemy;
+        return null;
     }
 
     removeItemInfo() {

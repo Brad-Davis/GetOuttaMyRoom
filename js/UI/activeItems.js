@@ -78,24 +78,27 @@ class ActiveItems {
         throw new Error("getContainerSelector must be implemented by subclass");
     }
 
-    renderItems(containerName) {
+    renderItems(containerName, options = {}) {
         const containers = document.querySelectorAll(containerName);
-        
+        const itemClass = options.itemClass ?? 'active-item';
+        const draggable = options.draggable !== false;
+
         console.log(this.items);
         
         // Update each container only if it needs to change
         this.items.forEach((item, index) => {
             if (index < containers.length) {
                 const container = containers[index];
-                const currentItemId = container.querySelector('.active-item')?.getAttribute('data-item-id');
+                const currentItemId = container.querySelector(`.${itemClass}`)?.getAttribute('data-item-id');
                 const newItemId = item?.id;
                 
                 // Only update if the item has changed
                 if (currentItemId !== newItemId) {
                     if (item !== null) {
+                        const dragAttr = draggable ? ' draggable="true"' : '';
                         // Add new item
                         container.innerHTML = `
-                            <div class="active-item" draggable="true" data-item-id="${item.id}" data-item-type="${item.type}">
+                            <div class="${itemClass}"${dragAttr} data-item-id="${item.id}" data-item-type="${item.type}">
                                 <img src="${item.image}" alt="${item.name}" title="${item.name}">
                             </div>
                         `;
@@ -130,7 +133,7 @@ class PlayerActiveItems extends ActiveItems {
     }
 
     renderItems() {
-        super.renderItems(this.getContainerSelector());
+        super.renderItems(this.getContainerSelector(), { itemClass: 'active-item', draggable: true });
     }
 }
 
@@ -151,7 +154,7 @@ class EnemyActiveItems extends ActiveItems {
     }  
 
     renderItems() {
-        super.renderItems(this.getContainerSelector());
+        super.renderItems(this.getContainerSelector(), { itemClass: 'enemy-active-item', draggable: false });
     }
 
     getActiveItemsElement() {
@@ -170,13 +173,27 @@ class EnemyActiveItems extends ActiveItems {
     }
 
     showEnemyItems() {
-        document.getElementById('enemy-active-items').style.opacity = '1';
-        document.getElementById('enemy-active-items-title').style.opacity = '1';
+        const itemsEl = document.getElementById('enemy-active-items');
+        const titleEl = document.getElementById('enemy-active-items-title');
+        if (itemsEl) {
+            itemsEl.style.opacity = '1';
+            itemsEl.style.pointerEvents = 'auto';
+        }
+        if (titleEl) {
+            titleEl.style.opacity = '1';
+        }
     }
 
     hideEnemyItems() {
-        document.getElementById('enemy-active-items').style.opacity = '0';
-        document.getElementById('enemy-active-items-title').style.opacity = '0';
+        const itemsEl = document.getElementById('enemy-active-items');
+        const titleEl = document.getElementById('enemy-active-items-title');
+        if (itemsEl) {
+            itemsEl.style.opacity = '0';
+            itemsEl.style.pointerEvents = 'none';
+        }
+        if (titleEl) {
+            titleEl.style.opacity = '0';
+        }
         this._currentEnemy = null;
     }
 }

@@ -1,9 +1,13 @@
 import Uncle from "../people/uncle.js";
+import Cousin from "../people/cousin.js";
+import Grandma from "../people/grandma.js";
 
 class EnemySpawner {
     constructor() {
         const uncle = new Uncle(100, 1, 10, 10);
-        this.enemies = [uncle];
+        const cousin = new Cousin(1000, 1, 10, 10);
+        const grandma = new Grandma(1000, 1, 10, 10);
+        this.enemies = [cousin, uncle, grandma];
         this.curEnemy = null;
     }
 

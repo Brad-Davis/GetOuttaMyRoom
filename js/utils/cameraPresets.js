@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import interactionService from './interactionService.js';
 import audioService from './audioService.js';
 import iframeControls from '../UI/iframeControls.js';
+import dialogService from './dialogService.js';
 
 const DEFAULT_VIEW_EPSILON = 0.12;
 
@@ -56,6 +57,16 @@ export const CAMERA_PRESETS = {
     VIDEO_WALL_VIEW: {
         position: { x: -3.35, y: -0.48, z: -3.8 },
         rotation: { x: 0, y: Math.PI / 2, z: 0 }
+    },
+    /** Right (+X) wall window — looks out at the cityscape GLB. */
+    RIGHT_WINDOW_VIEW: {
+        position: { x: 3.5, y: 0.2, z: -7.35 },
+        rotation: { x: 0, y: -Math.PI / 2, z: 0 }
+    },
+    /** Grandpa poster on the back wall (`poster2` in bedroom). */
+    POSTER2_VIEW: {
+        position: { x: 3.1, y: 0.15, z: -7.7 },
+        rotation: { x: 0, y: 0, z: 0 }
     }
 };
 
@@ -67,6 +78,76 @@ class CameraService {
         this.defaultPosition = { x: 0, y: 0, z: 0 };
         this.defaultRotation = { x: 0, y: 0, z: 0 };
         this._wasAtInteriorDefault = true;
+        this.grandpaDialogShown = false;
+        /** @type {import('three').Mesh | null} */
+        this._poster2Mesh = null;
+        this._poster2DefaultPose = null;
+        this._poster2PivotUp = 1.5;
+        this._poster2Tilted = false;
+    }
+
+    /** Call once after bedroom build (see AssetManager). */
+    setPoster2Mesh(mesh) {
+        if (!mesh) return;
+        this._poster2Mesh = mesh;
+        const h = mesh.geometry?.parameters?.height ?? 3;
+        this._poster2PivotUp = h / 2;
+        this._poster2DefaultPose = {
+            position: { x: mesh.position.x, y: mesh.position.y, z: mesh.position.z },
+            rotation: { x: mesh.rotation.x, y: mesh.rotation.y, z: mesh.rotation.z },
+        };
+        this._poster2Tilted = false;
+    }
+
+    /** Tip the frame ~20° sideways, pivoting near the top edge. */
+    tiltPoster2Frame() {
+        const mesh = this._poster2Mesh;
+        const def = this._poster2DefaultPose;
+        if (!mesh || !def || this._poster2Tilted) return;
+
+        this._poster2Tilted = true;
+        const tilt = Math.PI / 9;
+        const pivotUp = this._poster2PivotUp;
+
+        gsap.killTweensOf(mesh.rotation);
+        gsap.killTweensOf(mesh.position);
+
+        gsap.to(mesh.rotation, {
+            z: def.rotation.z + tilt,
+            duration: 0.9,
+            ease: 'power2.inOut',
+        });
+        gsap.to(mesh.position, {
+            x: def.position.x + pivotUp * Math.sin(tilt),
+            y: def.position.y + pivotUp * (1 - Math.cos(tilt)),
+            duration: 0.9,
+            ease: 'power2.inOut',
+        });
+    }
+
+    resetPoster2Frame() {
+        const mesh = this._poster2Mesh;
+        const def = this._poster2DefaultPose;
+        if (!mesh || !def) return;
+
+        this._poster2Tilted = false;
+        gsap.killTweensOf(mesh.rotation);
+        gsap.killTweensOf(mesh.position);
+
+        gsap.to(mesh.rotation, {
+            x: def.rotation.x,
+            y: def.rotation.y,
+            z: def.rotation.z,
+            duration: 0.6,
+            ease: 'power2.inOut',
+        });
+        gsap.to(mesh.position, {
+            x: def.position.x,
+            y: def.position.y,
+            z: def.position.z,
+            duration: 0.6,
+            ease: 'power2.inOut',
+        });
     }
 
     initialize(camera) {
@@ -132,6 +213,55 @@ class CameraService {
         audioService.fadeOutBackgroundMusic();
     }
 
+    lookAtRightWindow() {
+        if (!this.camera) return;
+        applyCameraPreset('RIGHT_WINDOW_VIEW');
+        audioService.fadeOutBackgroundMusic();
+    }
+
+    lookAtPoster2() {
+        if (!this.camera) return;
+        if (this.currentPreset === 'POSTER2_VIEW') {
+
+            if (this.grandpaDialogShown) {
+                this.tiltPoster2Frame();
+                return;
+            }
+            this.grandpaDialogShown = true;
+            
+            dialogService.runLines([
+                {
+                    speaker: 'Inner Monologue',
+                    text: 'This is the final photo you have of your grandfather.',
+                },
+                {
+                    speaker: 'Inner Monologue',
+                    text: 'You put him into a Snapchat filter while he was in the depths of his dementia.',
+                },
+                {
+                    speaker: 'Inner Monologue',
+                    text: 'Doctors theorized this may have led to his passing.',
+                },
+                {
+                    speaker: 'Inner Monologue',
+                    text: 'Dad hung it up to teach you a lesson'
+                }
+
+            ]);
+        } else {
+            applyCameraPreset('POSTER2_VIEW');
+        }
+    }
+
+    turnCamera(direction) {
+        if (!this.camera) return;
+        gsap.to(this.camera.rotation, {
+            y: this.camera.rotation.y + direction,
+            duration: 1,
+            ease: 'power2.inOut',
+        });
+    }
+
     resetToDefault() {
         if (!this.camera) return;
         this.currentPreset = null;
@@ -191,9 +321,7 @@ class CameraService {
         const bottomEye = document.getElementById('bottomEye');
         if (topEye) topEye.style.transform = 'translate(0, -100%)';
         if (bottomEye) bottomEye.style.transform = 'translate(0, 100%)';
-        setTimeout(() => {
-            interactionService.setEyesClosed(false);
-        }, 2000);
+        interactionService.setEyesClosed(false);
         audioService.startBackgroundMusic();
     }
 
@@ -257,11 +385,18 @@ class CameraService {
 
     checkCameraPreset(presetName) {
         const preset = CAMERA_PRESETS[presetName];
-        const position = preset.position;
-        if (this.camera.position.x === position.x && this.camera.position.z === position.z && this.camera.position.y === position.y) {
-            return true;
-        }
-        return false;
+        if (!preset || !this.camera) return false;
+        const p = this.camera.position;
+        const r = this.camera.rotation;
+        const ref = preset;
+        return (
+            nearlyEqual(p.x, ref.position.x) &&
+            nearlyEqual(p.y, ref.position.y) &&
+            nearlyEqual(p.z, ref.position.z) &&
+            nearlyEqual(r.x, ref.rotation.x) &&
+            nearlyEqual(r.y, ref.rotation.y) &&
+            nearlyEqual(r.z, ref.rotation.z)
+        );
     }
 
     /**
@@ -295,6 +430,25 @@ class CameraService {
             nearlyEqual(r.y, ref.rotation.y) &&
             nearlyEqual(r.z, ref.rotation.z)
         );
+    }
+
+    isAtRightWindowView(cam = this.camera) {
+        if (!cam) return false;
+        const ref = CAMERA_PRESETS.RIGHT_WINDOW_VIEW;
+        const p = cam.position;
+        const r = cam.rotation;
+        return (
+            nearlyEqual(p.x, ref.position.x) &&
+            nearlyEqual(p.y, ref.position.y) &&
+            nearlyEqual(p.z, ref.position.z) &&
+            nearlyEqual(r.x, ref.rotation.x) &&
+            nearlyEqual(r.y, ref.rotation.y) &&
+            nearlyEqual(r.z, ref.rotation.z)
+        );
+    }
+
+    getCameraPosition() {
+        return this.camera ? { ...this.camera.position } : null;
     }
 
     /** Fade ambient BGM back in whenever the camera settles at the room's starting pose. */

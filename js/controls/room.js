@@ -23,27 +23,39 @@ class Room {
   /**
    * Load and cache a texture
    */
-  loadTexture(texturePath, options = {}) {
+  loadTexture(texturePath) {
     if (this.textureCache.has(texturePath)) {
       return this.textureCache.get(texturePath);
     }
 
     const texture = this.textureLoader.load(`../resources/images/${texturePath}`);
-    
-    // Set proper texture filtering to prevent glitching
+
     texture.minFilter = THREE.LinearMipmapLinearFilter;
     texture.magFilter = THREE.LinearFilter;
     texture.generateMipmaps = true;
-    
-    // Apply texture options
-    if (options.repeat) {
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(options.repeat.x, options.repeat.y);
-    }
-    
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+
     this.textureCache.set(texturePath, texture);
     return texture;
+  }
+
+  /**
+   * Per-mesh map so repeat/offset on one surface does not affect others sharing the same image.
+   */
+  _textureMapForSurface(texturePath, textureOptions = {}) {
+    const map = this.loadTexture(texturePath).clone();
+    map.repeat.set(1, 1);
+    map.offset.set(0, 0);
+
+    if (textureOptions.repeat) {
+      map.repeat.set(textureOptions.repeat.x, textureOptions.repeat.y);
+    }
+    if (textureOptions.offset) {
+      map.offset.set(textureOptions.offset.x, textureOptions.offset.y);
+    }
+
+    return map;
   }
 
   /**
@@ -51,34 +63,12 @@ class Room {
    */
   createSurface(type, config) {
     const geometry = new THREE.PlaneGeometry(config.width, config.height);
-    const texture = this.loadTexture(config.texture, config.textureOptions);
-    
-    // Apply texture positioning options to main texture
-    if (config.textureOptions) {
-      if (config.textureOptions.offset) {
-        // texture.offset.set(config.textureOptions.offset.x, config.textureOptions.offset.y);
-      }
-      if (config.textureOptions.repeat) {
-        texture.repeat.set(config.textureOptions.repeat.x, config.textureOptions.repeat.y);
-      }
-    }
-    
-    // Create material with optional transparency
+    const texture = this._textureMapForSurface(config.texture, config.textureOptions);
+
     const materialOptions = { map: texture };
-    
-    // Handle alpha map for custom transparency masks
+
     if (config.alphaMap) {
-      const alphaMap = this.loadTexture(config.alphaMap);
-      
-      // Apply the same texture options to alpha map
-      if (config.textureOptions) {
-        if (config.textureOptions.offset) {
-          alphaMap.offset.set(config.textureOptions.offset.x, config.textureOptions.offset.y);
-        }
-        // if (config.textureOptions.repeat) {
-        //   alphaMap.repeat.set(config.textureOptions.repeat.x, config.textureOptions.repeat.y);
-        // }
-      }
+      const alphaMap = this._textureMapForSurface(config.alphaMap, config.textureOptions);
       
       materialOptions.alphaMap = alphaMap;
       materialOptions.transparent = true;
@@ -110,24 +100,7 @@ class Room {
    */
   buildRoom(scene) {
     throw new Error('buildRoom() must be implemented by subclass');
-  }
-
-  /**
-   * Add an item to the room
-   */
-  addItem(item) {
-    this.items.push(item);
-  }
-
-  /**
-   * Remove an item from the room
-   */
-  removeItem(item) {
-    const index = this.items.indexOf(item);
-    if (index > -1) {
-      this.items.splice(index, 1);
-    }
-  }
+  } 
 
   /**
    * Get room dimensions
@@ -154,6 +127,10 @@ class Room {
     this.textureCache.forEach(texture => texture.dispose());
     this.textureCache.clear();
     this.items = [];
+  }
+
+  shake(mesh) {
+    
   }
 }
 

@@ -1,16 +1,22 @@
 import gsap from 'gsap';
 
 const DEFAULT_BGM_VOLUME = 0.7;
+const DEFAULT_CROSSFADE_DURATION = 2;
 
 class AudioService {
     constructor() {
-        this.bgmAudio = new Audio();
+        this.bgmAudio = this._createBgmElement('resources/sounds/ambient.mp3');
+        this._bgmAlt = this._createBgmElement();
         this.bgmAudio.volume = DEFAULT_BGM_VOLUME;
-        this.bgmAudio.loop = true;
-        this.bgmAudio.src = 'resources/sounds/ambient.mp3';
+        this._bgmTargetVolume = DEFAULT_BGM_VOLUME;
+        this._currentTrackUrl = this._trackKey('resources/sounds/ambient.mp3');
         this.isPlaying = false;
         /** @type {gsap.core.Tween | null} */
         this._bgmVolumeTween = null;
+        /** @type {gsap.core.Tween[]} */
+        this._bgmCrossfadeTweens = [];
+        /** Incremented to cancel in-flight crossfades when switching again. */
+        this._bgmSwitchId = 0;
         /** @type {Set<string>} */
         this._sfxPreloadedUrls = new Set();
         /** @type {Map<string, AudioBuffer>} decoded SFX for low-latency Web Audio playback */
@@ -22,13 +28,33 @@ class AudioService {
         this._installSfxUnlockOnUserGesture();
     }
 
-    /** Stable key so `./sfx.mp3` and `sfx.mp3` share one buffer. */
-    _sfxKey(url) {
+    _createBgmElement(src = '') {
+        const audio = new Audio();
+        audio.loop = true;
+        audio.volume = 0;
+        if (src) audio.src = src;
+        return audio;
+    }
+
+    _trackKey(url) {
+        if (!url) return '';
         try {
             return new URL(url, window.location.href).href;
         } catch {
             return url;
         }
+    }
+
+    _killBgmTweens() {
+        this._bgmVolumeTween?.kill();
+        this._bgmVolumeTween = null;
+        this._bgmCrossfadeTweens.forEach(tween => tween.kill());
+        this._bgmCrossfadeTweens = [];
+    }
+
+    /** Stable key so `./sfx.mp3` and `sfx.mp3` share one buffer. */
+    _sfxKey(url) {
+        return this._trackKey(url);
     }
 
     _createSfxContext() {
@@ -116,6 +142,115 @@ class AudioService {
         this._playSoundHtmlFallback(soundUrl, options);
     }
 
+    playBattleMusic() {
+        return this.switchBackgroundMusic('./resources/sounds/battle.mp3');
+    }
+
+    playDefaultBackgroundMusic() {
+        return this.switchBackgroundMusic('resources/sounds/ambient.mp3');
+    }
+
+    /**
+     * Crossfade from the current BGM track to a new one.
+     *
+     * @param {string} trackPath
+     * @param {{
+     *   duration?: number,
+     *   volume?: number,
+     *   loop?: boolean,
+     *   play?: boolean,
+     *   force?: boolean,
+     * }} [options]
+     * @returns {Promise<void>}
+     */
+    async switchBackgroundMusic(trackPath, options = {}) {
+        if (!trackPath) return;
+
+        const duration = Math.max(0, options.duration ?? DEFAULT_CROSSFADE_DURATION);
+        const volume = Math.max(0, Math.min(1, options.volume ?? this._bgmTargetVolume));
+        const loop = options.loop ?? true;
+        const shouldPlay = options.play ?? true;
+        const trackKey = this._trackKey(trackPath);
+
+        this._bgmTargetVolume = volume;
+
+        if (!options.force && trackKey === this._currentTrackUrl) {
+            this.bgmAudio.loop = loop;
+            if (shouldPlay) {
+                await this._ensureBgmPlaying(this.bgmAudio);
+                if (this.bgmAudio.volume < volume && duration > 0) {
+                    this.fadeInBackgroundMusic(volume, duration);
+                } else {
+                    this.bgmAudio.volume = volume;
+                }
+            }
+            return;
+        }
+
+        const switchId = ++this._bgmSwitchId;
+        this._killBgmTweens();
+
+        const outgoing = this.bgmAudio;
+        const incoming = this._bgmAlt;
+
+        incoming.loop = loop;
+        incoming.src = trackPath;
+        incoming.currentTime = 0;
+        incoming.volume = 0;
+
+        if (shouldPlay) {
+            await this._ensureBgmPlaying(incoming);
+        }
+
+        if (switchId !== this._bgmSwitchId) return;
+
+        this._currentTrackUrl = trackKey;
+
+        const finishSwap = () => {
+            if (switchId !== this._bgmSwitchId) return;
+            outgoing.pause();
+            outgoing.volume = 0;
+            this.bgmAudio = incoming;
+            this._bgmAlt = outgoing;
+        };
+
+        if (duration <= 0) {
+            outgoing.pause();
+            outgoing.volume = 0;
+            incoming.volume = volume;
+            finishSwap();
+            return;
+        }
+
+        const fadeOut = gsap.to(outgoing, {
+            volume: 0,
+            duration,
+            ease: 'power2.inOut',
+            onComplete: () => {
+                if (switchId !== this._bgmSwitchId) return;
+                outgoing.pause();
+            },
+        });
+        const fadeIn = gsap.to(incoming, {
+            volume,
+            duration,
+            ease: 'power2.inOut',
+            onComplete: finishSwap,
+        });
+
+        this._bgmCrossfadeTweens = [fadeOut, fadeIn];
+    }
+
+    async _ensureBgmPlaying(audio) {
+        if (!audio) return;
+        try {
+            await audio.play();
+            this.isPlaying = true;
+        } catch (error) {
+            console.warn('Audio play failed:', error);
+        }
+    }
+
     /**
      * @param {AudioBuffer} buffer
      * @param {{ volume?: number, playbackRate?: number }} options
@@ -154,28 +289,32 @@ class AudioService {
 
     startBackgroundMusic() {
         if (!this.isPlaying) {
-            this.bgmAudio.play().catch((error) => {
-                console.warn('Audio play failed:', error);
-            });
-            this.isPlaying = true;
+            this._ensureBgmPlaying(this.bgmAudio);
         }
     }
 
-    setBackgroundMusic(trackPath) {
-        if (!trackPath) return;
-        this.bgmAudio.src = trackPath;
+    /** @deprecated Prefer switchBackgroundMusic for crossfades. */
+    setBackgroundMusic(trackPath, options = {}) {
+        return this.switchBackgroundMusic(trackPath, { ...options, duration: 0 });
     }
 
     setBackgroundVolume(volume = 0.5) {
-        this.bgmAudio.volume = Math.max(0, Math.min(1, volume));
+        this._bgmTargetVolume = Math.max(0, Math.min(1, volume));
+        this.bgmAudio.volume = this._bgmTargetVolume;
     }
 
     stopSound() {
+        this._bgmSwitchId += 1;
+        this._killBgmTweens();
         this.bgmAudio.pause();
+        this._bgmAlt.pause();
+        this.bgmAudio.volume = 0;
+        this._bgmAlt.volume = 0;
         this.isPlaying = false;
     }
+
     fadeOutBackgroundMusic(duration = 1) {
-        this._bgmVolumeTween?.kill();
+        this._killBgmTweens();
         this._bgmVolumeTween = gsap.to(this.bgmAudio, {
             volume: 0,
             duration,
@@ -184,11 +323,14 @@ class AudioService {
     }
 
     fadeInBackgroundMusic(volume = DEFAULT_BGM_VOLUME, duration = 1) {
-        if (!this.isPlaying) return;
+        this._bgmTargetVolume = Math.max(0, Math.min(1, volume));
+        if (!this.isPlaying) {
+            void this._ensureBgmPlaying(this.bgmAudio);
+        }
 
-        this._bgmVolumeTween?.kill();
+        this._killBgmTweens();
         this._bgmVolumeTween = gsap.to(this.bgmAudio, {
-            volume,
+            volume: this._bgmTargetVolume,
             duration,
             ease: 'power2.inOut',
         });

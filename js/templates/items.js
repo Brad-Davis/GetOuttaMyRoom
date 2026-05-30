@@ -1,7 +1,8 @@
 import effectsService from "../utils/effectsService.js";
 import voiceRecognition from "../services/voiceRecognition.js";
 import dialogService from "../utils/dialogService.js";
-import {podcastScore, insultScore} from "../services/aiScoring.js";
+import {podcastScore, insultScore, musicTasteScore} from "../services/aiScoring.js";
+import micVolumeScoring from "../services/micVolumeScoring.js";
 import dopamineManager from "../managers/dopamineManager.js";
 
 class Item {
@@ -104,7 +105,10 @@ class Item {
     onUse(innerItemElement, containerElement, fromEnemy = false) {
         effectsService.apply(this.effects);
         console.log(this.sfx);
-        effectsService.playSfx(this.sfx);
+        // Prevent double-playing the same sound when effects.sfx already handled it.
+        if (!this.effects?.sfx && this.sfx) {
+            effectsService.playSfx(this.sfx);
+        }
         this.use(fromEnemy);
         this.isReady = false;
         innerItemElement.style.boxShadow = "";
@@ -119,6 +123,9 @@ class Item {
 
 
 let speakingActive = false;
+export function isSpeakingActive() {
+    return speakingActive;
+}
 
 const itemPool = {
     "punch": new Item(
@@ -131,7 +138,7 @@ const itemPool = {
             hurt(10, fromEnemy);
         },
         /* id */ "punch",
-        /* phyDamage */ 3,
+        /* phyDamage */ 10,
         /* emoDamage */ 0,
         /* effects */ {
             sfx: "punchLight",
@@ -151,11 +158,11 @@ const itemPool = {
             hurt(10, fromEnemy, true);
         },
         /* id */ "punch_heavy",
-        /* phyDamage */ 10,
+        /* phyDamage */ 30,
         /* emoDamage */ 0,
         /* effects */ {
             sfx: "punchHeavy",
-            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            sfxOptions: { volume: 0.05, playbackRate: 1 },
             screenShake: { intensity: 6, duration: 120 },
             flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
         },
@@ -165,34 +172,23 @@ const itemPool = {
         "Shot",
         "A shot that boosts physical damage, but lowers emotional damage.",
         /* value */ 6,
-        /* rechargeTime */ 2,
+        /* rechargeTime */ 10,
         /* image */ "./resources/images/shot.png",
         /* triggerFunction */ (fromEnemy = false) => {
-            buffPlayer(2, 0.5);
+            buffPlayer(1.25, 0.75, 1, fromEnemy);
         },
         /* id */ "shot",
         /* phyDamage */ 0,
         /* emoDamage */ 0,
         /* effects */ {
             sfx: "punchLight",
-            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            sfxOptions: { volume: 0.15, playbackRate: 1.05 },
             screenShake: { intensity: 6, duration: 120 },
             flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
         },
         /* sfx */ "shot",
         /* phyBuff */ 2,
         /* emoBuff */ 0.5
-    ),
-    "cd": new Item(
-        "CD",
-        "A shiny CD with unknown contents.",
-        /* value */ 5,
-        /* rechargeTime */ 0,
-        /* image */ "./resources/images/cd.jpg",
-        /* id */ "cd",
-        /* phyDamage */ 0,
-        /* emoDamage */ 0,
-        /* effects */ null
     ),
     "pentagram": new Item(
         "Pentagram",
@@ -219,7 +215,7 @@ const itemPool = {
         "Podcast",
         "Creating a podcast will inflict huge emotional damage to your family.",
         /* value */ 5,
-        /* rechargeTime */ 6,
+        /* rechargeTime */ 5 ,
         /* image */ "./resources/images/mic.png",
         /* triggerFunction */ async (fromEnemy = false) => {
             if (speakingActive) {
@@ -260,6 +256,8 @@ const itemPool = {
                 }]);
             } catch (error) {
                 console.warn("[Podcast item] failed:", error);
+            } finally {
+                speakingActive = false;
             }
         },
         /* phyDamage */ 0,
@@ -316,6 +314,8 @@ const itemPool = {
                 }]);
             } catch (error) {
                 console.warn("[Insult item] failed:", error);
+            } finally {
+                speakingActive = false;
             }
         },
         /* phyDamage */ 0,
@@ -334,7 +334,7 @@ const itemPool = {
         /* rechargeTime */ 2,
         /* image */ "./resources/images/chips.png",
         /* triggerFunction */ (fromEnemy = false) => {
-            heal(3, fromEnemy);
+            heal(10, fromEnemy);
         },
         /* phyDamage */ 0,
         /* emoDamage */ 0,
@@ -353,19 +353,81 @@ const itemPool = {
         /* phyDamage */ 0,
         /* emoDamage */ 0,
         /* effects */ null,
-        /* sfx */ "bite"
+        /* sfx */ "bite",
+
+        
     ),
     "scream": new Item(
         "Scream",
         "Scream at your family members to hurt them a lot and yourself a little.",
         /* value */ 5,
-        /* rechargeTime */ 2,
+        /* rechargeTime */ 10,
         /* image */ "./resources/images/scream.png",
-        /* triggerFunction */ (fromEnemy = false) => {
+        /* triggerFunction */ async (fromEnemy = false) => {
+            if (speakingActive) {
+                return;
+            }
+            speakingActive = true;
+            const lengthOfTime = 4;
+            const meterSegments = 12;
+            let lastUiUpdateMs = 0;
 
-            //IMPLEMENT SCREAM LEVEL
-            hurt(10, fromEnemy);
-            heal(10, fromEnemy);
+            await dialogService.runLines([
+                {
+                    speaker: 'Inner Monologue',
+                    text: `Scream as loud as you can for ${lengthOfTime} seconds. Louder screams deal more damage.`,
+                },
+            ]);
+
+            const renderMeter = (level = 0) => {
+                const safeLevel = Math.max(0, Math.min(1, Number(level) || 0));
+                const filled = Math.round(safeLevel * meterSegments);
+                const empty = meterSegments - filled;
+                const bar = `[${"#".repeat(filled)}${"-".repeat(empty)}]`;
+                const loudnessPercent = Math.round(safeLevel * 100);
+                return `Scream now!\nLoudness ${bar} ${loudnessPercent}%`;
+            };
+
+            dialogService.startLiveDialog({
+                speaker: 'Inner Monologue',
+                text: renderMeter(0),
+                secondsRemaining: lengthOfTime,
+            });
+
+            try {
+                const screamScore = await micVolumeScoring.measureLoudness(lengthOfTime, {
+                    onSample: (sample) => {
+                        const now = Date.now();
+                        if (now - lastUiUpdateMs < 100) return;
+                        lastUiUpdateMs = now;
+                        const secondsRemaining = Math.max(0, lengthOfTime - sample.elapsed);
+                        dialogService.updateLiveDialog({
+                            text: renderMeter(sample.level),
+                            secondsRemaining,
+                        });
+                    },
+                });
+                const familyDamage = Math.max(8, Math.round(screamScore.score * 10));
+                const selfDamage = Math.max(2, Math.round(familyDamage * 0.2));
+
+                hurt(familyDamage, fromEnemy, false);
+                hurt(selfDamage, !fromEnemy, false);
+
+                dialogService.endLiveDialog();
+                dialogService.runLines([{
+                    speaker: 'Inner Monologue',
+                    text: `Family takes ${familyDamage} damage. You take ${selfDamage} recoil damage.`,
+                }]);
+            } catch (error) {
+                console.warn("[Scream item] failed:", error);
+                dialogService.endLiveDialog();
+                dialogService.runLines([{
+                    speaker: 'Inner Monologue',
+                    text: 'Could not read your mic scream level. Check mic permissions and try again.',
+                }]);
+            } finally {
+                speakingActive = false;
+            }
         },
         /* phyDamage */ 0,
         /* emoDamage */ 0,
@@ -533,14 +595,54 @@ const itemPool = {
         /* value */ 5,
         /* rechargeTime */ 5,
         /* image */ "./resources/images/musicTaste.png",
-        /* triggerFunction */ (fromEnemy = false) => {
-            // GIVE DOPAMINE
-            //Talk about a musician that your family would be disapointed in.
+        /* triggerFunction */ async (fromEnemy = false) => {
+            if (speakingActive) {
+                return;
+            }
+            speakingActive = true;
+            const lengthOfTime = 10;
+
+            try {
+                await dialogService.runLines([
+                    {
+                        speaker: 'Disappointed Parent',
+                        text: `Talk about a musician that your family would be disappointed in. You have ${lengthOfTime} seconds. Start talking after clicking this box (your words will show up on the screen).`,
+                    },
+                ]);
+            } catch (error) {
+                console.warn("[Music Taste intro] failed:", error);
+            }
+
+            try {
+                const statement = await voiceRecognition.getAndPrintStatement(lengthOfTime);
+                const score = await musicTasteScore(statement, musician);
+                console.log("[Music Taste score]", score);
+                hurt(score.score, fromEnemy, false);
+
+                let response = `Your music taste score is ${score.score}.`;
+                if (score.score > 50) {
+                    response += ` Your family is afraid of you and your music taste.`;
+                } else {
+                    response += ` Your family is relieved. Maybe they can get you into the classics.`;
+                }
+                dialogService.runLines([{
+                    speaker: 'Inner Monologue',
+                    text: response,
+                }]);
+            } catch (error) {
+                console.warn("[Music Taste item] failed:", error);
+            } finally {
+                speakingActive = false;
+            }
         },
         /* phyDamage */ 0,
-        /* emoDamage */ 0,
-        /* effects */ null,
-        /* sfx */ "musicTaste"
+        /* emoDamage */ 3,
+        /* effects */ {
+            sfx: "punchLight",
+            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            screenShake: { intensity: 6, duration: 120 },
+            flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
+        },
     ),
     "Youtube Shorts": new Item(
         "Youtube Shorts",
@@ -556,20 +658,20 @@ const itemPool = {
         /* effects */ null,
         /* sfx */ "youtubeShorts"
     ),
-    "Sports Betting": new Item(
-        "Sports Better",
-        "Play a sport to hurt yourself and your family.",
-        /* value */ 5,
-        /* rechargeTime */ 5,
-        /* image */ "./resources/images/sportsBetter.png",
-        /* triggerFunction */ (fromEnemy = false) => {
-            // GIVE DOPAMINE
-        },  
-        /* phyDamage */ 0,
-        /* emoDamage */ 0,
-        /* effects */ null,
-        /* sfx */ "sportsBetter"
-    ),
+    // "Sports Betting": new Item(
+    //     "Sports Better",
+    //     "Play a sport to hurt yourself and your family.",
+    //     /* value */ 5,
+    //     /* rechargeTime */ 5,
+    //     /* image */ "./resources/images/sportsBetter.png",
+    //     /* triggerFunction */ (fromEnemy = false) => {
+    //         // GIVE DOPAMINE
+    //     },  
+    //     /* phyDamage */ 0,
+    //     /* emoDamage */ 0,
+    //     /* effects */ null,
+    //     /* sfx */ "sportsBetter"
+    // ),
     "Hot Take": new Item(
         "Hot Take",
         "Make a hot take to hurt yourself or your family.",
@@ -578,6 +680,7 @@ const itemPool = {
         /* image */ "./resources/images/hotTake.png",
         /* triggerFunction */ (fromEnemy = false) => {
             // GIVE DOPAMINE
+
         },
         /* phyDamage */ 0,
         /* emoDamage */ 0,
@@ -622,10 +725,12 @@ const items = {
     "pentagram_001": generateItem("pentagram", "pentagram_001"),
     "pentagram_002": generateItem("pentagram", "pentagram_002"),
     "podcast_001": generateItem("podcast", "podcast_001"),
+    "musicTaste_001": generateItem("Music Taste", "musicTaste_001"),
     "insult_001": generateItem("insult", "insult_001"),
     "chips_001": generateItem("chips", "chips_001"),
     "bite_001": generateItem("bite", "bite_001"),
     "callEx_001": generateItem("callEx", "callEx_001"),
+    "scream_001": generateItem("scream", "scream_001"),
 
 }
 

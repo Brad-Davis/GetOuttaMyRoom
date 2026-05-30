@@ -1,4 +1,7 @@
 import audioService from '../utils/audioService.js';
+import cameraService from '../utils/cameraPresets.js';
+import sceneService from '../utils/sceneService.js';
+import CameraSmokeEffect from '../utils/cameraSmokeEffect.js';
 
 const SFX_LIBRARY = {
     punchLight: './resources/sounds/punch-light.mp3',
@@ -20,6 +23,9 @@ class EffectsService {
     constructor() {
         this.root = document.getElementById('container') || document.body;
         this.flashLayer = document.getElementById('screen-fx-flash');
+        this._smokeClock = null;
+        /** @type {CameraSmokeEffect | null} */
+        this._cameraSmoke = null;
     }
 
     refreshTargets() {
@@ -32,6 +38,7 @@ class EffectsService {
         if (effects.sfx) this.playSfx(effects.sfx, effects.sfxOptions || {});
         if (effects.screenShake) this.shakeScreen(effects.screenShake);
         if (effects.flash) this.flashScreen(effects.flash);
+        if (effects.smoke) this.smokeEffect(effects.smoke);
     }
 
     playSfx(soundKeyOrPath, options = {}) {
@@ -69,9 +76,45 @@ class EffectsService {
             this.flashLayer.classList.remove('screen-flash-active');
         }, duration);
     }
+
+    /**
+     * Puff of smoke in front of the active Three.js camera (e.g. bong hit).
+     * @param {object} [options] Passed to {@link CameraSmokeEffect} on first create.
+     */
+    smokeEffect(options = {}) {
+        const camera = cameraService.getCamera();
+        const scene = sceneService.getScene();
+        if (!camera || !scene) return;
+
+        if (!this._cameraSmoke) {
+            this._cameraSmoke = new CameraSmokeEffect(camera, scene, options);
+        } else {
+            this._cameraSmoke.configure(options);
+        }
+
+        this._smokeClock = { last: performance.now() };
+        this._cameraSmoke.spawn();
+    }
+
+    /** Call from the game loop while smoke may be playing. */
+    update() {
+        if (!this._cameraSmoke?.alive) return;
+        if (!this._smokeClock) {
+            this._smokeClock = { last: performance.now() };
+        }
+        const now = performance.now();
+        const delta = Math.min((now - this._smokeClock.last) / 1000, 0.05);
+        this._smokeClock.last = now;
+        this._cameraSmoke.update(delta);
+    }
+
+    dispose() {
+        this._cameraSmoke?.dispose();
+        this._cameraSmoke = null;
+        this._smokeClock = null;
+    }
 }
 
 const effectsService = new EffectsService();
 window.effectsService = effectsService;
 export default effectsService;
-

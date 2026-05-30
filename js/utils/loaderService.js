@@ -1,9 +1,11 @@
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as THREE from 'three';
 
 class LoaderService {
   constructor() {
     this.gltfLoader = new GLTFLoader();
+    this.gltfLoader.setMeshoptDecoder(MeshoptDecoder);
     this.textureLoader = new THREE.TextureLoader();
 
   }

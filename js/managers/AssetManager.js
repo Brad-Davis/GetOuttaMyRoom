@@ -7,6 +7,7 @@ import Dresser from '../items/dresser.js';
 import Computer from '../items/computer.js';
 import CD from '../items/cd.js';
 import Bedroom from '../enviroments/bedroom.js';
+import cameraService from '../utils/cameraPresets.js';
 import OpeningMenu from '../enviroments/openingMenu.js';
 import Enemy from '../templates/enemy.js';
 import gsap from 'gsap';
@@ -92,6 +93,25 @@ class AssetManager {
             });
         }
 
+        const rightWindowMesh = bedroom.getRightWindowClickMesh();
+        if (rightWindowMesh) {
+            this.interactableObjects.set('rightWindow', {
+                object: bedroom,
+                mesh: rightWindowMesh,
+                type: 'rightWindow'
+            });
+        }
+
+        const poster2Mesh = bedroom.getPoster2Mesh();
+        if (poster2Mesh) {
+            cameraService.setPoster2Mesh(poster2Mesh);
+            this.interactableObjects.set('poster2', {
+                object: bedroom,
+                mesh: poster2Mesh,
+                type: 'poster2'
+            });
+        }
+
         // Rug
         const rug = new Rug(gameGroup);
         rug.createRug(0, -3, -1.5);
@@ -147,6 +167,7 @@ class AssetManager {
             // Dresser
             const dresser = new Dresser(gameGroup);
             await dresser.createDresser(-4, -3, -2);
+            this.animatedObjects.push(dresser);
             this.gameObjects.set('dresser', dresser);
             this.interactableObjects.set('dresser', {
                 object: dresser,

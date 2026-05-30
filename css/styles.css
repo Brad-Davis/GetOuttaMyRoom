@@ -1,12 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
 body {
     font-family: 'Press Start 2P', cursive !important; /* Set retro gaming font for the body */
-    background-color: #f4f4f4; /* Light background color for the body */
-    margin: 0; /* Remove default margin */
-    padding: 0; /* Add padding around the content */
+    background-color: #000;
     color: #333; /* Default text color */
-    overflow: hidden;
 }
 
 #backButton {
@@ -30,6 +35,57 @@ body {
 
 #backButton .inactive {
     opacity: 0.2;
+}
+
+#speakButton {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    min-width: 96px;
+    padding: 2px 12px 2px 8px;
+    font-family: "Pixelated MS Sans Serif", Arial, "MS Sans Serif", "Segoe UI", sans-serif !important;
+    font-size: 25px !important;
+    letter-spacing: normal;
+    color: black;
+    -webkit-font-smoothing: none;
+    user-select: none; 
+}
+
+#speakButton .speak-button__icon {
+  width: 36px;
+    height: 36px;
+    object-fit: contain;
+    flex-shrink: 0;
+    display: block;
+    pointer-events: none;
+}
+
+#speakButton .speak-button__label {
+    line-height: 1;
+}
+
+/* Win95 menu accelerator underline — short, thick bar under S only */
+#speakButton u {
+    text-decoration: none;
+    border-bottom: none;
+    position: relative;
+    display: inline-block;
+}
+
+#speakButton u::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0.06em;
+    transform: translateX(-60%);
+    width: 0.45em;
+    height: 2px;
+    background: #222;
 }
 
 .mission-hud {
@@ -161,16 +217,26 @@ body {
 }
 
 #container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none; /* Allow clickthrough on the container */
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
 }
-    
+
+/* Default: HUD layers pass clicks through to the canvas */
 #container > * {
-    pointer-events: auto; /* Enable pointer events for child elements */
+    pointer-events: none;
+}
+
+/* Only these controls capture clicks; everything else is visual-only */
+#backButton,
+#speakButton,
+#mission-hud:not([hidden]),
+#inventory-button {
+    pointer-events: auto;
 }
 
 
@@ -187,15 +253,31 @@ body {
     filter: brightness(0.4);
 }
 
-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw; /* Full width of the viewport */
-    height: 100vh; /* Full height of the viewport */
-    pointer-events: auto; /* Allow clickthrough on the canvas */
-    z-index: -1;
+#container > canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: auto;
+    z-index: 0;
+}
 
+/* Invisible HUD must not block the scene (parent none does not apply to children) */
+#battleMode,
+#battleMode *,
+#shop,
+#shop *,
+#pain-container,
+#pain-container *,
+#self-pain-container,
+#self-pain-container * {
+    pointer-events: none;
+}
+
+#shop.is-open,
+#shop.is-open * {
+    pointer-events: auto;
 }
 
 #playerHealthContainer {
@@ -301,20 +383,18 @@ canvas {
 
 #overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 1000;
 }
 
 #full-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -367,7 +447,7 @@ canvas {
 
 #inventory-button {
   position: absolute;
-  bottom: 50px;
+  bottom: 20px;
   right: 20px;
   width: 100px;
   height: 100px;
@@ -376,7 +456,7 @@ canvas {
 
 #active-items {
   position: absolute;
-  bottom: 50px;
+  bottom: 20px;
   left: 20px;
   width: auto;
   width: 100px;
@@ -420,7 +500,7 @@ canvas {
 }
 
 /* Drag and Drop Styles */
-.inventory-item, .active-item {
+.inventory-item, .active-item, .enemy-active-item {
   width: 100%;
   max-width: 100px;
   max-height: 100px;
@@ -436,11 +516,15 @@ canvas {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.inventory-item img, .active-item img {
+#inventory-container {
+  pointer-events: all !important;
+}
+
+.inventory-item img, .active-item img, .enemy-active-item img {
   pointer-events: none;
 }
 
-.inventory-item:hover, .active-item:hover {
+.inventory-item:hover, .active-item:hover, .enemy-active-item:hover {
   border-color: #007BFF;
   background-color: rgba(255, 255, 255, 0.2);
 }
@@ -449,14 +533,18 @@ canvas {
   cursor: grabbing;
 }
 
-.inventory-item img, .active-item img {
+.enemy-active-item {
+  cursor: help;
+}
+
+.inventory-item img, .active-item img, .enemy-active-item img {
   width: 60px;
   height: 60px;
   object-fit: contain;
   margin-bottom: 4px;
 }
 
-.inventory-item .item-name, .active-item .item-name {
+.inventory-item .item-name, .active-item .item-name, .enemy-active-item .item-name {
   font-size: 8px;
   text-align: center;
   color: white;
@@ -670,7 +758,7 @@ canvas {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 80vw;
+  width: 30vw;
   height: 40vh;
   display: flex;
   flex-direction: column;
@@ -776,13 +864,13 @@ canvas {
   margin-left: -35px;
   margin-top: 32px;
   display: none;
-  z-index: 1000;
+  z-index: 10000;
 }
 
 #computer iframe {
   width: 100%;
   height: 100%;
-  z-index: 1000;
+  z-index: 10000;
   position: absolute;
 }
 
@@ -870,24 +958,30 @@ canvas {
   height: 100%;
   width: 100%;
   position: absolute;
-  left: 0;
-  right: 0;
+  inset: 0;
+  overflow: hidden;
   pointer-events: none;
+  z-index: 1002;
 }
 
 #topEye, #bottomEye {
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 60vh;
-  width: 100vw;
-  
-  transition: all 2s ease-in;
+  width: 100%;
+  transition: transform 2s ease-in;
 }
 
 #topEye {
+  top: 0;
   transform: translate(0, -100%);
   background: linear-gradient(to bottom, rgba(0,0,0, 1) 0%, rgba(0,0,0, 1) 90%, rgba(0,0,0, 0) 100%);
 }
 
 #bottomEye {
+  /* Stacked below topEye (60vh) like the original block layout */
+  top: 60vh;
   transform: translate(0, 100%);
   background: linear-gradient(to top, rgba(0,0,0, 1) 0%, rgba(0,0,0, 1) 90%, rgba(0,0,0, 0) 100%);
 }

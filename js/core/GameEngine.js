@@ -44,6 +44,7 @@ class GameEngine {
 
             // Load game assets
             await this.loadGameAssets();
+            await this.spawnThirties();
             
             // Setup interactions
             this.setupInteractions();
@@ -73,6 +74,16 @@ class GameEngine {
         );
     }
 
+    async spawnThirties() {
+        if (this.thirties) return;
+        this.thirties = new Thirties(120, 1, 0, 0);
+        await this.thirties.renderInGame(this.sceneManager.gameGroup);
+    }
+
+    getThirties() {
+        return this.thirties;
+    }
+
     async applySkipIntroFlow() {
         // Stop constructor-started bottom-HUD blink ("Click the CD"); otherwise #overlay flashes the whole skip path.
         textOverlay.clearBottomOverlay();
@@ -98,10 +109,12 @@ class GameEngine {
         await iframeControls.hideIframe(true);
         // `endDialog()` shows bottom HUD again — keep overlay hidden during normal play.
         textOverlay.hide();
+        interactionService.enable();
     }
 
     setupInteractions() {
         console.log('Setting up interactions...');
+        this.interactionManager.setAssetManager(this.assetManager);
         this.interactionManager.setupGameInteractions(
             this.assetManager.getInteractableObjects(),
             this.sceneManager.camera,
@@ -140,13 +153,6 @@ class GameEngine {
 
                     this.interactionManager.syncOrbitToGameGroup(this.sceneManager.gameGroup);
 
-                    //ADD YOUR THIRTIES
-                    if (!this.thirties) {
-                        this.thirties = new Thirties(120, 1, 0, 0);
-                        this.thirties.renderInGame(this.sceneManager.gameGroup);
-                    }
-                    
-
                     // Second camera move into the room; onComplete must run or interactions stay disabled.
                     // applyCameraPreset('INTERIOR_START', {
                     //     duration: 1.75,
@@ -169,6 +175,7 @@ class GameEngine {
     update() {
         this.interactionManager?.frameUpdate();
         this.assetManager.updateAnimatedObjects();
+        effectsService.update();
     }
 
     render() {
@@ -182,6 +189,7 @@ class GameEngine {
         this.sceneManager?.dispose();
         this.assetManager?.dispose();
         this.interactionManager?.dispose();
+        effectsService.dispose();
     }
 
     // Getters for other systems to access managers

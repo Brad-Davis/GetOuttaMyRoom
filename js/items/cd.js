@@ -161,7 +161,7 @@ class CD {
       effectsService.playSfx('startupEffect');
       setTimeout(() => {
           iframeControls.openSite('bedroomWelcome');
-          iframeControls.zoomIn();
+          iframeControls.zoomIn(true);
           setTimeout(() => {
             cameraService.sleepInBed();
             document.getElementById('active-items').style.display = 'block';

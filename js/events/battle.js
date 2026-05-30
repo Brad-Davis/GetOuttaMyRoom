@@ -1,6 +1,8 @@
 import gameState from "../gameState.js";
 import interactionService from "../utils/interactionService.js";
 import dialogService from "../utils/dialogService.js";
+import audioService from "../utils/audioService.js";
+import { isSpeakingActive } from "../templates/items.js";
 
 class Battle {
     constructor(player, enemy) {
@@ -18,6 +20,7 @@ class Battle {
     startBattle() {
         this.battleRunning = true;
         interactionService.setBattleBlocking(true);
+        audioService.playBattleMusic();
         this.enemy.startBattle();
         this.player.startBattle();
         this.showBattleElements();
@@ -48,7 +51,9 @@ class Battle {
         this.enemy.tick();
         // this.showHealth(); THIS IS HANDLED IN PLAYER AND ENEMY
         if (this.randomDialogTime <= 0) {
-            this.enemy.sayRandomDialog();
+            if (!isSpeakingActive()) {
+                this.enemy.sayRandomDialog();
+            }
             this.randomDialogTime = 10000;
         } else {
             this.randomDialogTime -= 1;
@@ -77,6 +82,7 @@ class Battle {
     endBattle(playerWon) {
         this.battleRunning = false;
         this.hideBattleElements();
+        audioService.playDefaultBackgroundMusic();
         if (playerWon) {
             this.gameState.winBattle();
         } else {

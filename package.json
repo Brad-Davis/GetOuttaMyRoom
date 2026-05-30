@@ -9,7 +9,8 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview",
-    "dev:vercel": "npx vercel dev"
+    "dev:vercel": "npx vercel dev",
+    "compress:outside": "npx @gltf-transform/cli optimize ./resources/models/Outside.source.glb ./resources/models/Outside.glb --texture-compress webp --texture-size 512"
   },
   "dependencies": {
     "98.css": "^0.1.21",

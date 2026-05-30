@@ -5,6 +5,7 @@ import dialogService from '../utils/dialogService.js';
 import cameraService from '../utils/cameraPresets.js';
 import Movement from '../controls/movement.js';
 import backButtonManager from '../controls/backButton.js';
+import speakButtonManager from '../controls/speakButton.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 class GameInteractionManager {
@@ -13,6 +14,11 @@ class GameInteractionManager {
         this.movement = null;
         this.orbitControls = null;
         this._camera = null;
+        this.assetManager = null;
+    }
+
+    setAssetManager(assetManager) {
+        this.assetManager = assetManager;
     }
 
     initialize(renderer, camera) {
@@ -30,7 +36,8 @@ class GameInteractionManager {
         // Setup movement controls
         this.movement = new Movement(camera, null); // Will set gameGroup later
 
-        this.movement.disable();
+        // this.movement.disable();
+        this.movement.enable();
         //UNCOMMENT THIS TO ENABLE ORBIT CONTROLS
         // this.orbitControls = new OrbitControls(camera, renderer.domElement);
         // this.orbitControls.enableDamping = true;
@@ -43,8 +50,9 @@ class GameInteractionManager {
     setupGameInteractions(interactableObjects, camera, gameState) {
         console.log('Setting up game interactions...');
 
-        // Setup back button for focused interactions (module singleton)
+        // Setup HUD buttons (module singletons)
         backButtonManager.init(camera, window.gsap, this.unsetAllFocus.bind(this), gameState);
+        speakButtonManager.init(camera);
 
         // Setup individual object interactions
         interactableObjects.forEach((item, key) => {
@@ -91,6 +99,12 @@ class GameInteractionManager {
             case 'videoWall':
                 this.setupVideoWallInteraction(mesh, object);
                 break;
+            case 'rightWindow':
+                this.setupRightWindowInteraction(mesh);
+                break;
+            case 'poster2':
+                this.setupPoster2Interaction(mesh);
+                break;
             case 'bed':
                 this.setupBedInteraction(mesh, object, gameState);
                 break;
@@ -135,6 +149,24 @@ class GameInteractionManager {
         this.addCursorListener(mesh);
     }
 
+    setupRightWindowInteraction(mesh) {
+        mesh.addEventListener('click', () => {
+            if (!interactionService.checkEnabled()) return;
+
+            cameraService.lookAtRightWindow();
+        });
+        this.addCursorListener(mesh);
+    }
+
+    setupPoster2Interaction(mesh) {
+        mesh.addEventListener('click', () => {
+            if (!interactionService.checkEnabled()) return;
+
+            cameraService.lookAtPoster2();
+        });
+        this.addCursorListener(mesh);
+    }
+
 
     setupBedInteraction(mesh, _bed, gameState) {
         mesh.addEventListener('click', async () => {
@@ -164,9 +196,13 @@ class GameInteractionManager {
         mesh.addEventListener('click', () => {
             if (!interactionService.checkEnabled()) return;
 
-            console.log('Computer clicked');
             const dresser = this.getGameObject('dresser');
-            computer.lookAtComputer(camera, window.gsap, dresser?.getDresserFocus());
+            if (!dresser?.getDresserFocus()) {
+                return;
+            }
+
+            console.log('Computer clicked');
+            computer.lookAtComputer(camera, window.gsap, dresser.getDresserFocus());
         });
         this.addCursorListener(mesh);
     }
@@ -219,8 +255,7 @@ class GameInteractionManager {
 
     // Helper method to get game objects (would need reference to AssetManager)
     getGameObject(name) {
-        // This would be injected or passed in during setup
-        return null;
+        return this.assetManager?.getGameObject(name) ?? null;
     }
 
     setMovementGameGroup(gameGroup) {
@@ -266,6 +301,7 @@ class GameInteractionManager {
             this.orbitControls.update();
         }
         backButtonManager.updateVisibility();
+        speakButtonManager.updateVisibility();
         cameraService.updateInteriorBgm();
     }
 
@@ -278,6 +314,7 @@ class GameInteractionManager {
         this.threeInteractionManager = null;
         this.movement = null;
         backButtonManager.dispose();
+        speakButtonManager.dispose();
     }
 
     addCursorListener(mesh) {
@@ -287,6 +324,10 @@ class GameInteractionManager {
         mesh.addEventListener('mouseleave', () => {
             document.body.style.cursor = '';
         });
+    }
+
+    getMovement(){
+        return this.movement;
     }
 }
 

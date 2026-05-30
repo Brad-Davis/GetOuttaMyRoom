@@ -1,6 +1,7 @@
 import iframeSites from '../config/iframeSites.js';
 import cameraService from '../utils/cameraPresets.js';
 import backButtonManager from '../controls/backButton.js';
+import speakButtonManager from '../controls/speakButton.js';
 import dialogService from '../utils/dialogService.js';
 import missionService from '../utils/missionService.js';
 
@@ -61,6 +62,7 @@ class IframeControls {
         this.iframe.setAttribute('allow', DEFAULT_IFRAME_ALLOW);
         this.computer.style.display = 'none';
         this.computer.style.opacity = '0';
+        this.computer.style.pointerEvents = 'none';
         if(firstTime) {
             setTimeout(async () => {
                 cameraService.openEyes();
@@ -72,6 +74,7 @@ class IframeControls {
                         }
                     ]);
                     backButtonManager.enable();
+                    speakButtonManager.enable();
                     missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
                 }, 1000);
             }, 1000);
@@ -85,6 +88,7 @@ class IframeControls {
         }
         this.computer.style.display = 'block';
         this.computer.style.opacity = '1';
+        this.computer.style.pointerEvents = 'auto';
         const allow = options.allow ?? DEFAULT_IFRAME_ALLOW;
         this.iframe.setAttribute('allow', allow);
         if (options.externalEmbed) {
@@ -113,7 +117,7 @@ class IframeControls {
         return true;
     }
 
-    zoomIn() {
+    zoomIn(opening = false) {
         const c = this.computer;
         const iframe = this.iframe;
 
@@ -136,7 +140,12 @@ class IframeControls {
         c.style.height = `${rect.height}px`;
         c.style.margin = '0';
         c.style.transform = 'none';
-        c.style.zIndex = '1000';
+        if (opening){
+            c.style.zIndex = '10000';
+        } else {
+            c.style.zIndex = '1000';
+        }
+       
         c.style.right = 'auto';
         c.style.bottom = 'auto';
         c.style.boxSizing = 'border-box';

@@ -1,3 +1,4 @@
 node_modules/
 dist/
 .env
+resources/models/Outside.source.glb

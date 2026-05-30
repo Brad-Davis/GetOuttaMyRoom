@@ -73,6 +73,9 @@ class BackButtonManager {
   }
 
   returnToDefaultPos(camera, gsap, gameState) {
+    this.unsetFocus?.();
+    cameraService.resetPoster2Frame();
+    cameraService.currentPreset = null;
     gsap.to(camera.position, {
       x: 0,
       z: 0,

@@ -24,54 +24,58 @@ class Hallway extends Room {
         const hallway = new THREE.Group();
 
         const leftWall = this.createSurface('wall', {
-            width: 20,
+            width: 2000,
             height: 10,
             x: -2,
             y: 0,
-            z: -15,
+            z: -1005,
             rotX: 0,
             rotY: Math.PI / 2,
             rotZ: 0,
-            texture: 'wall.jpg'
+            texture: 'wall.jpg',
+            textureOptions: { repeat: { x: 10, y: 1 } }
         });
         hallway.add(leftWall);
 
         const rightWall = this.createSurface('wall', {
-            width: 20,
+            width: 2000,
             height: 10,
             x: 2,
             y: 0,
-            z: -15,
+            z: -1005,
             rotX: 0,
             rotY: -Math.PI / 2,
             rotZ: 0,
-            texture: 'wall.jpg'
+            texture: 'wall.jpg',
+            textureOptions: { repeat: { x: 10, y: 1 } }
         });
 
         const floor = this.createSurface('floor', {
-            width: 20,
+            width: 2000,
             height: 4,
             x: 0,
             y: -3,
-            z: -15,
+            z: -1005,
             texture: 'floor.jpg',
             rotX: -Math.PI / 2,
             rotY: 0,
             rotZ: Math.PI / 2,
+            textureOptions: { repeat: { x: 10, y: 1 } }
         });
         hallway.add(floor);
         hallway.add(rightWall);
 
         const ceiling = this.createSurface('ceiling', {
-            width: 20,
+            width: 2000,
             height: 4,
             x: 0,
             y: 1.5,
-            z: -15,
+            z: -1005,
             texture: 'ceiling.jpg',
             rotX: Math.PI / 2,
             rotY: 0,
             rotZ: -Math.PI / 2,
+            textureOptions: { repeat: { x: 10, y: 1 } }
         });
         hallway.add(ceiling);
 

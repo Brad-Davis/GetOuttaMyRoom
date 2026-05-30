@@ -13,6 +13,7 @@ class TextOverlay {
         this.dialogueTriangle = document.getElementById('dialogue-triangle');
         this._dialogScrollTimeout = null;
         this._dialogLineClickHandler = null;
+        this._dialogLineResolver = null;
         this.bottomText = '[Click on the CD to start]';
         this.fullText = '';
         this.isVisible = true;
@@ -139,6 +140,7 @@ class TextOverlay {
      */
     runDialogLine({ speaker = '', text = '' }) {
         return new Promise((resolve) => {
+            this._dialogLineResolver = resolve;
             this.show('dialogue');
             if (this.dialogueSpeaker) {
                 this.dialogueSpeaker.textContent = speaker;
@@ -162,6 +164,7 @@ class TextOverlay {
                 }
                 this.dialogueOverlay.removeEventListener('click', onClick);
                 this._dialogLineClickHandler = null;
+                this._dialogLineResolver = null;
                 resolve();
             };
 
@@ -203,6 +206,11 @@ class TextOverlay {
         if (this._dialogLineClickHandler) {
             this.dialogueOverlay.removeEventListener('click', this._dialogLineClickHandler);
             this._dialogLineClickHandler = null;
+        }
+        if (this._dialogLineResolver) {
+            const resolve = this._dialogLineResolver;
+            this._dialogLineResolver = null;
+            resolve();
         }
         if (this.dialogueSpeaker) {
             this.dialogueSpeaker.textContent = '';

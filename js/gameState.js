@@ -53,6 +53,7 @@ class GameState {
                 console.log("Player emotional damage is " + this.player.emoDamage);
                 damage *= this.currentEvent.enemy.emoDamage;
             }
+            damage = Math.floor(damage);
             this.player.changeHp(-damage);
             this.player.takeDamage(damage);
         } else {
@@ -62,6 +63,7 @@ class GameState {
             } else {
                 damage *= this.player.emoDamage;
             }
+            damage = Math.floor(damage);
             console.log(`Dealing ${damage} damage to ${this.currentEvent.enemy.name}`);
             this.currentEvent.enemy.changeHp(-damage);
             this.currentEvent.enemy.takeDamage(damage);
@@ -202,8 +204,6 @@ class GameState {
         //SWITCH THIS IN REAL GAME
         this.currentEvent.enemy.dieEvent()
 
-
-        window.gameEngine?.getInteractionManager?.()?.movement?.enable();
     }
 
     getCurrentEnemyItems() {
@@ -245,7 +245,13 @@ window.heal = (healAmount, fromEnemy = false) => {
     return true;
 };
 
-window.buffPlayer = (buffPhysical, buffEmotional = 1, buffHealth = 1) => {
+window.buffPlayer = (buffPhysical, buffEmotional = 1, buffHealth = 1, fromEnemy = false) => {
+    if (fromEnemy && gameState.currentEvent?.enemy) {
+        gameState.currentEvent.enemy.phyDamage *= buffPhysical;
+        gameState.currentEvent.enemy.emoDamage *= buffEmotional;
+        return true;
+    }
+
     gameState.player.buffPhysical(buffPhysical);
     gameState.player.buffEmotional(buffEmotional);
     gameState.player.buffHealth(buffHealth);
