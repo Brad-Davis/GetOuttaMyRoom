@@ -10,6 +10,7 @@ class Bong {
     this.bongMesh = null;
     this.active = false;
     this.originalPosition = null;
+    this.hitCounter = 0;
   }
 
   async createBong(x, y, z) {
@@ -46,9 +47,25 @@ class Bong {
   }
 
   onClick() {
+    this.hitCounter++;
     if (this.active) return;
     if (!cameraService.checkCameraPreset('DRESSER_VIEW')) return;
     this.active = true;
+
+    if (this.hitCounter === 1) {
+      effectsService.playSfx('bongHit1');
+    } else if (this.hitCounter === 2) {
+      effectsService.playSfx('bongHit2');
+    } else if (this.hitCounter === 3) {
+      effectsService.playSfx('bongHit3');
+      setTimeout(() => {
+        cameraService.closeEyes();
+        setTimeout(() => {
+          cameraService.openEyes();
+        }, 5000);
+      }, 5000);
+      this.hitCounter = 0;
+    }
     
     // Animate up first
     gsap.to(this.bongMesh.position, {
@@ -59,13 +76,13 @@ class Bong {
       ease: 'power2.inOut',
       onComplete: () => {
         effectsService.smokeEffect({
-          duration: 3,
-          growthPower: 4,
+          duration: 6,
+          growthPower: 8,
           numSprites: 18,
           sizeStart: 0.006,
-          sizeEnd: 1.5,
+          sizeEnd: 1.5 * this.hitCounter,
           radiusStart: 0.003,
-          radiusEnd: 1.2,
+          radiusEnd: 1.2 * this.hitCounter,
         });
         console.log('Animation up finished!');
         setTimeout(() => {
@@ -87,7 +104,7 @@ class Bong {
             duration: 1,
             ease: 'power2.inOut',
           });
-        }, 1000);
+        }, 3000);
       }
     });
 

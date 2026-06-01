@@ -150,6 +150,10 @@ class AudioService {
         return this.switchBackgroundMusic('resources/sounds/ambient.mp3');
     }
 
+    playThirtiesMusic() {
+        return this.switchBackgroundMusic('./resources/sounds/thirties.mp3');
+    }
+
     /**
      * Crossfade from the current BGM track to a new one.
      *

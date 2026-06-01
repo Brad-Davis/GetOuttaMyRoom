@@ -83,10 +83,10 @@ class SceneManager {
     }
 
     setupBackground() {
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.load('./resources/images/sky.jpg', (texture) => {
-            this.scene.background = texture;
-        });
+        // const textureLoader = new THREE.TextureLoader();
+        // textureLoader.load('./resources/images/sky.jpg', (texture) => {
+        //     this.scene.background = texture;
+        // });
     }
 
     setupEventListeners() {

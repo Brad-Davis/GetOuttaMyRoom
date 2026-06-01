@@ -1,65 +1,250 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 import iframeControls from '../UI/iframeControls.js';
-import { HALLWAY_BLACK_FACE_LOCAL_Z } from '../enviroments/hallway.js';
+import SpeedBar from '../UI/speedBar.js';
+import cameraService, { CAMERA_PRESETS } from '../utils/cameraPresets.js';
+import effectsService from '../utils/effectsService.js';
+import gameState from '../gameState.js';
+import {
+    FIRST_BATTLE_POSITION,
+    SECOND_BATTLE_POSITION,
+    scrollBattleZ,
+} from '../people/thirties.js';
+import { DADS_ROOM_WALL_LOCAL_Z } from '../enviroments/hallway.js';
 
-/** Point on the hallway black wall (room-side face) for iframe trigger — keep Y with `hallway.js`. */
-const HALLWAY_BLACK_TRIGGER_LOCAL = new THREE.Vector3(0, -0.85, HALLWAY_BLACK_FACE_LOCAL_Z);
+/** Matches `SceneManager` initial `gameGroup.position.z`. */
+const INITIAL_GAME_GROUP_Z = -5;
+/** World-Z at the bedroom / interior anchor — start of the speed-bar rail. */
+const RAIL_Z_ORIGIN = 0;
+/** Stop scroll before Dad's room wall reaches the camera (world Z, translation-only group). */
+const DADS_ROOM_SCROLL_MARGIN = 0.35;
+/** Max `gameGroup.position.z` before Dad's room wall meets the interior camera. */
+const MAX_GAME_GROUP_Z =
+    CAMERA_PRESETS.INTERIOR_START.position.z -
+    DADS_ROOM_WALL_LOCAL_Z -
+    DADS_ROOM_SCROLL_MARGIN;
+
+const FIRST_BATTLE_Z = scrollBattleZ(FIRST_BATTLE_POSITION);
+const SECOND_BATTLE_Z = scrollBattleZ(SECOND_BATTLE_POSITION);
+
+const _thirtiesWorldPos = new THREE.Vector3();
+
 const DADDY_IFRAME_URL = 'https://pleasewakeupdaddy.com/';
-/** Open iframe when camera is this close to the black wall face (world units). */
-const BLACK_BOX_OPEN_DISTANCE = 5;
-/** Stop scroll before the black mass’s front face passes the camera (world Z, translation-only group). */
-const BLACK_WALL_SCROLL_MARGIN = 0.35;
+/** Trigger Dad's room sequence when scroll reaches the wall (small epsilon for float). */
+const DADS_ROOM_TRIGGER_EPSILON = 0.05;
+const BATTLE_TRIGGER_EPSILON = 0.05;
+
+const MOVEMENT_SPEED = 0.1;
+/** Wheel deltaY equivalent needed for 100% fill (higher = harder to max out). */
+const REFERENCE_WHEEL_DELTA = 400;
+const MAX_DISPLAY_SPEED = MOVEMENT_SPEED * REFERENCE_WHEEL_DELTA;
+/** How much each scroll tick blends into the running average (lower = longer memory). */
+const SCROLL_EMA_ALPHA = 0.06;
+/** Per-frame retention when idle (higher = slower falloff; ~0.99 ≈ several seconds at 60fps). */
+const IDLE_DECAY_PER_FRAME = 0.99;
 
 export default class Movement {
     constructor(camera, gameGroup) {
       this.camera = camera;
       this.gameGroup = gameGroup;
       this.enableMovement = false;
-      this._daddyIframeOpened = false;
-  
-      // Bind the scroll event listener
+      this._dadsRoomSequenceStarted = false;
+      this._firstScrollBattleDone = false;
+      this._secondScrollBattleDone = false;
+      this._firstScrollBattleWon = false;
+      this._scrollBattleStarting = false;
+      this._averageScrollSpeed = 0;
+      this._speedBar = null;
+
       window.addEventListener('wheel', this.handleScroll.bind(this));
     }
-  
-    handleScroll(event) {
-        if(!this.enableMovement) return;
-        if (!this.gameGroup || !this.camera) return;
 
-      const movementSpeed = 0.001; // Adjust the movement speed as needed
-  
-      const deltaZ = movementSpeed * event.deltaY;
-  
+    handleScroll(event) {
+        if (!this.enableMovement) return;
+        if (!this.gameGroup || !this.camera) return;
+        if (event.deltaY <= 0) return;
+
+      const deltaZ = MOVEMENT_SPEED * event.deltaY;
+      const instantSpeed = Math.abs(deltaZ);
+
+      this._averageScrollSpeed +=
+          (instantSpeed - this._averageScrollSpeed) * SCROLL_EMA_ALPHA;
+
       this.gameGroup.position.z += deltaZ;
 
-      // Cannot scroll “through” the black mass: cap when its front face reaches the camera.
-      const maxGroupZ =
-          this.camera.position.z - HALLWAY_BLACK_FACE_LOCAL_Z - BLACK_WALL_SCROLL_MARGIN;
-      if (this.gameGroup.position.z > maxGroupZ) {
-          this.gameGroup.position.z = maxGroupZ;
+      if (this.gameGroup.position.z > MAX_GAME_GROUP_Z) {
+          this.gameGroup.position.z = MAX_GAME_GROUP_Z;
       }
-  
+
       this.camera.position.y = this.gameGroup.position.y;
+      this._updateSpeedBar();
+      this._checkScrollBattleTriggers();
+      this._maybeTriggerDadsRoomSequence();
+    }
 
-      if (this._daddyIframeOpened) return;
+    showSpeed() {
+        if (this._speedBar) {
+            this._speedBar.show();
+            this._updateSpeedBar();
+            return;
+        }
 
-      this.gameGroup.updateMatrixWorld(true);
-      const worldBox = HALLWAY_BLACK_TRIGGER_LOCAL.clone().applyMatrix4(
-          this.gameGroup.matrixWorld
-      );
-      if (worldBox.distanceTo(this.camera.position) < BLACK_BOX_OPEN_DISTANCE) {
-          this._daddyIframeOpened = true;
-          iframeControls.showIframe(DADDY_IFRAME_URL, { externalEmbed: true });
-          iframeControls.zoomIn();
-      }
+        const rootEl = document.getElementById('speed-bar-overlay');
+        if (!rootEl) return;
+
+        this._speedBar = new SpeedBar(rootEl);
+        this._speedBar.show();
+        this._updateSpeedBar();
+    }
+
+    hideSpeed() {
+        this._speedBar?.hide();
+    }
+
+    /** Smooth the average down when idle; call from the game loop. */
+    frameUpdate() {
+        if (!this.enableMovement || !this._speedBar) return;
+
+        if (this._averageScrollSpeed > 0.00001) {
+            this._averageScrollSpeed *= IDLE_DECAY_PER_FRAME;
+        } else {
+            this._averageScrollSpeed = 0;
+        }
+
+        this._updateSpeedBar();
+        this._checkScrollBattleTriggers();
+        this._maybeTriggerDadsRoomSequence();
+    }
+
+    _maybeTriggerDadsRoomSequence() {
+        if (this._dadsRoomSequenceStarted || !this.enableMovement) return;
+        if (!this.gameGroup || this.gameGroup.position.z < MAX_GAME_GROUP_Z - DADS_ROOM_TRIGGER_EPSILON) {
+            return;
+        }
+
+        this._dadsRoomSequenceStarted = true;
+        this.gameGroup.position.z = MAX_GAME_GROUP_Z;
+        this.disable();
+
+        const interactionManager = window.gameEngine?.getInteractionManager?.();
+        interactionManager?.beginProgrammaticCameraMove?.();
+
+        const dadsRoomDoor = window.gameEngine?.getAssetManager?.()?.getGameObject('dadsRoomDoor');
+
+        cameraService.runDadsRoomDoorSequence(this.gameGroup, {
+            onEnterComplete: () => {
+                effectsService.playSfx('startupEffect');
+                if (dadsRoomDoor && !dadsRoomDoor.doorOpen) {
+                    dadsRoomDoor.open();
+                }
+            },
+        });
+
+        setTimeout(() => {
+            effectsService.playSfx('startupEffect');
+            setTimeout(() => {
+                iframeControls.openIframe(DADDY_IFRAME_URL, { externalEmbed: true });
+            }, 1000);
+        }, 3100);
+    }
+
+    _getThirtiesPosition() {
+        const model = window.gameEngine?.getThirties?.()?.worldSprite;
+        if (!model) return null;
+        model.getWorldPosition(_thirtiesWorldPos);
+        return _thirtiesWorldPos.z - this.gameGroup.position.z - 5;
+    }
+
+    /** Fixed scroll extent; rail length uses {@link MAX_GAME_GROUP_Z}, not live camera Z. */
+    _getScrollRailBounds() {
+        return {
+            zMin: RAIL_Z_ORIGIN,
+            zMax: MAX_GAME_GROUP_Z - INITIAL_GAME_GROUP_Z,
+        };
+    }
+
+    _updateSpeedBar() {
+        if (!this._speedBar || !this.enableMovement) return;
+        const scrollBounds = this._getScrollRailBounds();
+        const thirtiesZ = -this._getThirtiesPosition();
+        const youZ = this.gameGroup?.position.z;
+
+        this._speedBar.update(this._averageScrollSpeed, MAX_DISPLAY_SPEED, {
+            youZ: youZ,
+            youBounds: { zMin: RAIL_Z_ORIGIN, zMax: scrollBounds.zMax },
+            thirtiesZ: thirtiesZ,
+            thirtiesBounds: scrollBounds,
+        });
+    }
+
+    _checkScrollBattleTriggers() {
+        if (this._scrollBattleStarting || !this.enableMovement || !this.gameGroup) return;
+
+        const youZ = this.gameGroup.position.z;
+
+        if (
+            !this._firstScrollBattleDone &&
+            youZ >= FIRST_BATTLE_Z - BATTLE_TRIGGER_EPSILON
+        ) {
+            this._beginScrollBattle(1, FIRST_BATTLE_Z);
+            return;
+        }
+
+        if (
+            !this._secondScrollBattleDone &&
+            this._firstScrollBattleWon &&
+            youZ >= SECOND_BATTLE_Z - BATTLE_TRIGGER_EPSILON
+        ) {
+            this._beginScrollBattle(2, SECOND_BATTLE_Z);
+        }
+    }
+
+    _beginScrollBattle(phase, stopZ) {
+        if (this._scrollBattleStarting) return;
+
+        this._scrollBattleStarting = true;
+        this.gameGroup.position.z = stopZ;
+        this.disable();
+
+        if (phase === 1) {
+            this._firstScrollBattleDone = true;
+        } else {
+            this._secondScrollBattleDone = true;
+        }
+
+        const thirties = window.gameEngine?.getThirties?.();
+        if (thirties) {
+            thirties.scrollBattlePhase = phase;
+        }
+
+        cameraService.turnCamera(Math.PI, {
+            onComplete: async () => {
+                const enemy = window.gameEngine?.getThirties?.();
+                await gameState.startThirtiesScrollBattle(enemy);
+                this._scrollBattleStarting = false;
+            },
+        });
+    }
+
+    resumeAfterScrollBattle() {
+        this._scrollBattleStarting = false;
+        if (!this._firstScrollBattleWon && this._firstScrollBattleDone) {
+            this._firstScrollBattleWon = true;
+        }
+        cameraService.turnCamera(-Math.PI, {
+            onComplete: () => {
+                this.enable();
+            },
+        });
     }
 
     enable() {
         this.enableMovement = true;
+        this.showSpeed();
     }
 
     disable() {
         this.enableMovement = false;
+        this._averageScrollSpeed = 0;
+        this.hideSpeed();
     }
-
-
-  }
+}

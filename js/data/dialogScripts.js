@@ -5,7 +5,7 @@
 export const DIALOG_SCRIPTS = {
     bed_goblin_intro: {
         lines: [
-            { sound: 'bed_goblin_intro', speaker: 'Bed Goblin', text: 'Over here, I can help you...' },
+            { sound: 'bed_goblin_intro', speaker: 'Bed Goblin', text: 'OVER HERE, I CAN HELP YOU...' },
         ],
     },
 };

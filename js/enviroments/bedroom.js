@@ -63,8 +63,14 @@ class Bedroom extends Room {
     this._rightWindowClickMesh = null;
     /** @type {THREE.Mesh | null} */
     this._poster2Mesh = null;
+    /** @type {import('./hallway.js').default | null} */
+    this.hallway = null;
 
     this.questionForPasserBy = false;
+  }
+
+  getDadsRoomDoor() {
+    return this.hallway?.getDadsRoomDoor?.() ?? null;
   }
 
   /** Invisible click target in front of the right-wall window (see AssetManager). */
@@ -409,13 +415,14 @@ class Bedroom extends Room {
     this.voidMeshes = [];
     this._poster2Mesh = null;
     
-    // Floor
+    // Floor — extend 1 unit past the back wall so it overlaps the hallway plane (no seam).
+    const floorDepth = this.config.depth + 1;
     const floor = this.createSurface('floor', {
       width: this.config.width,
-      height: this.config.depth,
+      height: floorDepth,
       x: 0,
       y: this.config.floorLevel,
-      z: 0,
+      z: -0.5,
       rotX: -Math.PI / 2,
       rotY: 0,
       rotZ: 0,
@@ -650,12 +657,18 @@ class Bedroom extends Room {
       rotX: 0,
       rotY: 0,
       rotZ: 0,
-      texture: 'wall.jpg',
+      texture: 'doorWall.png',
       alphaMap: 'dooredWall.jpg',
       textureOptions: {
-        offset: { x: 0, y: -0.1 },
-        repeat: { x: 1, y: 1 }
-      }
+        offset: { x: 0, y: 0 },
+        repeat: { x: 1, y: 0.785 }
+      },
+      // Alpha hole is ~40% of image height; door mesh is 4/8 of wall (50%). Scale V so cutout matches door.
+      alphaMapTextureOptions: {
+        offset: { x: 0, y: 0 },
+        repeat: { x: 1, y: 0.8 }
+      },
+      alphaTest: 0.5,
     });
 
     const poster1 = this.createSurface('poster', {
@@ -794,7 +807,7 @@ class Bedroom extends Room {
     // 
     scene.add(grass);
 
-    const hallway = new Hallway(scene);
+    this.hallway = new Hallway(scene);
 
     if (this.rainOptions.enabled) {
       const { center, volume, particleCount, fallSpeed, wind, opacity, color } = this.rainOptions;

@@ -173,6 +173,16 @@ class GameState {
         return this.goToBattle(door, { skipPrompt: true, openDoorOnStart: true });
     }
 
+    /** Scroll-hallway fight with the Thirties model already in the world. */
+    async startThirtiesScrollBattle(thirties) {
+        if (!thirties) return false;
+        await thirties.loadModel();
+        if (!thirties.model) return false;
+        this.currentEvent = new Battle(this.player, thirties);
+        this.currentEvent.startBattle();
+        return true;
+    }
+
     showAreYouReadyForBattle(door) {
         this.firstBattle = false;
         this.textOverlay.showWindowOverlay("You have no protection you incel, go talk to the bed goblin.", 

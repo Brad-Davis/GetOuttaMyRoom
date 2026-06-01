@@ -52,6 +52,33 @@
     <div id="dopamine-container">
       <span id="dopamine-count">0</span><img src="./resources/images/dopamine.svg" alt="Dopamine" id="dopamine-image">
     </div>
+    <div id="speed-bar-overlay" class="speed-bar-overlay" hidden aria-live="polite">
+      <div class="window speed-bar-window">
+        <div class="title-bar">
+          <div class="title-bar-text">Scroll speed</div>
+        </div>
+        <div class="window-body speed-bar-body">
+          <div class="speed-bar-track">
+            <div class="speed-bar-endpoint speed-bar-endpoint--bedroom">
+              <span class="speed-bar-endpoint-label">Your bedroom</span>
+            </div>
+            <div class="speed-bar-meter">
+              <div class="speed-bar-rail">
+                <img src="./resources/images/youIcon.png" alt="You" width="18" height="18" class="speed-bar-marker speed-bar-marker--you" hidden>
+                <img src="./resources/images/thirtiesIcon.png" alt="Your Thirties" width="18" height="18" class="speed-bar-marker speed-bar-marker--thirties" hidden>
+                <progress id="scrollSpeedBar" max="100" value="0" aria-label="Average scroll speed toward Dad's room"></progress>
+              </div>
+            </div>
+            <div class="speed-bar-endpoint speed-bar-endpoint--dad">
+              <span class="speed-bar-endpoint-label">Dad's room</span>
+            </div>
+          </div>
+        </div>
+        <div class="status-bar">
+          <p class="status-bar-field speed-bar-readout">0%</p>
+        </div>
+      </div>
+    </div>
     
     <div id="inventory-container">
       <div id="item-info-block" class="window item-info-window" style="display: none;" aria-live="polite">

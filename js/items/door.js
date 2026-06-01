@@ -27,6 +27,9 @@ class Door {
     this.doorMesh.rotation.X = Math.PI / 2;
 
     this.scene.add(this.doorMesh);
+
+    //COMMENT OUTs
+    this.open();
   }
 
   getDoorMesh() {

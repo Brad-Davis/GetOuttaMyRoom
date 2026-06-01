@@ -57,7 +57,7 @@ class AssetManager {
             height: 6,
             depth: 10,
             x: -22,
-            y: 1,
+            y: 0,
             z: -2,
             interiorTexture: 'wall.jpg',
             topTexture: 'ceiling.jpg',
@@ -75,6 +75,11 @@ class AssetManager {
         bedroom.buildRoom(gameGroup);
         this.gameObjects.set('bedroom', bedroom);
         this.animatedObjects.push(bedroom);
+
+        const dadsRoomDoor = bedroom.getDadsRoomDoor();
+        if (dadsRoomDoor) {
+            this.gameObjects.set('dadsRoomDoor', dadsRoomDoor);
+        }
 
         bedroom.voidMeshes.forEach((mesh, index) => {
             this.interactableObjects.set(`voidSurface${index + 1}`, {
@@ -124,12 +129,12 @@ class AssetManager {
         door.createDoor(0, -1, -5);
 
         const door2 = new Door(gameGroup);
-        door2.createDoor(-22,0,-6);
+        door2.createDoor(-22, -1, -6);
 
         const door2PanelGeometry = new THREE.BoxGeometry(2, 4, 0.1);
         const door2PanelMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
         const door2Panel = new THREE.Mesh(door2PanelGeometry, door2PanelMaterial);
-        door2Panel.position.set(-22, 0, -6.06);
+        door2Panel.position.set(-22, -1, -6.06);
         gameGroup.add(door2Panel);
 
         

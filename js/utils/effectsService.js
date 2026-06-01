@@ -17,6 +17,9 @@ const SFX_LIBRARY = {
     punchHeavy: './resources/sounds/punchHeavy.wav',
     bite: './resources/sounds/bite.wav',
     scream: './resources/sounds/scream.wav',
+    bongHit1: './resources/sounds/bong1.mp3',
+    bongHit2: './resources/sounds/bong2.mp3',
+    bongHit3: './resources/sounds/bong3.mp3',
 };
 
 class EffectsService {

@@ -68,10 +68,12 @@ class Room {
     const materialOptions = { map: texture };
 
     if (config.alphaMap) {
-      const alphaMap = this._textureMapForSurface(config.alphaMap, config.textureOptions);
-      
+      const alphaOpts = config.alphaMapTextureOptions ?? config.textureOptions ?? {};
+      const alphaMap = this._textureMapForSurface(config.alphaMap, alphaOpts);
+
       materialOptions.alphaMap = alphaMap;
       materialOptions.transparent = true;
+      materialOptions.alphaTest = config.alphaTest ?? 0.5;
     }
     
     // Handle PNG transparency (check if texture file is PNG)

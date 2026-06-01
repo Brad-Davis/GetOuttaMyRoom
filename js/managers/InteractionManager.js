@@ -303,6 +303,7 @@ class GameInteractionManager {
         backButtonManager.updateVisibility();
         speakButtonManager.updateVisibility();
         cameraService.updateInteriorBgm();
+        this.movement?.frameUpdate();
     }
 
     dispose() {

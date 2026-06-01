@@ -2,6 +2,7 @@ import iframeControls from '../UI/iframeControls.js';
 import interactionService from '../utils/interactionService.js';
 import cameraService from '../utils/cameraPresets.js';
 
+
 class BackButtonManager {
   constructor() {
     this.noFocus = true;
@@ -76,6 +77,10 @@ class BackButtonManager {
     this.unsetFocus?.();
     cameraService.resetPoster2Frame();
     cameraService.currentPreset = null;
+    iframeControls.hideIframe();
+    setTimeout(() => {
+      iframeControls.hideIframe();
+    }, 1000);
     gsap.to(camera.position, {
       x: 0,
       z: 0,

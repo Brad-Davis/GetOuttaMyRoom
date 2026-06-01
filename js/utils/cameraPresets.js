@@ -3,6 +3,7 @@ import interactionService from './interactionService.js';
 import audioService from './audioService.js';
 import iframeControls from '../UI/iframeControls.js';
 import dialogService from './dialogService.js';
+import { DADS_ROOM_WALL_LOCAL_Z } from '../enviroments/hallway.js';
 
 const DEFAULT_VIEW_EPSILON = 0.12;
 
@@ -253,12 +254,13 @@ class CameraService {
         }
     }
 
-    turnCamera(direction) {
+    turnCamera(direction, options = {}) {
         if (!this.camera) return;
         gsap.to(this.camera.rotation, {
             y: this.camera.rotation.y + direction,
             duration: 1,
             ease: 'power2.inOut',
+            onComplete: options.onComplete,
         });
     }
 
@@ -290,7 +292,7 @@ class CameraService {
         interactionService.setEyesClosed(true);
         const topEye = document.getElementById('topEye');
         const bottomEye = document.getElementById('bottomEye');
-        if (topEye) topEye.style.transform = 'translate(0, 0)';
+        if (topEye) topEye.style.transform = 'translate(0, -10%)';
         if (bottomEye) bottomEye.style.transform = 'translate(0, -10%)';
     }
 
@@ -335,6 +337,34 @@ class CameraService {
         if (!this.camera) return;
         const { duration = 0.5, ease = 'power2.inOut', onComplete } = options;
         applyCameraPreset('WOOSH_INTO_DOOR', { duration, ease, onComplete });
+    }
+
+    /**
+     * CD-style approach at Dad's room wall — camera targets follow `gameGroup` scroll
+     * so the door at {@link DADS_ROOM_WALL_LOCAL_Z} stays framed when the wall is reached.
+     */
+    runDadsRoomDoorSequence(gameGroup, options = {}) {
+        if (!this.camera || !gameGroup) return;
+
+        const { onEnterComplete, onWooshComplete } = options;
+        const doorZ = gameGroup.position.z + DADS_ROOM_WALL_LOCAL_Z - 10;
+        const rotation = { x: 0, y: 0, z: 0 };
+        const enterPosition = { x: 0, y: 0, z: doorZ + 5 };
+        const wooshPosition = { x: 0, y: 0, z: doorZ - 1 };
+
+        this.transitionTo(enterPosition, rotation, {
+            duration: 3,
+            ease: 'power2.inOut',
+            onComplete: onEnterComplete,
+        });
+
+        setTimeout(() => {
+            this.transitionTo(wooshPosition, rotation, {
+                duration: 0.5,
+                ease: 'power2.inOut',
+                onComplete: onWooshComplete,
+            });
+        }, 3100);
     }
 
     defaultRoomView() {

@@ -1,18 +1,35 @@
 import * as THREE from "three";
+import gsap from "gsap";
 import Enemy from "../templates/enemy.js";
 import loaderService from "../utils/loaderService.js";
 import cameraService, { CAMERA_PRESETS } from "../utils/cameraPresets.js";
 import dialogService from "../utils/dialogService.js";
+import effectsService from "../utils/effectsService.js";
+import audioService from "../utils/audioService.js";
+import { enemyActiveItems } from "../UI/activeItems.js";
 
 const THIRTIES_GLB = "./resources/models/thirties2.glb";
 /** Positive Z = behind INTERIOR_START / default camera at the origin. */
-const SPAWN_BEHIND_DEFAULT = { x: 0, y: 0, z: 11 };
+export const SPAWN_BEHIND_DEFAULT = { x: 0, y: 0, z: 11 };
 const TARGET_HEIGHT = 8;
+
+/** Milestones along scroll (`gameGroup.position.z`); stored negative, use {@link scrollBattleZ}. */
+export const FIRST_BATTLE_POSITION = -50;
+export const SECOND_BATTLE_POSITION = -150;
+
+/** `gameGroup.position.z` at which a scroll battle fires. */
+export function scrollBattleZ(milestone) {
+    return -milestone;
+}
+
+
 
 class Thirties extends Enemy {
     constructor(hp, level, exp, gold) {
         super("Thirties", [], hp, level, exp, gold, null, [0, -3, 0], null);
         this.worldSprite = null;
+        /** @type {1 | 2 | null} */
+        this.scrollBattlePhase = null;
     }
 
     _fitModelToHeight(model) {
@@ -31,7 +48,19 @@ class Thirties extends Enemy {
         this._fitModelToHeight(model);
         model.rotation.y = Math.PI;
         this.model = model;
+        
         return model;
+        
+    }
+
+    modelRun(position, duration = 10) {
+        gsap.to(this.model.position, {
+            x: position[0],
+            y: position[1],
+            z: position[2],
+            duration: duration,
+            ease: "power2.out",
+        });
     }
 
     async renderInGame(group) {
@@ -45,6 +74,8 @@ class Thirties extends Enemy {
             ref.y + SPAWN_BEHIND_DEFAULT.y,
             ref.z + SPAWN_BEHIND_DEFAULT.z
         );
+
+        // this.modelRun([ref.x + SPAWN_BEHIND_DEFAULT.x, ref.y + SPAWN_BEHIND_DEFAULT.y, ref.z + SPAWN_BEHIND_DEFAULT.z + FIRST_BATTLE_POSITION], 30);
 
         group.add(model);
         this.worldSprite = model;
@@ -69,6 +100,8 @@ class Thirties extends Enemy {
     }
 
     async runThirtiesHello() {
+        effectsService.shakeScreen(10, 0.1);
+        audioService.playThirtiesMusic();
         await setTimeout(() => {}, 1000)
         await dialogService.runLines([
             {speaker: "Your Thirties", text: "Hey I've just been here breathing down your neck."},
@@ -101,6 +134,67 @@ class Thirties extends Enemy {
     startRun() {
         cameraService.turnCamera(Math.PI);
         window.gameEngine?.getInteractionManager?.()?.movement?.enable();
+    }
+
+    /** Hallway scroll battle — keep the GLB in `gameGroup`, do not reparent to the scene root. */
+    startBattle() {
+        this.setHp(this.maxHp);
+        this.enemyHealthBar.showHealthBar();
+        enemyActiveItems.renderEnemyItems(this);
+        if (this.model) {
+            this.model.visible = true;
+            gsap.to(this.model.position, {
+                x: 0,
+                y: SPAWN_BEHIND_DEFAULT.y,
+                z: 4,
+                duration: 0.6,
+                ease: "power2.out",
+            });
+        }
+    }
+
+    dieEvent() {
+        dialogService.clearDialog();
+        const lines =
+            this.scrollBattlePhase === 2
+                ? [
+                      {
+                          speaker: "Your Thirties",
+                          text: "Fine. Keep running. I'll still be back there.",
+                      },
+                  ]
+                : [
+                      {
+                          speaker: "Your Thirties",
+                          text: "You think scrolling away from me works??",
+                      },
+                      {
+                          speaker: "Your Thirties",
+                          text: "Keep going. I'm not done.",
+                      },
+                  ];
+        dialogService.runLines(lines).then(() => {
+            this.scrollBattlePhase = null;
+            window.gameEngine?.getInteractionManager?.()?.movement?.resumeAfterScrollBattle?.();
+        });
+    }
+
+    getRandomDialog() {
+        const dialogs = [
+            [
+                { speaker: "Your Thirties", text: "I can smell your fear from back here." },
+                { speaker: "Your Thirties", text: "And your laundry." },
+            ],
+            [
+                { speaker: "Your Thirties", text: "You can't out-scroll me." },
+                { speaker: "Your Thirties", text: "I AM you." },
+            ],
+            [
+                { speaker: "Your Thirties", text: "Remember the gluten allergy?" },
+                { speaker: "Your Thirties", text: "That was a warning shot." },
+            ],
+        ];
+        return dialogs[Math.floor(Math.random() * dialogs.length)];
     }
 }
 

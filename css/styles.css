@@ -271,7 +271,9 @@ body {
 #pain-container,
 #pain-container *,
 #self-pain-container,
-#self-pain-container * {
+#self-pain-container *,
+#speed-bar-overlay,
+#speed-bar-overlay * {
     pointer-events: none;
 }
 
@@ -817,6 +819,120 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+.speed-bar-overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 9995;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* Below back button / top HUD (~20px + control height) with a small gap */
+  padding: 68px clamp(24px, 8vw, 80px) 0;
+  box-sizing: border-box;
+  pointer-events: none;
+  background: transparent;
+}
+
+.speed-bar-overlay[hidden] {
+  display: none !important;
+}
+
+.speed-bar-window {
+  width: min(78vw, 640px);
+  max-width: 100%;
+  box-shadow: 4px 4px 14px rgba(0, 0, 0, 0.42);
+  pointer-events: none;
+}
+
+.speed-bar-window .title-bar-text,
+.speed-bar-window .window-body,
+.speed-bar-window .status-bar,
+.speed-bar-window .status-bar-field,
+.speed-bar-window label,
+.speed-bar-endpoint-label {
+  font-family: Arial, "Helvetica Neue", "MS Sans Serif", "Segoe UI", sans-serif !important;
+  letter-spacing: normal;
+}
+
+.speed-bar-body {
+  padding: 6px 8px;
+  padding-top: 20px;
+}
+
+.speed-bar-track {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.speed-bar-endpoint {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  max-width: 4.5rem;
+}
+
+.speed-bar-endpoint-label {
+  font-size: 10px !important;
+  line-height: 1.15;
+  text-align: center;
+  color: #111;
+  max-width: 100%;
+}
+
+.speed-bar-meter {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-end;
+  min-width: 0;
+}
+
+.speed-bar-rail {
+  position: relative;
+  width: 100%;
+  padding-top: 20px;
+  margin-top: -20px;
+}
+
+.speed-bar-rail progress {
+  display: block;
+  width: 100%;
+  height: 14px;
+}
+
+.speed-bar-marker {
+  position: absolute;
+  top: -5px;
+  width: 25px;
+  height: 25px;
+  object-fit: contain;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 2;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.35));
+}
+
+.speed-bar-marker[hidden] {
+  display: none;
+}
+
+.speed-bar-window .status-bar {
+  min-height: 0;
+}
+
+.speed-bar-readout {
+  margin: 0;
+  font-size: 10px !important;
+  line-height: 1.15;
+  color: #111;
+}
+
 #dopamine-container {
   position: absolute;
   top: 50px;
@@ -968,7 +1084,7 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  height: 60vh;
+  height: 80vh;
   width: 100%;
   transition: transform 2s ease-in;
 }
