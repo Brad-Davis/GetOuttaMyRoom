@@ -10,7 +10,7 @@ export const DADS_ROOM_WALL_LOCAL_Z = -200;
 class Hallway extends Room {
     constructor(scene) {
         super('Hallway', {
-            width: 10,
+            width: 12,
             height: 8,
             depth: 10,
             floorLevel: -3,
@@ -88,7 +88,7 @@ class Hallway extends Room {
         hallway.add(ceiling);
 
         // Floor under side intro / door2 (x ≈ -22) into the main corridor.
-        const bridgeW = 22;
+        const bridgeW = 8;
         const bridgeD = 18;
         const bridgeFloor = this.createSurface('floor', {
             width: bridgeW,

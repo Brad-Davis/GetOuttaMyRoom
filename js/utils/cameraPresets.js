@@ -4,6 +4,9 @@ import audioService from './audioService.js';
 import iframeControls from '../UI/iframeControls.js';
 import dialogService from './dialogService.js';
 import { DADS_ROOM_WALL_LOCAL_Z } from '../enviroments/hallway.js';
+import { getKitchenCenter } from '../enviroments/kitchenLayout.js';
+
+const KITCHEN_CENTER = getKitchenCenter();
 
 const DEFAULT_VIEW_EPSILON = 0.12;
 
@@ -67,6 +70,10 @@ export const CAMERA_PRESETS = {
     /** Grandpa poster on the back wall (`poster2` in bedroom). */
     POSTER2_VIEW: {
         position: { x: 3.1, y: 0.15, z: -7.7 },
+        rotation: { x: 0, y: 0, z: 0 }
+    },
+    KITCHEN_VIEW: {
+        position: { ...KITCHEN_CENTER },
         rotation: { x: 0, y: 0, z: 0 }
     }
 };
@@ -492,6 +499,11 @@ class CameraService {
         if (atDefault) {
             audioService.fadeInBackgroundMusic();
         }
+    }
+
+    lookAtKitchen() {
+        if (!this.camera) return;
+        applyCameraPreset('KITCHEN_VIEW');
     }
 }
 

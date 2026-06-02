@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import loaderService from '../utils/loaderService.js';
 import cameraService from '../utils/cameraPresets.js';
 import effectsService from '../utils/effectsService.js';
+import audioService from '../utils/audioService.js';
+import iframeControls from '../UI/iframeControls.js';
+
 import gsap from 'gsap';
 
 class Bong {
@@ -54,13 +57,23 @@ class Bong {
 
     if (this.hitCounter === 1) {
       effectsService.playSfx('bongHit1');
+      
     } else if (this.hitCounter === 2) {
       effectsService.playSfx('bongHit2');
     } else if (this.hitCounter === 3) {
       effectsService.playSfx('bongHit3');
       setTimeout(() => {
         cameraService.closeEyes();
+        
+        audioService.playSound('bongHit3');
+      
+        
+        audioService.playThoseWhoAreRememberedMusic();
         setTimeout(() => {
+          const url = "/sites/thoseWhoAreRemebered/index.html";
+          const externalEmbed = /^https?:\/\//i.test(url);
+          iframeControls.showIframe(url, { externalEmbed });
+          iframeControls.zoomIn();
           cameraService.openEyes();
         }, 5000);
       }, 5000);

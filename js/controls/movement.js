@@ -4,6 +4,7 @@ import SpeedBar from '../UI/speedBar.js';
 import cameraService, { CAMERA_PRESETS } from '../utils/cameraPresets.js';
 import effectsService from '../utils/effectsService.js';
 import gameState from '../gameState.js';
+import dialogService from '../utils/dialogService.js';
 import {
     FIRST_BATTLE_POSITION,
     SECOND_BATTLE_POSITION,
@@ -33,7 +34,7 @@ const DADDY_IFRAME_URL = 'https://pleasewakeupdaddy.com/';
 const DADS_ROOM_TRIGGER_EPSILON = 0.05;
 const BATTLE_TRIGGER_EPSILON = 0.05;
 
-const MOVEMENT_SPEED = 0.1;
+const MOVEMENT_SPEED = 0.001;
 /** Wheel deltaY equivalent needed for 100% fill (higher = harder to max out). */
 const REFERENCE_WHEEL_DELTA = 400;
 const MAX_DISPLAY_SPEED = MOVEMENT_SPEED * REFERENCE_WHEEL_DELTA;
@@ -52,16 +53,41 @@ export default class Movement {
       this._secondScrollBattleDone = false;
       this._firstScrollBattleWon = false;
       this._scrollBattleStarting = false;
+      this._caughtByThirties = false;
       this._averageScrollSpeed = 0;
       this._speedBar = null;
+      this._lastWheelAt = 0;
 
       window.addEventListener('wheel', this.handleScroll.bind(this));
+      this.enable();
+    }
+
+    _getScrollIdleMs() {
+        if (!this._lastWheelAt) return Infinity;
+        return performance.now() - this._lastWheelAt;
+    }
+
+    _updateThirtiesChase(scrollBoost = 0) {
+        const thirties = window.gameEngine?.getThirties?.();
+        if (!thirties?.isChasing?.() || !this.gameGroup) return;
+
+        const idleMs = this._getScrollIdleMs();
+        thirties.updateChase(this.gameGroup, scrollBoost, idleMs);
+
+        if (
+            this.enableMovement &&
+            thirties.checkCaught(this.gameGroup, this._averageScrollSpeed, idleMs)
+        ) {
+            this._handleCaughtByThirties();
+        }
     }
 
     handleScroll(event) {
         if (!this.enableMovement) return;
         if (!this.gameGroup || !this.camera) return;
         if (event.deltaY <= 0) return;
+
+      this._lastWheelAt = performance.now();
 
       const deltaZ = MOVEMENT_SPEED * event.deltaY;
       const instantSpeed = Math.abs(deltaZ);
@@ -75,7 +101,7 @@ export default class Movement {
           this.gameGroup.position.z = MAX_GAME_GROUP_Z;
       }
 
-      this.camera.position.y = this.gameGroup.position.y;
+      this._updateThirtiesChase(instantSpeed);
       this._updateSpeedBar();
       this._checkScrollBattleTriggers();
       this._maybeTriggerDadsRoomSequence();
@@ -102,17 +128,38 @@ export default class Movement {
 
     /** Smooth the average down when idle; call from the game loop. */
     frameUpdate() {
-        if (!this.enableMovement || !this._speedBar) return;
-
-        if (this._averageScrollSpeed > 0.00001) {
-            this._averageScrollSpeed *= IDLE_DECAY_PER_FRAME;
-        } else {
-            this._averageScrollSpeed = 0;
+        const thirties = window.gameEngine?.getThirties?.();
+        if (thirties?.isChasing?.()) {
+            this._updateThirtiesChase(0);
         }
 
-        this._updateSpeedBar();
-        this._checkScrollBattleTriggers();
-        this._maybeTriggerDadsRoomSequence();
+        if (this.enableMovement) {
+            if (this._averageScrollSpeed > 0.00001) {
+                this._averageScrollSpeed *= IDLE_DECAY_PER_FRAME;
+            } else {
+                this._averageScrollSpeed = 0;
+            }
+
+            this._updateSpeedBar();
+            this._checkScrollBattleTriggers();
+            this._maybeTriggerDadsRoomSequence();
+        }
+    }
+
+    _handleCaughtByThirties() {
+        if (this._caughtByThirties || this._scrollBattleStarting) return;
+
+        this._caughtByThirties = true;
+        this.disable();
+
+        const thirties = window.gameEngine?.getThirties?.();
+        thirties?.stopChase?.();
+
+        cameraService.turnCamera(Math.PI, {
+            onComplete: () => {
+                gameState.kill('Your Thirties caught you.');
+            },
+        });
     }
 
     _maybeTriggerDadsRoomSequence() {
@@ -198,7 +245,7 @@ export default class Movement {
         }
     }
 
-    _beginScrollBattle(phase, stopZ) {
+    async _beginScrollBattle(phase, stopZ) {
         if (this._scrollBattleStarting) return;
 
         this._scrollBattleStarting = true;
@@ -207,18 +254,28 @@ export default class Movement {
 
         if (phase === 1) {
             this._firstScrollBattleDone = true;
+            await dialogService.runLines([
+                { speaker: "Your Thirties", text: "YOU MUST FACE ME!!!!" },
+            ]);
         } else {
+            await dialogService.runLines([
+                { speaker: "Your Thirties", text: "LATE 20S MY ASS. LOOK AT ME!!!!!" },
+            ]);
             this._secondScrollBattleDone = true;
         }
 
         const thirties = window.gameEngine?.getThirties?.();
         if (thirties) {
             thirties.scrollBattlePhase = phase;
+            thirties.startBattleChase();
         }
 
         cameraService.turnCamera(Math.PI, {
             onComplete: async () => {
                 const enemy = window.gameEngine?.getThirties?.();
+                if (enemy && this.gameGroup) {
+                    enemy.updateChase(this.gameGroup, 3);
+                }
                 await gameState.startThirtiesScrollBattle(enemy);
                 this._scrollBattleStarting = false;
             },
@@ -239,7 +296,11 @@ export default class Movement {
 
     enable() {
         this.enableMovement = true;
+        this._lastWheelAt = performance.now();
         this.showSpeed();
+        if (!this._caughtByThirties) {
+            window.gameEngine?.getThirties?.()?.startChase?.();
+        }
     }
 
     disable() {

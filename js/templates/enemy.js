@@ -215,9 +215,9 @@ class Enemy {
         this.enemyHealthBar.showHealthBar();
     }
     
-    tick() {
+    tick(timeAmount = 0.1) {
         // this.changeHp(-1)
-        enemyActiveItems.tickItems(0.1);
+        enemyActiveItems.tickItems(timeAmount);
 
         // It would be great to show enemy attacks and show them charging.
         // For now every second we should have a low chance of the enemy attacking.

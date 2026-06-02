@@ -671,6 +671,33 @@ class Bedroom extends Room {
       alphaTest: 0.5,
     });
 
+    // Back wall (with door)
+    const backWall2 = this.createSurface('wall', {
+      width: this.config.width,
+      height: this.config.height,
+      x: 0,
+      y: this.config.wallHeight,
+      z: -this.config.depth / 2 - 0.01,
+      rotX: 0,
+      rotY: Math.PI,
+      rotZ: 0,
+      texture: 'doorWall.png',
+      alphaMap: 'dooredWall.jpg',
+      textureOptions: {
+        offset: { x: 0, y: 0 },
+        repeat: { x: 1, y: 0.785 }
+      },
+      // Alpha hole is ~40% of image height; door mesh is 4/8 of wall (50%). Scale V so cutout matches door.
+      alphaMapTextureOptions: {
+        offset: { x: 0, y: 0 },
+        repeat: { x: 1, y: 0.8 }
+      },
+      alphaTest: 0.5,
+    });
+
+    surfaces.push(backWall2);
+    scene.add(backWall2);
+
     const poster1 = this.createSurface('poster', {
       width: 1.5,
       height: 1.5,

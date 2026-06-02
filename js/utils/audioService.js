@@ -142,8 +142,20 @@ class AudioService {
         this._playSoundHtmlFallback(soundUrl, options);
     }
 
-    playBattleMusic() {
+    async playBattleMusic() {
+        const { default: gameState } = await import('../gameState.js');
+        const enemy = gameState.currentEvent?.enemy;
+        if (this._isThirtiesEnemy(enemy)) {
+            return;
+        }
         return this.switchBackgroundMusic('./resources/sounds/battle.mp3');
+    }
+
+    _isThirtiesEnemy(enemy) {
+        if (!enemy) return false;
+        if (enemy.name === 'Thirties') return true;
+        const thirties = window.gameEngine?.getThirties?.();
+        return thirties != null && enemy === thirties;
     }
 
     playDefaultBackgroundMusic() {
@@ -152,6 +164,10 @@ class AudioService {
 
     playThirtiesMusic() {
         return this.switchBackgroundMusic('./resources/sounds/thirties.mp3');
+    }
+
+    playThoseWhoAreRememberedMusic() {
+        return this.switchBackgroundMusic('./resources/sounds/charli.mp3');
     }
 
     /**

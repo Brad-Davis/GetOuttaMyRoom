@@ -9,7 +9,13 @@ import missionService from '../utils/missionService.js';
 import audioService from '../utils/audioService.js';
 
 /** Production iframe (must serve the same postMessage markup as `/evilLinkedIn/index.html`). */
-const COMPUTER_IFRAME_URL = '/evilLinkedIn/index.html';
+let COMPUTER_IFRAME_URL = '/evilLinkedIn/index.html';
+
+const LINKEDIN_COMPUTER_IFRAME_URL = '/evilLinkedIn/index.html';
+
+const TINDER_COMPUTER_IFRAME_URL = '/evilTinder/index.html';
+
+const YOUTUBE_COMPUTER_IFRAME_URL = '/evilYoutube/index.html';
 
 /** After LinkedIn submit, block re-opening the computer iframe for this long (ms). */
 const COMPUTER_REOPEN_COOLDOWN_MS = 4000;
@@ -32,6 +38,7 @@ class Computer {
     this._postSubmitComputerIframeUrl = null;
     this.computerTimeUsed = false;
 
+    iframeControls.setComputerInstance(this);
     iframeControls.setComputerSubmitCallback((text) => {
       this.handleIframeSubmit(text);
     });
@@ -93,15 +100,21 @@ class Computer {
   }
 
   handleIframeSubmit(text) {
-    this._computerIframeOpensBlockedUntil = Date.now() + COMPUTER_REOPEN_COOLDOWN_MS;
-    this._postSubmitComputerIframeUrl = POST_SUBMIT_COMPUTER_IFRAME_URL;
-    this.lastIframeSubmitText = text;
-    console.log(text);
     this.unsetFocus();
-    // Call linkedInScore, then show a dialog with the result
-    this.gradeLinkedIn(text);
-    this.computerTimeUsed = true;
-
+    if (COMPUTER_IFRAME_URL === TINDER_COMPUTER_IFRAME_URL) {
+      this.unsetFocus();
+      this.computerTimeUsed = true;
+      this.firstMission();
+    } else if (COMPUTER_IFRAME_URL === LINKEDIN_COMPUTER_IFRAME_URL) {
+      this._computerIframeOpensBlockedUntil = Date.now() + COMPUTER_REOPEN_COOLDOWN_MS;
+      this._postSubmitComputerIframeUrl = POST_SUBMIT_COMPUTER_IFRAME_URL;
+      this.lastIframeSubmitText = text;
+      console.log(text);
+      this.unsetFocus();
+      // Call linkedInScore, then show a dialog with the result
+      this.gradeLinkedIn(text);
+      this.computerTimeUsed = true;
+    }
   }
 
   resetComputerTimeUsed() {
@@ -148,26 +161,30 @@ class Computer {
       ]);
       dopamineManager.giveDopamine(10);
     } finally {
-      cameraService.defaultRoomView();
-      setTimeout(async () => {
-        await dialogService.runLines([
-          {
-            speaker: 'Inner Monologue',
-            text: 'You remember that your dad has a night shift tonight at Denny\'s.',
-          }, {
-            speaker: 'Inner Monologue',
-            text: 'You have to wake him, but you hear your extended family just outside the door.',
-          }, {
-            speaker: 'Inner Monologue',
-            text: 'Best talk to the Bed Goblin to get help.',
-          }
-        ]);
-        missionService.setCurrentMission([
-          'Go wake up your dad.',
-          'Go talk to the Bed Goblin to get help.',
-        ]);
-      }, 2000);
+      await this.firstMission();
     }
+  }
+
+  async firstMission() {
+    cameraService.defaultRoomView();
+    setTimeout(async () => {
+      await dialogService.runLines([
+        {
+          speaker: 'Inner Monologue',
+          text: 'You remember that your dad has a night shift tonight at Denny\'s.',
+        }, {
+          speaker: 'Inner Monologue',
+          text: 'You have to wake him, but you hear your extended family just outside the door.',
+        }, {
+          speaker: 'Inner Monologue',
+          text: 'Best talk to the Bed Goblin to get help.',
+        }
+      ]);
+      missionService.setCurrentMission([
+        'Go wake up your dad.',
+        'Go talk to the Bed Goblin to get help.',
+      ]);
+    }, 2000);
   }
 
   getLastIframeSubmitText() {
@@ -189,6 +206,16 @@ class Computer {
 
   getComputerFocus() {
     return this.computerFocus;
+  }
+
+  setFrame(frame) {
+    if (frame === 'linkedin') {
+      COMPUTER_IFRAME_URL = LINKEDIN_COMPUTER_IFRAME_URL;
+    } else if (frame === 'tinder') {
+      COMPUTER_IFRAME_URL = TINDER_COMPUTER_IFRAME_URL;
+    } else if (frame === 'youtube') {
+      COMPUTER_IFRAME_URL = YOUTUBE_COMPUTER_IFRAME_URL;
+    }
   }
 }
 

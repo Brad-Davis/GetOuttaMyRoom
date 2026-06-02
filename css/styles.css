@@ -28,7 +28,7 @@ body {
     position: absolute;
     top: 20px;
     left: 20px;
-    transition: opacity 0.5s ease-in-out;
+    transition: opacity 0.5s ease-in-out, left 0.35s ease-out;
     opacity: 1;
     z-index: 10000;
 }
@@ -92,6 +92,7 @@ body {
     position: absolute;
     top: 72px;
     left: 20px;
+    transition: left 0.35s ease-out;
     z-index: 10000;
     max-width: min(380px, 46vw);
     padding: 10px 12px;
@@ -216,6 +217,21 @@ body {
     }
 }
 
+/* Evil Tinder sidebar image is 749×1644; iframe scales it to 100vh tall. */
+body.evil-tinder-iframe-open {
+    --evil-tinder-sidebar-width: calc(100vh * 749 / 1644);
+}
+
+body.evil-tinder-iframe-open #backButton,
+body.evil-tinder-iframe-open #mission-hud {
+    left: calc(var(--evil-tinder-sidebar-width) + 20px);
+}
+
+/* Above fullscreen #computer iframe (z-index 10000) while Evil Tinder is open */
+body.evil-tinder-iframe-open #dopamine-container {
+    z-index: 10001;
+}
+
 #container {
     position: fixed;
     inset: 0;
@@ -309,10 +325,8 @@ body {
   #playerHealth, #enemyHealth {
     background: rgba(255,255,255,0.1);
     justify-content: flex-start;
-    border-radius: 100px;
     align-items: center;
     position: relative;
-    padding: 0 5px;
     display: flex;
     height: 40px;
     width: 500px;
@@ -449,7 +463,7 @@ body {
 
 #inventory-button {
   position: absolute;
-  bottom: 20px;
+  bottom: 50px;
   right: 20px;
   width: 100px;
   height: 100px;
@@ -458,7 +472,7 @@ body {
 
 #active-items {
   position: absolute;
-  bottom: 20px;
+  bottom: 50px;
   left: 20px;
   width: auto;
   width: 100px;
@@ -935,7 +949,7 @@ body {
 
 #dopamine-container {
   position: absolute;
-  top: 50px;
+  top: 75px;
   right: 20px;
   display: flex;
   flex-direction: row;

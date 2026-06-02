@@ -4,11 +4,22 @@ import backButtonManager from '../controls/backButton.js';
 import speakButtonManager from '../controls/speakButton.js';
 import dialogService from '../utils/dialogService.js';
 import missionService from '../utils/missionService.js';
+import dopamineManager from '../managers/dopamineManager.js';
 
 export const IFRAME_WAKE_MESSAGE = 'GOMR_IFRAME_WAKE_UP';
 
 /** Computer iframe only: close iframe and deliver textarea text to `setComputerSubmitCallback`. */
 export const IFRAME_COMPUTER_SUBMIT_MESSAGE = 'GOMR_COMPUTER_SUBMIT';
+
+/** Evil Tinder iframe: player got a mutual match (award dopamine). */
+export const IFRAME_TINDER_MATCH_MESSAGE = 'GOMR_TINDER_MATCH';
+
+/** Body class: shifts #backButton / #mission-hud right of the Evil Tinder sidebar. */
+const EVIL_TINDER_HUD_BODY_CLASS = 'evil-tinder-iframe-open';
+
+function isEvilTinderUrl(url) {
+    return typeof url === 'string' && url.includes('/evilTinder/');
+}
 
 const DEFAULT_IFRAME_SANDBOX =
     'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-presentation';
@@ -30,6 +41,8 @@ function isAllowedComputerIframeOrigin(origin) {
 class IframeControls {
     constructor() {
         this._computerSubmitCallback = null;
+        /** `Computer` game object (setFrame, etc.) — not the `#computer` DOM node. */
+        this._computerInstance = null;
         this.iframe = document.getElementById('iframe');
         if (!this.iframe) {
             this.iframe = document.createElement('iframe');
@@ -52,7 +65,12 @@ class IframeControls {
         this.computer.appendChild(this.iframe);
     }
 
+    _setEvilTinderHudLayout(active) {
+        document.body.classList.toggle(EVIL_TINDER_HUD_BODY_CLASS, Boolean(active));
+    }
+
     async hideIframe(firstTime = false) {
+        this._setEvilTinderHudLayout(false);
         this.zoomOut();
         if (this.iframe.parentNode !== this.computer) {
             this.computer.appendChild(this.iframe);
@@ -67,19 +85,37 @@ class IframeControls {
             setTimeout(async () => {
                 cameraService.openEyes();
                 setTimeout(async () => {
-                    await dialogService.runLines([
-                        {
-                            speaker: 'Inner Monologue',
-                            text: 'You have no dopamine or self worth. Your body is telling you to post on LinkedIn.',
-                        }
-                    ]);
-                    backButtonManager.enable();
-                    speakButtonManager.enable();
-                    missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
+                    await this.tinderStartup();
                 }, 1000);
             }, 1000);
             
         }
+    }
+
+    async linkedInStartup() {
+        await dialogService.runLines([
+            {
+                speaker: 'Inner Monologue',
+                text: 'You have no dopamine or self worth. Your body is telling you to post on LinkedIn.',
+            }
+        ]);
+        backButtonManager.enable();
+        speakButtonManager.enable();
+        missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
+        this._computerInstance?.setFrame('linkedin');
+    }
+
+    async tinderStartup() {
+        await dialogService.runLines([
+            {
+                speaker: 'Inner Monologue',
+                text: 'You have no dopamine or sex appeal. Your body is telling you to swipe on Tinder.',
+            }
+        ]);
+        backButtonManager.enable();
+        speakButtonManager.enable();
+        missionService.setCurrentMission('Swipe on Tinder to get dopamine.');
+        this._computerInstance?.setFrame('tinder');
     }
 
     showIframe(url, options = {}) {
@@ -98,6 +134,7 @@ class IframeControls {
         }
         this.iframe.src = url;
         this.iframe.style.display = 'block';
+        this._setEvilTinderHudLayout(isEvilTinderUrl(url));
     }
 
     /** Show an iframe URL and zoom to fullscreen (same pattern as movement / CD flows). */
@@ -180,6 +217,10 @@ class IframeControls {
         this._computerSubmitCallback = typeof fn === 'function' ? fn : null;
     }
 
+    setComputerInstance(computer) {
+        this._computerInstance = computer ?? null;
+    }
+
     zoomOut() {
         if (this._zoomEndTimer) {
             clearTimeout(this._zoomEndTimer);
@@ -218,6 +259,11 @@ window.addEventListener('message', (event) => {
         void iframeControls.hideIframe(false).then(() => {
             iframeControls._computerSubmitCallback?.(text);
         });
+        return;
+    }
+
+    if (data.type === IFRAME_TINDER_MATCH_MESSAGE) {
+        dopamineManager.giveDopamine(5);
         return;
     }
 

@@ -13,6 +13,19 @@
         ]
 
     },
+    "mom": {
+        "name": "Mom",
+        "description": "Your mom. She keeps tabs on you ever since the incident.",
+        "image": "resources/images/mom.png",
+        "items": [
+            "resources/images/mom.png"
+        ],
+        "dialog": [
+            "Have you been on that computer again?",
+            "Did you eat?",
+            "I'm not mad. I'm just disappointed."
+        ]
+    },
     "thirties": {
         "name": "YOUR 30s",
         "description": "Your 30s are breathing down your neck.",

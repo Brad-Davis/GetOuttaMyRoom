@@ -16,7 +16,6 @@ class GameState {
         this.currentEvent = null;
         this.allEvents = [];
         this.textOverlay = textOverlay
-        this.firstBattle = true;
         this.enemySpawner = enemySpawner;
         this.sceneService = sceneService;
         this.store = store;
@@ -151,8 +150,8 @@ class GameState {
     }
 
     async goToBattle(door, options = {}) {
-        const { skipPrompt = false, openDoorOnStart = false } = options;
-        if (this.firstBattle && !skipPrompt) {
+        const { openDoorOnStart = false, skipNoItemsPrompt = false } = options;
+        if (!skipNoItemsPrompt && !this.inventoryManager.hasAnyItems()) {
             this.showAreYouReadyForBattle(door);
             return false;
         }
@@ -169,8 +168,7 @@ class GameState {
     }
 
     async startBattleNow(door) {
-        this.firstBattle = false;
-        return this.goToBattle(door, { skipPrompt: true, openDoorOnStart: true });
+        return this.goToBattle(door, { skipNoItemsPrompt: true, openDoorOnStart: true });
     }
 
     /** Scroll-hallway fight with the Thirties model already in the world. */
@@ -184,12 +182,16 @@ class GameState {
     }
 
     showAreYouReadyForBattle(door) {
-        this.firstBattle = false;
-        this.textOverlay.showWindowOverlay("You have no protection you incel, go talk to the bed goblin.", 
+        this.textOverlay.showWindowOverlay("You have no protection, go talk to the bed goblin.", 
             "Are you ready for battle?", 
             ["Okay I'll go talk to the bed goblin :/ ", "LET ME OUT OF HERE"], 
-            [() => this.textOverlay.closeWindowOverlay(),() => {this.goToBattle(); door.open(); this.textOverlay.closeWindowOverlay();}]);
-        
+            [
+                () => this.textOverlay.closeWindowOverlay(),
+                () => {
+                    this.textOverlay.closeWindowOverlay();
+                    void this.startBattleNow(door);
+                },
+            ]);
     }
 
     goToSacrifice() {

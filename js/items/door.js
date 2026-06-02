@@ -29,7 +29,7 @@ class Door {
     this.scene.add(this.doorMesh);
 
     //COMMENT OUTs
-    this.open();
+    // this.open();
   }
 
   getDoorMesh() {

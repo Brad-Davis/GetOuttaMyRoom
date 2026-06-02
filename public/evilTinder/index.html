@@ -16,50 +16,205 @@
       *::after {
         box-sizing: border-box;
       }
+
       html,
       body {
         margin: 0;
         height: 100%;
         overflow: hidden;
-        background: #ffffff;
+        background: #111;
         font-family: Roboto, system-ui, -apple-system, sans-serif;
       }
 
-      /*
-        The image + overlay live inside .image-frame, which always matches the same
-        on-screen rectangle as object-fit: contain for this aspect ratio.
-
-        Tune overlay position against your PSD / 1920×1080 screenshot:
-        --overlay-left / --overlay-top / --overlay-width are in *design pixels* (same coords as Photoshop).
-      */
       .stage {
-        position: fixed;
-        inset: 0;
         display: flex;
+        height: 100vh;
+        width: 100vw;
+      }
+
+      .sidebar-wrap {
+        position: relative;
+        flex-shrink: 0;
+        height: 100vh;
+      }
+
+      .left-sidebar {
+        height: 100vh;
+        width: auto;
+        object-fit: cover;
+        display: block;
+        user-select: none;
+        pointer-events: none;
+      }
+
+      .sidebar-feed {
+        position: absolute;
+        top: 38%;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow-y: auto;
+        padding: 12px 14px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      /* Dark mode custom scrollbar for sidebar-feed */
+      }
+      .sidebar-feed {
+        scrollbar-width: thin;
+        scrollbar-color: #333 #191919;
+      }
+      .sidebar-feed::-webkit-scrollbar {
+        width: 8px;
+        background: #191919;
+      }
+      .sidebar-feed::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 8px;
+      }
+      .sidebar-feed::-webkit-scrollbar-thumb:hover {
+        background: #444;
+      }
+      .sidebar-feed::-webkit-scrollbar-corner {
+        background: #191919;
+      }
+ 
+
+      .match-event {
+        opacity: 0;
+        transform: translateY(12px);
+        animation: pop-in 0.4s ease forwards;
+      }
+
+      @keyframes pop-in {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .match-banner {
+        text-align: center;
+        padding: 16px 8px 12px;
+      }
+
+      .match-banner h2 {
+        margin: 0 0 6px;
+        font-size: 22px;
+        font-weight: 800;
+        background: linear-gradient(90deg, #fd267a, #ff6036);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .match-banner.not-match h2 {
+        background: linear-gradient(90deg, #888, #555);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .match-banner.not-match .match-avatars img:last-child {
+        filter: grayscale(1);
+        opacity: 0.5;
+      }
+
+      .match-banner p {
+        margin: 0;
+        color: #aaa;
+        font-size: 13px;
+      }
+
+      .match-avatars {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 12px;
+      }
+
+      .match-avatars img {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #fff;
+      }
+
+      .msg-bubble {
+        max-width: 88%;
+        padding: 10px 14px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.4;
+        background: #333;
+        color: #fff;
+        border-bottom-left-radius: 4px;
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      .msg-bubble.visible {
+        animation: pop-in 0.35s ease forwards;
+      }
+
+      .card-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: clamp(16px, 3vh, 28px);
+        padding: clamp(12px, 2vw, 24px);
+        min-width: 0;
       }
 
-      .image-frame {
-        --design-w: 2000;
-        --design-h: 2000;
-        /* Box position/size on the design canvas (evilLinkedIn.png at native resolution) */
-        --overlay-left: 110;
-        --overlay-top: 1180;
-        --overlay-width: 1310;
-
-        container-type: inline-size;
+      .card-stack {
         position: relative;
-        aspect-ratio: var(--design-w) / var(--design-h);
-        max-width: 100vw;
-        max-height: 100vh;
-        width: min(100vw, calc(100vh * var(--design-w) / var(--design-h)));
-        height: min(100vh, calc(100vw * var(--design-h) / var(--design-w)));
+        width: min(420px, 72vw, calc(72vh * 9 / 16));
+        aspect-ratio: 9 / 16;
+        max-height: min(640px, 72vh);
       }
 
-      .frame-image {
+      .card {
         position: absolute;
         inset: 0;
+        border-radius: 16px;
+        overflow: hidden;
+        background: #222;
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.45),
+          0 2px 8px rgba(0, 0, 0, 0.3);
+        transform-origin: center bottom;
+        transition:
+          transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.35s ease;
+        will-change: transform, opacity;
+      }
+
+      .card.is-behind {
+        transform: scale(0.96) translateY(8px);
+        z-index: 1;
+        filter: brightness(0.92);
+      }
+
+      .card.is-top {
+        z-index: 2;
+      }
+
+      .card.swipe-left {
+        transform: translateX(-140%) rotate(-18deg);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .card.swipe-right {
+        transform: translateX(140%) rotate(18deg);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .card-photo {
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -68,98 +223,365 @@
         pointer-events: none;
       }
 
-      .overlay {
+      .card-info {
         position: absolute;
-        z-index: 1;
-        left: calc(var(--overlay-left) * 100% / var(--design-w));
-        top: calc(var(--overlay-top) * 100% / var(--design-h));
-        width: calc(var(--overlay-width) * 100% / var(--design-w));
-        padding: clamp(10px, 2.8cqw, 16px);
-        border-radius: 8px;
-        background: #ffffff;
-        height: 200px;
-      }
-      .overlay label {
-        display: block;
-        margin-bottom: 8px;
-        font-size: clamp(11px, 2.9cqw, 13px);
-        font-weight: 600;
-        color: #000000;
-      }
-      .overlay textarea {
-        width: 100%;
-        min-height: clamp(72px, 18cqw, 100px);
-        padding: 10px 12px;
-        font-family: inherit;
-        font-size: clamp(12px, 3cqw, 14px);
-        line-height: 1.4;
-        color: #000000;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid #000000;
-        border-radius: 6px;
-        resize: none;
-        margin-bottom: 12px;
-        box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-      }
-      .overlay textarea:focus {
-        outline: none;
-        border-color: #70b7ff;
-        box-shadow: 0 0 0 2px rgba(112, 183, 255, 0.25);
-      }
-      .overlay button {
-        padding: clamp(8px, 1.7cqw, 10px) clamp(14px, 2.7cqw, 18px);
-        font-size: clamp(12px, 3cqw, 14px);
-        font-weight: 600;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 48px 20px 20px;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
         color: #fff;
-        cursor: pointer;
-        background: #0a66c2;
-        border: none;
-        border-radius: 24px;
       }
-      .overlay button:hover {
-        background: #004182;
+
+      .card-name {
+        margin: 0;
+        font-size: clamp(22px, 4vw, 28px);
+        font-weight: 700;
+        letter-spacing: -0.02em;
       }
-      .overlay-actions {
+
+      .card-bio {
+        margin: 4px 0 0;
+        font-size: clamp(13px, 2.5vw, 15px);
+        font-weight: 400;
+        opacity: 0.9;
+      }
+
+      .card-stamp {
+        position: absolute;
+        top: 48px;
+        padding: 6px 14px;
+        border: 4px solid;
+        border-radius: 8px;
+        font-size: clamp(28px, 5vw, 36px);
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0;
+        transform: rotate(-12deg) scale(1.2);
+        transition: opacity 0.15s ease;
+        pointer-events: none;
+      }
+
+      .card-stamp.nope {
+        left: 24px;
+        color: #fd267a;
+        border-color: #fd267a;
+      }
+
+      .card-stamp.like {
+        right: 24px;
+        color: #21d07c;
+        border-color: #21d07c;
+        transform: rotate(12deg) scale(1.2);
+      }
+
+      .card.show-nope .card-stamp.nope,
+      .card.show-like .card-stamp.like {
+        opacity: 1;
+      }
+
+      .actions {
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
         align-items: center;
+        justify-content: center;
+        gap: clamp(20px, 4vw, 36px);
       }
-      .overlay button.is-listening {
-        background: #b24020;
+
+      .action-btn {
+        width: clamp(56px, 10vw, 68px);
+        height: clamp(56px, 10vw, 68px);
+        border-radius: 50%;
+        border: none;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
       }
-      .overlay button.is-listening:hover {
-        background: #8a3018;
+
+      .action-btn:hover {
+        transform: scale(1.08);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
       }
-      .overlay button[type='submit'] {
-        background: #057642;
+
+      .action-btn:active {
+        transform: scale(0.95);
       }
-      .overlay button[type='submit']:hover {
-        background: #046139;
+
+      .action-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .action-btn svg {
+        width: 52%;
+        height: 52%;
+      }
+
+      .action-btn.nope svg {
+        color: #fd267a;
+      }
+
+      .action-btn.like svg {
+        color: #21d07c;
+      }
+
+      .empty-state {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        color: #888;
+        font-size: 18px;
+        font-weight: 500;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .empty-state.visible {
+        opacity: 1;
       }
     </style>
   </head>
   <body>
     <div class="stage">
-      <div class="image-frame">
+      <div class="sidebar-wrap">
         <img
-          class="frame-image"
-          src="/resources/images/evilLinkedIn.png"
-          alt="Evil LinkedIn"
+          class="left-sidebar"
+          src="/resources/images/evilTinderSidebar.jpg"
+          alt=""
           draggable="false"
         />
+        <div class="sidebar-feed" id="sidebar-feed"></div>
+      </div>
 
-        <form class="overlay" id="evil-form" aria-label="Comment">
-          <label for="comment">Prove your self worth!!!</label>
-          <textarea id="comment" name="comment" rows="4" placeholder="Type or speak here…"></textarea>
-          <div class="overlay-actions">
-            <button type="button" id="speak-btn" aria-pressed="false">Speak</button>
-            <button type="submit">Submit</button>
-          </div>
-        </form>
+      <div class="card-area">
+        <div class="card-stack" id="card-stack">
+          <div class="empty-state" id="empty-state">No more profiles nearby</div>
+        </div>
+
+        <div class="actions">
+          <button class="action-btn nope" id="nope-btn" type="button" aria-label="Pass">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+          <button class="action-btn like" id="like-btn" type="button" aria-label="Like">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
-    <script type="module" src="/js/evilLinkedIn/evilLinkedInVoice.js"></script>
+    <script>
+      const MESSAGE_DELAY_MS = 1500;
+      const EXIT_AFTER_EMPTY_MS = 3000;
+      const TINDER_MATCH_MSG = { type: 'GOMR_TINDER_MATCH', v: 1 };
+      const COMPUTER_SUBMIT_MSG = { type: 'GOMR_COMPUTER_SUBMIT', v: 1, text: '' };
+
+      const PROFILES = [
+        {
+          id: 'sheldon',
+          name: 'Sheldon',
+          age: 34,
+          bio: 'I love adventures and trying new things',
+          image: '/resources/images/midGuy.png',
+          notMatchMessage: 'You got rejected by a mid dude. Embarrassing.',
+        },
+        {
+          id: 'aquamarina',
+          name: 'Aquamarina',
+          age: 23,
+          bio: "I could tell from a young age I'd be drawn to the ocean. Swipe left if under 5'7",
+          image: '/resources/images/hotGirl.png',
+          match: true,
+          message: 'I literally swiped right on you as a joke...',
+        },
+        { id: 'gimbogy', name: 'Gimbogy', age: 39, bio: 'Actually 49', image: '/resources/images/uglyGuy.png', match: true,
+        message: 'I will find you now', },
+        { id: 'uncle-rick', name: 'Uncle Rick', age: 58, bio: 'Grill master. Divorce pending.', image: '/resources/images/uncle/uncle1.png', match: true, message: ';) i didn\'t know you rolled like that' },
+      ];
+
+      const stackEl = document.getElementById('card-stack');
+      const emptyStateEl = document.getElementById('empty-state');
+      const nopeBtn = document.getElementById('nope-btn');
+      const likeBtn = document.getElementById('like-btn');
+      const sidebarFeed = document.getElementById('sidebar-feed');
+
+      let currentIndex = 0;
+      let isAnimating = false;
+      let exitAfterEmptyTimer = null;
+
+      function exitIframeLikeLinkedIn() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(COMPUTER_SUBMIT_MSG, '*');
+        }
+      }
+
+      function showDeckEmpty() {
+        emptyStateEl.classList.add('visible');
+        nopeBtn.disabled = true;
+        likeBtn.disabled = true;
+        if (exitAfterEmptyTimer !== null) return;
+        exitAfterEmptyTimer = setTimeout(() => {
+          exitAfterEmptyTimer = null;
+          exitIframeLikeLinkedIn();
+        }, EXIT_AFTER_EMPTY_MS);
+      }
+
+      function createCard(profile, layer) {
+        const card = document.createElement('article');
+        card.className = `card ${layer}`;
+        card.innerHTML = `
+          <img class="card-photo" src="${profile.image}" alt="${profile.name}" draggable="false" />
+          <div class="card-info">
+            <h2 class="card-name">${profile.name}, ${profile.age}</h2>
+            <p class="card-bio">${profile.bio}</p>
+          </div>
+          <span class="card-stamp nope" aria-hidden="true">Nope</span>
+          <span class="card-stamp like" aria-hidden="true">Like</span>
+        `;
+        return card;
+      }
+
+      function notifyParentMatch() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage(TINDER_MATCH_MSG, '*');
+        }
+      }
+
+      function showLikeResult(profile, isMatch) {
+        if (isMatch) {
+          notifyParentMatch();
+        }
+
+        const event = document.createElement('div');
+        event.className = 'match-event';
+        event.innerHTML = `
+          <div class="match-banner${isMatch ? '' : ' not-match'}">
+            <h2>${isMatch ? "It's a Match!" : "It's NOT a Match"}</h2>
+            <p>${isMatch ? `You and ${profile.name} liked each other` : `${profile.name} didn't like you back`}</p>
+            <div class="match-avatars">
+              <img src="/resources/images/youIcon.png" alt="You" />
+              <img src="${profile.image}" alt="${profile.name}" />
+            </div>
+          </div>
+          <div class="msg-bubble"></div>
+        `;
+
+        sidebarFeed.appendChild(event);
+        sidebarFeed.scrollTop = sidebarFeed.scrollHeight;
+
+        const bubble = event.querySelector('.msg-bubble');
+        const followUpText = isMatch
+          ? profile.message
+          : profile.notMatchMessage || 'Better luck next time.';
+
+        setTimeout(() => {
+          bubble.textContent = followUpText;
+          bubble.classList.add('visible');
+          sidebarFeed.scrollTop = sidebarFeed.scrollHeight;
+        }, MESSAGE_DELAY_MS);
+      }
+
+      function handleLike(profile) {
+        showLikeResult(profile, !!profile.match);
+      }
+
+      function renderStack() {
+        stackEl.querySelectorAll('.card').forEach(card => card.remove());
+
+        const remaining = PROFILES.slice(currentIndex);
+        if (remaining.length === 0) {
+          showDeckEmpty();
+          return;
+        }
+
+        emptyStateEl.classList.remove('visible');
+        nopeBtn.disabled = false;
+        likeBtn.disabled = false;
+
+        const behind = remaining[1];
+        const top = remaining[0];
+
+        if (behind) {
+          stackEl.insertBefore(createCard(behind, 'is-behind'), emptyStateEl);
+        }
+        stackEl.insertBefore(createCard(top, 'is-top'), emptyStateEl);
+      }
+
+      function swipe(direction) {
+        if (isAnimating || currentIndex >= PROFILES.length) return;
+
+        const topCard = stackEl.querySelector('.card.is-top');
+        if (!topCard) return;
+
+        isAnimating = true;
+        nopeBtn.disabled = true;
+        likeBtn.disabled = true;
+
+        const likedProfile = direction === 'right' ? PROFILES[currentIndex] : null;
+
+        topCard.classList.add(direction === 'left' ? 'show-nope' : 'show-like');
+        topCard.classList.remove('is-top');
+        topCard.classList.add(direction === 'left' ? 'swipe-left' : 'swipe-right');
+
+        const behindCard = stackEl.querySelector('.card.is-behind');
+        if (behindCard) {
+          behindCard.classList.remove('is-behind');
+          behindCard.classList.add('is-top');
+        }
+
+        topCard.addEventListener(
+          'transitionend',
+          () => {
+            topCard.remove();
+            if (likedProfile) handleLike(likedProfile);
+            currentIndex += 1;
+
+            const nextProfile = PROFILES[currentIndex + 1];
+            if (nextProfile) {
+              const newBehind = createCard(nextProfile, 'is-behind');
+              const topCardNow = stackEl.querySelector('.card.is-top');
+              if (topCardNow) {
+                stackEl.insertBefore(newBehind, topCardNow);
+              } else {
+                stackEl.insertBefore(newBehind, emptyStateEl);
+              }
+            }
+
+            if (currentIndex >= PROFILES.length) {
+              showDeckEmpty();
+            } else {
+              nopeBtn.disabled = false;
+              likeBtn.disabled = false;
+            }
+
+            isAnimating = false;
+          },
+          { once: true }
+        );
+      }
+
+      nopeBtn.addEventListener('click', () => swipe('left'));
+      likeBtn.addEventListener('click', () => swipe('right'));
+
+      renderStack();
+    </script>
   </body>
 </html>

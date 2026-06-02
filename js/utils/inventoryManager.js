@@ -34,9 +34,9 @@ class InventoryManager {
 
     addTestItems() {
         // Add some test items to the inventory
-        this.inventory.addItem(items.punch_001);
-        this.inventory.addItem(items.shot_001);
-        this.inventory.addItem(items.scream_001);
+        // this.inventory.addItem(items.punch_001);
+        // this.inventory.addItem(items.shot_001);
+        // this.inventory.addItem(items.scream_001);
     }
 
     setupDragAndDrop() {
@@ -346,6 +346,12 @@ class InventoryManager {
     showAllElements() {
         this.inventoryContainer.style.opacity = 1;
         this.inventoryContainer.style.pointerEvents = "auto";
+    }
+
+    hasAnyItems() {
+        const inInventory = this.inventory.items.length > 0;
+        const equipped = this.activeItems.items.some((item) => item !== null);
+        return inInventory || equipped;
     }
 
     resetAllActiveItems() {

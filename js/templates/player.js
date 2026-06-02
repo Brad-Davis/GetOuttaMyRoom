@@ -5,7 +5,7 @@ class Player {
     constructor(name) {
         this.name = name;
         this.items = [];
-        this.maxHp = 1000;
+        this.maxHp = 500;
         this.currentHp = this.maxHp;
         this.level = 1;
         this.basePhyDamage = 1;
@@ -61,9 +61,9 @@ class Player {
         this.setHp(this.maxHp);
     }
 
-    tick() {
+    tick(timeAmount = 0.1) {
         // this.changeHp(-1);
-        playerActiveItems.tickItems(0.1);
+        playerActiveItems.tickItems(timeAmount);
     }
 
     buffPhysical(amount) {
