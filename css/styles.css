@@ -505,7 +505,7 @@ body.evil-tinder-iframe-open #dopamine-container {
 #inventory-items {
   position: absolute;
   right: 0px;
-  width: 300px;
+  width: 200px;
   height: 200px;
   top: 50%;
   transform: translate(100%, -50%);

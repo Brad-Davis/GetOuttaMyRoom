@@ -6,7 +6,7 @@ import interactionService from '../utils/interactionService.js';
 import cameraService, { applyCameraPreset } from '../utils/cameraPresets.js';
 import textOverlay from '../UI/textOverlay.js';
 import Thirties from '../people/thirties.js';
-import { CD_STARTS_BATTLE_IMMEDIATELY, SKIP_INTRO } from '../config/gameFlow.js';
+import { CD_STARTS_BATTLE_IMMEDIATELY, SKIP_INTRO, SPAWN_IN_KITCHEN } from '../config/gameFlow.js';
 import effectsService from '../utils/effectsService.js';
 import iframeControls from '../UI/iframeControls.js';
 import { dismissInitialLoadingScreen } from '../utils/initialLoadingScreen.js';
@@ -52,7 +52,9 @@ class GameEngine {
             // Start game loop
             this.startGameLoop();
 
-            if (SKIP_INTRO) {
+            if (SPAWN_IN_KITCHEN) {
+                await this.applyKitchenDevSpawn();
+            } else if (SKIP_INTRO) {
                 await this.applySkipIntroFlow();
             }
             
@@ -82,6 +84,25 @@ class GameEngine {
 
     getThirties() {
         return this.thirties;
+    }
+
+    async applyKitchenDevSpawn() {
+        textOverlay.clearBottomOverlay();
+        textOverlay.hide();
+        dismissInitialLoadingScreen();
+
+        const gameGroup = this.sceneManager.gameGroup;
+        // Keep default scroll origin (-5); offset camera to match (see getKitchenCameraPosition).
+        cameraService.lookAtKitchen({ duration: 0 });
+        this.interactionManager.syncOrbitToGameGroup(gameGroup);
+
+        const activeItems = document.getElementById('active-items');
+        const invBtn = document.getElementById('inventory-button');
+        if (activeItems) activeItems.style.display = 'block';
+        if (invBtn) invBtn.style.display = 'block';
+
+        interactionService.enable();
+        this.interactionManager.movement.enable(true);
     }
 
     async applySkipIntroFlow() {

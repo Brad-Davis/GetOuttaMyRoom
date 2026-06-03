@@ -37,6 +37,8 @@ class Computer {
     /** After first LinkedIn submit, computer uses this URL (external embed). */
     this._postSubmitComputerIframeUrl = null;
     this.computerTimeUsed = false;
+    /** Pending `lookAtComputer` iframe open — cleared on back / unsetFocus. */
+    this._openIframeTimer = null;
 
     iframeControls.setComputerInstance(this);
     iframeControls.setComputerSubmitCallback((text) => {
@@ -73,7 +75,7 @@ class Computer {
   }
 
   async lookAtComputer() {
-    if (cameraService.getCameraPreset() !== cameraService.getCameraPreset('DRESSER_VIEW')) {
+    if (!cameraService.checkCameraPreset('DRESSER_VIEW')) {
       return;
     }
     if (Date.now() < this._computerIframeOpensBlockedUntil) {
@@ -90,7 +92,13 @@ class Computer {
     }
     this.computerFocus = true;
     cameraService.lookAtComputer();
-    setTimeout(() => {
+    if (this._openIframeTimer) {
+      clearTimeout(this._openIframeTimer);
+    }
+    this._openIframeTimer = setTimeout(() => {
+      this._openIframeTimer = null;
+      if (!this.computerFocus) return;
+
       const url = COMPUTER_IFRAME_URL;
 
       // Check if the URL starts with "http://" or "https://", indicating it's an external embed
@@ -99,12 +107,13 @@ class Computer {
     }, 1000);
   }
 
-  handleIframeSubmit(text) {
+  async handleIframeSubmit(text) {
     this.unsetFocus();
     if (COMPUTER_IFRAME_URL === TINDER_COMPUTER_IFRAME_URL) {
       this.unsetFocus();
       this.computerTimeUsed = true;
-      this.firstMission();
+      console.log("first mission");
+      await this.firstMission();
     } else if (COMPUTER_IFRAME_URL === LINKEDIN_COMPUTER_IFRAME_URL) {
       this._computerIframeOpensBlockedUntil = Date.now() + COMPUTER_REOPEN_COOLDOWN_MS;
       this._postSubmitComputerIframeUrl = POST_SUBMIT_COMPUTER_IFRAME_URL;
@@ -119,6 +128,14 @@ class Computer {
 
   resetComputerTimeUsed() {
     this.computerTimeUsed = false;
+  }
+
+  /** LinkedIn session again after a battle — clears cooldown and post-submit redirect. */
+  resetForNewLinkedInSession() {
+    this.setFrame('linkedin');
+    this.resetComputerTimeUsed();
+    this._computerIframeOpensBlockedUntil = 0;
+    this._postSubmitComputerIframeUrl = null;
   }
 
   async gradeLinkedIn(text) {
@@ -161,7 +178,7 @@ class Computer {
       ]);
       dopamineManager.giveDopamine(10);
     } finally {
-      await this.firstMission();
+      
     }
   }
 
@@ -202,6 +219,11 @@ class Computer {
 
   unsetFocus() {
     this.computerFocus = false;
+    if (this._openIframeTimer) {
+      clearTimeout(this._openIframeTimer);
+      this._openIframeTimer = null;
+    }
+    this.hideIframe();
   }
 
   getComputerFocus() {

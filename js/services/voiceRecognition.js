@@ -179,10 +179,17 @@ class VoiceRecognitionService {
                 this.stopListening();
             }
 
-            const durationMs = Math.max(0, Number(lengthOfTime) || 0) * 1000;
-            const durationSeconds = Math.max(0, Number(lengthOfTime) || 0);
+            const hasTimer = lengthOfTime !== false;
+            const durationSeconds = hasTimer
+                ? Math.max(0, Number(lengthOfTime) || 0)
+                : null;
+            const durationMs =
+                durationSeconds != null ? durationSeconds * 1000 : null;
+
             let resolved = false;
             let countdownInterval = null;
+            let timeoutId = null;
+            let clickHandler = null;
 
             if (textOverlay?.dialogueSpeaker) {
                 textOverlay.dialogueSpeaker.textContent = 'YOU';
@@ -190,7 +197,14 @@ class VoiceRecognitionService {
             textOverlay.show('dialogue');
             textOverlay.dialogueBox.textContent = '';
             textOverlay.showFlashingTriangle();
-            textOverlay.showDialogueCountdown(durationSeconds);
+            if (hasTimer && durationSeconds > 0) {
+                textOverlay.showDialogueCountdown(durationSeconds);
+            } else {
+                textOverlay.hideDialogueCountdown();
+            }
+            if (textOverlay.dialogueOverlay) {
+                textOverlay.dialogueOverlay.style.pointerEvents = 'auto';
+            }
 
             const clearCountdown = () => {
                 if (countdownInterval != null) {
@@ -200,15 +214,30 @@ class VoiceRecognitionService {
                 textOverlay.hideDialogueCountdown();
             };
 
+            const cleanup = () => {
+                clearCountdown();
+                if (timeoutId != null) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+                if (clickHandler && textOverlay.dialogueOverlay) {
+                    textOverlay.dialogueOverlay.removeEventListener('click', clickHandler);
+                    clickHandler = null;
+                }
+            };
+
             const finish = () => {
                 if (resolved) return;
                 resolved = true;
-                clearCountdown();
+                cleanup();
+                this.stopListening();
                 const finalText = this.getTranscript().combined;
                 textOverlay.dialogueBox.textContent = finalText || '...';
                 textOverlay.showSolidTriangle();
                 resolve(finalText);
             };
+
+            clickHandler = () => finish();
 
             try {
                 this.startListening({
@@ -224,7 +253,7 @@ class VoiceRecognitionService {
                     onError: event => {
                         if (resolved) return;
                         resolved = true;
-                        clearCountdown();
+                        cleanup();
                         textOverlay.dialogueBox.textContent = '';
                         textOverlay.showSolidTriangle();
                         reject(
@@ -235,21 +264,23 @@ class VoiceRecognitionService {
                     },
                 });
             } catch (error) {
+                cleanup();
                 reject(error);
                 return;
             }
 
-            const startTimeMs = Date.now();
-            countdownInterval = setInterval(() => {
-                const elapsedSeconds = (Date.now() - startTimeMs) / 1000;
-                const secondsLeft = Math.max(0, durationSeconds - elapsedSeconds);
-                textOverlay.showDialogueCountdown(secondsLeft);
-            }, 250);
+            textOverlay.dialogueOverlay?.addEventListener('click', clickHandler);
 
-            setTimeout(() => {
-                this.stopListening();
-                finish();
-            }, durationMs);
+            if (hasTimer && durationMs > 0) {
+                const startTimeMs = Date.now();
+                countdownInterval = setInterval(() => {
+                    const elapsedSeconds = (Date.now() - startTimeMs) / 1000;
+                    const secondsLeft = Math.max(0, durationSeconds - elapsedSeconds);
+                    textOverlay.showDialogueCountdown(secondsLeft);
+                }, 250);
+
+                timeoutId = setTimeout(finish, durationMs);
+            }
         });
     }
 }

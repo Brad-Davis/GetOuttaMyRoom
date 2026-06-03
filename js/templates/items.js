@@ -102,6 +102,24 @@ class Item {
 
     
 
+    resetChargeVisual(containerElement) {
+        if (!containerElement) {
+            return;
+        }
+        const innerItemElement = containerElement.querySelector('.active-item, .enemy-active-item');
+        if (innerItemElement) {
+            innerItemElement.style.boxShadow = "";
+            innerItemElement.style.cursor = "";
+            innerItemElement.classList.remove('active-item-ready');
+            innerItemElement.style.transform = "scale(1)";
+            if (innerItemElement._readyClickHandler) {
+                innerItemElement.removeEventListener('click', innerItemElement._readyClickHandler);
+                innerItemElement._readyClickHandler = null;
+            }
+        }
+        containerElement.style.background = `rgba(192, 192, 192, 0)`;
+    }
+
     onUse(innerItemElement, containerElement, fromEnemy = false) {
         effectsService.apply(this.effects);
         console.log(this.sfx);
@@ -111,13 +129,7 @@ class Item {
         }
         this.use(fromEnemy);
         this.isReady = false;
-        innerItemElement.style.boxShadow = "";
-        innerItemElement.classList.remove('active-item-ready');
-        innerItemElement.style.transform = "scale(1)";
-        // Reset container background
-        if (containerElement) {
-            containerElement.style.background = `rgba(192, 192, 192, 0)`;
-        }
+        this.resetChargeVisual(containerElement);
     }
 }
 
@@ -687,6 +699,26 @@ const itemPool = {
         /* effects */ null,
         /* sfx */ "hotTake"
     ),
+    "Existential Dread": new Item(
+        "Existential Dread",
+        "Feel existential dread for big damage",
+        /* value */ 5,
+        /* rechargeTime */ 7,
+        /* image */ "./resources/images/skull.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            hurt(50, fromEnemy, false);
+        },
+        /* id */ "existentialDread",
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ {
+            sfx: "punchLight",
+            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            screenShake: { intensity: 300, duration: 1500 },
+            flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
+        },
+        /* sfx */ "existentialDread"
+    ),
 }
 
 function generateItem(itemName, id = null) {
@@ -731,7 +763,7 @@ const items = {
     "bite_001": generateItem("bite", "bite_001"),
     "callEx_001": generateItem("callEx", "callEx_001"),
     "scream_001": generateItem("scream", "scream_001"),
-
+    "existentialDread_001": generateItem("Existential Dread", "existentialDread_001"),
 }
 
 export default items;

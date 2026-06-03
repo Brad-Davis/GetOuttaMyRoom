@@ -200,22 +200,16 @@ class GameState {
 
     async winBattle() {
         this.inventoryManager.resetAllActiveItems();
-        // this.textOverlay.showWindowOverlay("You have won the battle!", 
-        //     "e won the battle!!! What item do you want to take?", 
-        //     this.getCurrentEnemyItems().map(item => {
-        //         if (item) {
-        //             return `
-        //             <div class="item-container">    
-        //             <img src="${item.image}" alt="${item.name}"></img>
-        //             <p>${item.name}</p>
-        //             </div>
-        //             `;
-        //         }
-        //     }),
-        //     [() => this.textOverlay.closeWindowOverlay(),() => {this.goToBattle(); this.textOverlay.closeWindowOverlay();}]);
-        //SWITCH THIS IN REAL GAME
-        this.currentEvent.enemy.dieEvent()
-
+        const defeatedEnemy = this.currentEvent.enemy;
+        const shouldCloseDoor =
+            defeatedEnemy.name === 'Uncle' || defeatedEnemy.name === 'Cousin';
+        if (shouldCloseDoor) {
+            const door = window.gameEngine?.getAssetManager?.()?.getGameObject('door');
+            if (door?.doorOpen) {
+                door.close();
+            }
+        }
+        defeatedEnemy.dieEvent();
     }
 
     getCurrentEnemyItems() {
@@ -242,6 +236,25 @@ class GameState {
                 window.location.reload();
             },
         ]);
+    }
+
+    /** LinkedIn computer, mission, and bed goblin shop — before the second battle stretch. */
+    prepareForSecondBattle() {
+        const computer = window.gameEngine?.getAssetManager?.()?.getGameObject('computer');
+        computer?.resetForNewLinkedInSession?.();
+
+        missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
+
+        this.store.refillShopWithLinkedInItems();
+    }
+
+    prepareForThirdBattle() {
+        const computer = window.gameEngine?.getAssetManager?.()?.getGameObject('computer');
+        computer?.resetForNewYoutubeSession?.();
+
+        missionService.setCurrentMission('Post on Youtube to get dopamine.');
+
+        this.store.refillShopWithYoutubeItems();
     }
 }
 

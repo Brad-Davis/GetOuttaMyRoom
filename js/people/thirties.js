@@ -7,6 +7,8 @@ import dialogService from "../utils/dialogService.js";
 import effectsService from "../utils/effectsService.js";
 import audioService from "../utils/audioService.js";
 import { enemyActiveItems } from "../UI/activeItems.js";
+import backButtonManager from "../controls/backButton.js";
+import items from "../templates/items.js";
 
 const THIRTIES_GLB = "./resources/models/thirties2.glb";
 /** Positive Z = behind INTERIOR_START / default camera at the origin. */
@@ -50,7 +52,7 @@ const _thirtiesWorldPos = new THREE.Vector3();
 
 class Thirties extends Enemy {
     constructor(hp, level, exp, gold) {
-        super("Thirties", [], hp, level, exp, gold, null, [0, -3, 0], null);
+        super("Thirties", [items["existentialDread_001"]], hp, level, exp, gold, null, [0, -3, 0], null);
         this.worldSprite = null;
         /** @type {1 | 2 | null} */
         this.scrollBattlePhase = null;
@@ -295,6 +297,7 @@ class Thirties extends Enemy {
     async runThirtiesHello() {
         effectsService.shakeScreen(10, 0.1);
         audioService.playThirtiesMusic();
+        backButtonManager.disablePermanently();
         await setTimeout(async () => {
             await dialogService.runLines([
                 {speaker: "Your Thirties", text: "Hey I've just been here breathing down your neck."},
@@ -308,12 +311,13 @@ class Thirties extends Enemy {
                         {speaker: "Your Thirties", text: "........"},
                         {speaker: "Your Thirties", text: "You don't like it????"},
                     ])
-                    this.shakeWithAnger();
+                    this.shakeWithAnger(1000, 0.5);
                     await dialogService.runLines([
                         {speaker: "Your Thirties", text: "BUT I MADE IT FOR YOU!!!"},
                         {speaker: "Your Thirties", text: "UNGRATFUL SHIT! I'LL SHOW U WHO'S IN CHARGE."},
                         {speaker: "Inner Monologue", text: "HOLY SHIT RUN (SCROLL AS FAST AS YOU CAN)"}
                     ])
+                    this.shakeWithAnger(1000, 2);
                     this.startRun();
 
                 });
@@ -321,8 +325,39 @@ class Thirties extends Enemy {
         }, 1000)
     }
 
-    shakeWithAnger() {
+    shakeWithAnger(duration = 1000, severity = 1) {
+        if (!this.model) return;
 
+        const model = this.model;
+        const originalPosition = {
+            x: model.position.x,
+            y: model.position.y,
+            z: model.position.z,
+        };
+
+        let shaking = true;
+        const startTime = performance.now();
+
+        const shakeFrame = () => {
+            if (!shaking) return;
+            const now = performance.now();
+            const elapsed = now - startTime;
+            if (elapsed >= duration) {
+                // Restore position
+                model.position.x = originalPosition.x;
+                model.position.y = originalPosition.y;
+                model.position.z = originalPosition.z;
+                shaking = false;
+                return;
+            }
+            // Random displacement per axis
+            model.position.x = originalPosition.x + (Math.random() - 0.5) * 0.1 * severity;
+            model.position.y = originalPosition.y + (Math.random() - 0.5) * 0.1 * severity;
+            model.position.z = originalPosition.z + (Math.random() - 0.5) * 0.1 * severity;
+            requestAnimationFrame(shakeFrame);
+        };
+
+        shakeFrame();
     }
 
     startRun() {

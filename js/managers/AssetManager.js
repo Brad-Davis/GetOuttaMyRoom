@@ -126,7 +126,13 @@ class AssetManager {
 
         // Kitchen (build runs in Kitchen constructor)
         const kitchen = new Kitchen(gameGroup);
+        await kitchen.spawnMom();
+        await kitchen.outsideLoadPromise;
         this.gameObjects.set('kitchen', kitchen);
+        this.animatedObjects.push(kitchen);
+        if (kitchen.outsideMoon) {
+            this.animatedObjects.push(kitchen.outsideMoon);
+        }
 
 
     }

@@ -7,6 +7,7 @@ import effectsService from "../utils/effectsService.js";
 import dialogService from "../utils/dialogService.js";
 
 const MOM_TEXTURE_URL = "./resources/images/mom.png";
+const MOM_TARGET_HEIGHT = 4;
 
 /** Single-frame for now; all poses map to index 0 until more mom sprites exist. */
 export const MOM_POSES = Object.freeze({
@@ -19,7 +20,7 @@ export const MOM_POSES = Object.freeze({
 
 class Mom extends Enemy {
     constructor(hp, level, exp, gold) {
-        super("Mom", [items["punch_heavy_001"]], hp, level, exp, gold, null, [0, -1, 0], null);
+        super("Mom", [items["punch_heavy_001"]], hp, level, exp, gold, null, [0, 1, 0], null);
         /** @type {ReturnType<typeof setTimeout> | null} */
         this._attackPoseResetTimer = null;
     }
@@ -34,7 +35,9 @@ class Mom extends Enemy {
             transparent: true,
         });
         const sprite = new THREE.Sprite(material);
-        sprite.scale.set(2.5, 3, 3);
+        const img = texture.image;
+        const aspect = img.width / img.height;
+        sprite.scale.set(MOM_TARGET_HEIGHT * aspect, MOM_TARGET_HEIGHT, 1);
         sprite.renderOrder = 1;
         this.initBillboardSprite(sprite, textures);
 

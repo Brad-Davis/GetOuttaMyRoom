@@ -12,6 +12,7 @@ class BackButtonManager {
     this.gameState = null;
     this.BackButtonEl = document.getElementById('backButton');
     this.disabled = true;
+    this.permanentlyDisabled = false;
     this._listenersAttached = false;
     this._handleClick = () => {
       if (!this.camera || !this.gsap || !this.gameState) return;
@@ -49,13 +50,20 @@ class BackButtonManager {
     this.hideBackButton();
   }
 
+  /** Hide the back button for the rest of the session; `enable()` will not show it again. */
+  disablePermanently() {
+    this.permanentlyDisabled = true;
+    this.hideBackButton();
+    this.disable();
+  }
+
   /** Call each frame (or after camera moves) so the control only appears away from the default view. */
   updateVisibility() {
     if (!this.BackButtonEl || !this.camera) return;
-    if (this.disabled) return;
+    if (this.disabled || this.permanentlyDisabled) return;
     const show =
       interactionService.checkEnabled() &&
-      !cameraService.isAtInteriorDefault(this.camera);
+      (!cameraService.isAtInteriorDefault(this.camera) || iframeControls.isOpen());
     if (show) {
       this.showBackButton();
     } else {
@@ -64,7 +72,7 @@ class BackButtonManager {
   }
 
   showBackButton() {
-    if (!this.BackButtonEl) return;
+    if (!this.BackButtonEl || this.permanentlyDisabled) return;
     this.BackButtonEl.style.display = 'block';
   }
 
@@ -78,9 +86,6 @@ class BackButtonManager {
     cameraService.resetPoster2Frame();
     cameraService.currentPreset = null;
     iframeControls.hideIframe();
-    setTimeout(() => {
-      iframeControls.hideIframe();
-    }, 1000);
     gsap.to(camera.position, {
       x: 0,
       z: 0,
@@ -96,10 +101,10 @@ class BackButtonManager {
       ease: 'power2.inOut',
     });
     gameState.resetPosition();
-    iframeControls.hideIframe();
   }
 
   enable() {
+    if (this.permanentlyDisabled) return;
     this.disabled = false;
     this.updateVisibility();
   }

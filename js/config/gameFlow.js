@@ -7,3 +7,6 @@ export const CD_STARTS_BATTLE_IMMEDIATELY = false;
  * monologue, mission). When false: normal CD → bed → iframe intro.
  */
 export const SKIP_INTRO = true;
+
+/** When true: skip intro/bed flow — spawn in the kitchen with scroll movement enabled. */
+export const SPAWN_IN_KITCHEN = true;

@@ -2,14 +2,15 @@ import gsap from 'gsap';
 
 const DEFAULT_BGM_VOLUME = 0.7;
 const DEFAULT_CROSSFADE_DURATION = 2;
+const DEFAULT_BGM_URL = 'resources/sounds/ambient.mp3';
 
 class AudioService {
     constructor() {
-        this.bgmAudio = this._createBgmElement('resources/sounds/ambient.mp3');
+        this.bgmAudio = this._createBgmElement(DEFAULT_BGM_URL);
         this._bgmAlt = this._createBgmElement();
         this.bgmAudio.volume = DEFAULT_BGM_VOLUME;
         this._bgmTargetVolume = DEFAULT_BGM_VOLUME;
-        this._currentTrackUrl = this._trackKey('resources/sounds/ambient.mp3');
+        this._currentTrackUrl = this._trackKey(DEFAULT_BGM_URL);
         this.isPlaying = false;
         /** @type {gsap.core.Tween | null} */
         this._bgmVolumeTween = null;
@@ -159,7 +160,41 @@ class AudioService {
     }
 
     playDefaultBackgroundMusic() {
-        return this.switchBackgroundMusic('resources/sounds/ambient.mp3');
+        return this.switchBackgroundMusic(DEFAULT_BGM_URL);
+    }
+
+    isDefaultBackgroundMusicPlaying() {
+        const defaultKey = this._trackKey(DEFAULT_BGM_URL);
+        if (this._currentTrackUrl !== defaultKey) return false;
+        return this.isPlaying && !this.bgmAudio.paused && this.bgmAudio.volume > 0.01;
+    }
+
+    /**
+     * When the camera returns to the room default view, restore ambient BGM if another
+     * track took over or playback was paused / faded out.
+     */
+    async ensureDefaultBackgroundMusic(options = {}) {
+        const { default: gameState } = await import('../gameState.js');
+        if (gameState.currentEvent?.battleRunning) return;
+
+        const defaultKey = this._trackKey(DEFAULT_BGM_URL);
+        if (this._currentTrackUrl !== defaultKey) {
+            return this.playDefaultBackgroundMusic();
+        }
+
+        const targetVolume = Math.max(
+            0,
+            Math.min(1, options.volume ?? DEFAULT_BGM_VOLUME)
+        );
+        const fadeDuration = options.duration ?? 1;
+
+        if (this.bgmAudio.paused || !this.isPlaying) {
+            await this._ensureBgmPlaying(this.bgmAudio);
+        }
+
+        if (this.bgmAudio.volume < targetVolume * 0.95) {
+            this.fadeInBackgroundMusic(targetVolume, fadeDuration);
+        }
     }
 
     playThirtiesMusic() {

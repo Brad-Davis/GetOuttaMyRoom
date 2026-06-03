@@ -5,7 +5,7 @@ import loaderService from "../utils/loaderService.js";
 import items from "../templates/items.js";
 import effectsService from "../utils/effectsService.js";
 import dialogService from "../utils/dialogService.js";
-
+import textOverlay from "../UI/textOverlay.js";
 /**
  * Pose name → 0-based frame index (same order as uncle1.png … uncle5.png).
  * Rename keys to whatever fits your game; keep values 0–4.
@@ -169,6 +169,19 @@ class Uncle extends Enemy {
                 text: "it\'s chill u don\'t even like sports we didn't have anything to talk about"
             },
         ]);
+        textOverlay.showWindowOverlay(
+            "Congratulations! You have defeated your weird Uncle. Looks like computer time is back. Time to post on linkedin.",
+            "Victory",
+            ["Okay"],
+            [
+                () => {
+                    textOverlay.closeWindowOverlay();
+                    import('../gameState.js').then(({ default: gameState }) => {
+                        gameState.prepareForSecondBattle();
+                    });
+                },
+            ]
+        );
     }
 
     getRandomDialog() {

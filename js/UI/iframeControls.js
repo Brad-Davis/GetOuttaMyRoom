@@ -5,6 +5,7 @@ import speakButtonManager from '../controls/speakButton.js';
 import dialogService from '../utils/dialogService.js';
 import missionService from '../utils/missionService.js';
 import dopamineManager from '../managers/dopamineManager.js';
+import audioService from '../utils/audioService.js';
 
 export const IFRAME_WAKE_MESSAGE = 'GOMR_IFRAME_WAKE_UP';
 
@@ -19,6 +20,16 @@ const EVIL_TINDER_HUD_BODY_CLASS = 'evil-tinder-iframe-open';
 
 function isEvilTinderUrl(url) {
     return typeof url === 'string' && url.includes('/evilTinder/');
+}
+
+/** Tinder, LinkedIn, and YouTube computer iframes keep ambient BGM; everything else fades it out. */
+function keepsBackgroundMusic(url) {
+    if (typeof url !== 'string') return false;
+    return (
+        url.includes('/evilTinder/') ||
+        url.includes('/evilLinkedIn/') ||
+        url.includes('/evilYoutube/')
+    );
 }
 
 const DEFAULT_IFRAME_SANDBOX =
@@ -41,6 +52,8 @@ function isAllowedComputerIframeOrigin(origin) {
 class IframeControls {
     constructor() {
         this._computerSubmitCallback = null;
+        /** Bumped on hide/zoomOut so stale zoomIn rAF callbacks no-op. */
+        this._zoomGeneration = 0;
         /** `Computer` game object (setFrame, etc.) — not the `#computer` DOM node. */
         this._computerInstance = null;
         this.iframe = document.getElementById('iframe');
@@ -69,7 +82,16 @@ class IframeControls {
         document.body.classList.toggle(EVIL_TINDER_HUD_BODY_CLASS, Boolean(active));
     }
 
+    isOpen() {
+        if (!this.computer) return false;
+        return (
+            this.computer.style.display !== 'none' &&
+            this.computer.style.opacity !== '0'
+        );
+    }
+
     async hideIframe(firstTime = false) {
+        this._zoomGeneration += 1;
         this._setEvilTinderHudLayout(false);
         this.zoomOut();
         if (this.iframe.parentNode !== this.computer) {
@@ -135,6 +157,9 @@ class IframeControls {
         this.iframe.src = url;
         this.iframe.style.display = 'block';
         this._setEvilTinderHudLayout(isEvilTinderUrl(url));
+        if (!keepsBackgroundMusic(url)) {
+            audioService.fadeOutBackgroundMusic();
+        }
     }
 
     /** Show an iframe URL and zoom to fullscreen (same pattern as movement / CD flows). */
@@ -157,6 +182,7 @@ class IframeControls {
     zoomIn(opening = false) {
         const c = this.computer;
         const iframe = this.iframe;
+        const gen = ++this._zoomGeneration;
 
         if (this._zoomEndTimer) {
             clearTimeout(this._zoomEndTimer);
@@ -197,6 +223,7 @@ class IframeControls {
 
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
+                if (gen !== this._zoomGeneration) return;
                 c.style.top = '0';
                 c.style.left = '0';
                 c.style.width = '100vw';
@@ -206,6 +233,7 @@ class IframeControls {
         });
 
         this._zoomEndTimer = setTimeout(() => {
+            if (gen !== this._zoomGeneration) return;
             c.style.transition = '';
             iframe.style.transition = '';
             this._zoomEndTimer = null;
@@ -222,6 +250,7 @@ class IframeControls {
     }
 
     zoomOut() {
+        this._zoomGeneration += 1;
         if (this._zoomEndTimer) {
             clearTimeout(this._zoomEndTimer);
             this._zoomEndTimer = null;

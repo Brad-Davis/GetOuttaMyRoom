@@ -56,8 +56,9 @@ class Store {
         // window.goblin = this.sprite;
         dopamineManager.getDopamine()
         if (this.storeVisited === false && dopamineManager.getDopamine() > 0) {
-            
+            items.punch_001.value = dopamineManager.getDopamine();
             this.firstTimeWithDopamine();
+            this.storeVisited = true;
         }
         scene.add(this.sprite);
         this.sprite.scale.set(0.8, 0.8, 0.8)
@@ -107,9 +108,33 @@ class Store {
     }
 
     initialStoreSetup() {
+        this.refillShop();
+    }
+
+    refillShop() {
+        this.items = [];
         this.addItem(items.punch_001);
         items.punch_001.value = 10;
+        if (this.shop?.classList.contains('is-open')) {
+            this.renderShopItems();
+        }
+    }
 
+    refillShopWithLinkedInItems() {
+        this.items = [];
+        this.addItem(items.podcast_001);
+        this.addItem(items.shot_001);
+        this.addItem(items.callEx_001);
+        if (this.shop?.classList.contains('is-open')) {
+            this.renderShopItems();
+        }
+    }
+
+    refillShopWithYoutubeItems() {
+        this.items = [];
+        if (this.shop?.classList.contains('is-open')) {
+            this.renderShopItems();
+        }
     }
 }
 

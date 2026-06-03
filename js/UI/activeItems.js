@@ -78,6 +78,21 @@ class ActiveItems {
         throw new Error("getContainerSelector must be implemented by subclass");
     }
 
+    refreshAllChargeVisuals() {
+        const activeItemsElement = this.getActiveItemsElement();
+        if (!activeItemsElement) {
+            return;
+        }
+        this.items.forEach((item, index) => {
+            const container = activeItemsElement.children[index + 1];
+            if (item) {
+                item.resetChargeVisual(container);
+            } else if (container) {
+                container.style.background = `rgba(192, 192, 192, 0)`;
+            }
+        });
+    }
+
     renderItems(containerName, options = {}) {
         const containers = document.querySelectorAll(containerName);
         const itemClass = options.itemClass ?? 'active-item';

@@ -5,6 +5,8 @@ import cameraService, { CAMERA_PRESETS } from '../utils/cameraPresets.js';
 import effectsService from '../utils/effectsService.js';
 import gameState from '../gameState.js';
 import dialogService from '../utils/dialogService.js';
+import voiceRecognition from '../services/voiceRecognition.js';
+
 import {
     FIRST_BATTLE_POSITION,
     SECOND_BATTLE_POSITION,
@@ -43,6 +45,8 @@ const SCROLL_EMA_ALPHA = 0.06;
 /** Per-frame retention when idle (higher = slower falloff; ~0.99 ≈ several seconds at 60fps). */
 const IDLE_DECAY_PER_FRAME = 0.99;
 
+const MOM_ENCOUNTER_Z = 0;
+
 export default class Movement {
     constructor(camera, gameGroup) {
       this.camera = camera;
@@ -57,9 +61,11 @@ export default class Movement {
       this._averageScrollSpeed = 0;
       this._speedBar = null;
       this._lastWheelAt = 0;
+      this.kitchenEnabled = false;
+      this._momEncounterStarted = false;
 
       window.addEventListener('wheel', this.handleScroll.bind(this));
-      this.enable();
+    //   this.enable(true); // Start in kitchen mode
     }
 
     _getScrollIdleMs() {
@@ -227,6 +233,12 @@ export default class Movement {
         if (this._scrollBattleStarting || !this.enableMovement || !this.gameGroup) return;
 
         const youZ = this.gameGroup.position.z;
+        if (this.kitchenEnabled) {
+            if (youZ >= -MOM_ENCOUNTER_Z) {
+                this.encounterMom();
+            }
+            return;
+        }
 
         if (
             !this._firstScrollBattleDone &&
@@ -243,6 +255,7 @@ export default class Movement {
         ) {
             this._beginScrollBattle(2, SECOND_BATTLE_Z);
         }
+
     }
 
     async _beginScrollBattle(phase, stopZ) {
@@ -282,6 +295,47 @@ export default class Movement {
         });
     }
 
+    encounterMom() {
+        if (this._momEncounterStarted) return;
+        this._momEncounterStarted = true;
+
+        this.gameGroup.position.z = -MOM_ENCOUNTER_Z;
+        // this.disable();
+
+        //REENABLE AFTER TESTING
+        const kitchen = window.gameEngine?.getAssetManager?.()?.getGameObject('kitchen');
+        kitchen?.activateOutsideBeyondDoorAtmosphere?.();
+        // cameraService.lookAtMom({
+        //     duration: 1.2,
+        //     onComplete: async () => {
+        //         await dialogService.runLines([
+        //             { speaker: "Mom", text: "Hey honey. Good to see you outside of your room." },
+        //             { speaker: "Mom", text: "Thanks for waking up Dad! He just ran out! Think he'll make it in time." },
+        //             { speaker: "Mom", text: "You seem like you have something on your mind. What's up?" },
+        //             { speaker: "Inner Monologue", text: "Say something to your mom. Anything. It won't be graded, timed or sent to an online database. Just say something." },
+        //         ]);
+        //         const response = await voiceRecognition.getAndPrintStatement(false);
+        //         await dialogService.runLines([
+        //             { speaker: "Mom", text: "That's wonderful honey. Why don't you go take a walk it's a wonderful evening."    },
+        //         ]);
+
+        //         const door = kitchen?.getKitchenDoor?.();
+        //         cameraService.lookAtKitchen({
+        //             duration: 1.2,
+        //             onComplete: () => {
+        //                 if (door && !door.doorOpen) {
+        //                     door.open();
+        //                 }
+        //                 this.enable(true);
+        //             },
+        //         });
+        //     },
+        // });
+        const door = kitchen?.getKitchenDoor?.();
+        door.open();
+        this.enable(true);
+    }
+
     resumeAfterScrollBattle() {
         this._scrollBattleStarting = false;
         if (!this._firstScrollBattleWon && this._firstScrollBattleDone) {
@@ -294,13 +348,18 @@ export default class Movement {
         });
     }
 
-    enable() {
+    enable(kitchen = false) {
         this.enableMovement = true;
         this._lastWheelAt = performance.now();
-        this.showSpeed();
-        if (!this._caughtByThirties) {
-            window.gameEngine?.getThirties?.()?.startChase?.();
+        if (!kitchen) {
+            this.showSpeed();
+            if (!this._caughtByThirties) {
+                window.gameEngine?.getThirties?.()?.startChase?.();
+            }
+        } else {
+            this.kitchenEnabled = true;
         }
+        
     }
 
     disable() {

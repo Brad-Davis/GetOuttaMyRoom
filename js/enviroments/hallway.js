@@ -147,7 +147,6 @@ class Hallway extends Room {
 
           const door = new Door(this.scene);
           door.createDoor(0, -1, backWallZ);
-          door.close();
 
           this.dadsRoomDoor = door;
           hallway.add(door.getDoorMesh());

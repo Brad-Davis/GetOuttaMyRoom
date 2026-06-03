@@ -361,6 +361,7 @@ class InventoryManager {
                 item.isReady = false;
             }
         });
+        this.activeItems.refreshAllChargeVisuals();
         this.activeItems.renderItems();
 
         this.enemyActiveItems.items.forEach(item => {
@@ -369,6 +370,7 @@ class InventoryManager {
                 item.isReady = false;
             }
         });
+        this.enemyActiveItems.refreshAllChargeVisuals();
         this.enemyActiveItems.hideEnemyItems();
     }
 }

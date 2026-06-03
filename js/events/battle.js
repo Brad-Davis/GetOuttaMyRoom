@@ -59,6 +59,9 @@ class Battle {
     }
 
     async tryUnlockRechargeAccel() {
+        if (this.playerHasNoItems()) {
+            return;
+        }
         if (
             this.rechargeAccelUnlocked ||
             this.rechargeAccelUnlocking ||
@@ -99,10 +102,15 @@ class Battle {
     }
 
     startBattle() {
-        this.rechargeSpeedMultiplier = 1;
         this.battleElapsedMs = 0;
-        this.rechargeAccelUnlocked = false;
         this.rechargeAccelUnlocking = false;
+        if (this.playerHasNoItems()) {
+            this.rechargeAccelUnlocked = true;
+            this.rechargeSpeedMultiplier = this.getRechargeAccelConfig().start;
+        } else {
+            this.rechargeSpeedMultiplier = 1;
+            this.rechargeAccelUnlocked = false;
+        }
         this.battleRunning = true;
         interactionService.setBattleBlocking(true);
         audioService.playBattleMusic();

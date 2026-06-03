@@ -4,9 +4,15 @@ import audioService from './audioService.js';
 import iframeControls from '../UI/iframeControls.js';
 import dialogService from './dialogService.js';
 import { DADS_ROOM_WALL_LOCAL_Z } from '../enviroments/hallway.js';
-import { getKitchenCenter } from '../enviroments/kitchenLayout.js';
+import {
+    getKitchenCenter,
+    getKitchenCameraPosition,
+    getMomView,
+    KITCHEN_SCROLL_ALIGNED_Z,
+} from '../enviroments/kitchenLayout.js';
 
 const KITCHEN_CENTER = getKitchenCenter();
+const MOM_VIEW = getMomView();
 
 const DEFAULT_VIEW_EPSILON = 0.12;
 
@@ -75,7 +81,12 @@ export const CAMERA_PRESETS = {
     KITCHEN_VIEW: {
         position: { ...KITCHEN_CENTER },
         rotation: { x: 0, y: 0, z: 0 }
-    }
+    },
+    /** Framed on Mom at the back of the kitchen (`spawnMom` in kitchen.js). */
+    MOM_VIEW: {
+        position: { ...MOM_VIEW.position },
+        rotation: { ...MOM_VIEW.rotation },
+    },
 };
 
 class CameraService {
@@ -497,13 +508,22 @@ class CameraService {
 
         this._wasAtInteriorDefault = atDefault;
         if (atDefault) {
-            audioService.fadeInBackgroundMusic();
+            void audioService.ensureDefaultBackgroundMusic();
         }
     }
 
-    lookAtKitchen() {
+    lookAtKitchen(options = {}) {
         if (!this.camera) return;
-        applyCameraPreset('KITCHEN_VIEW');
+        const gameGroup = window.gameEngine?.sceneManager?.gameGroup;
+        const scrollZ = gameGroup?.position?.z ?? KITCHEN_SCROLL_ALIGNED_Z;
+        const position = getKitchenCameraPosition(scrollZ);
+        this.currentPreset = 'KITCHEN_VIEW';
+        return this.transitionTo(position, CAMERA_PRESETS.KITCHEN_VIEW.rotation, options);
+    }
+
+    lookAtMom(options = {}) {
+        if (!this.camera) return;
+        applyCameraPreset('MOM_VIEW', options);
     }
 }
 
