@@ -396,6 +396,10 @@ body.noise-between-static-iframe-open #backButton {
     pointer-events: auto;
 }
 
+#shop.is-open .inventory-item {
+    cursor: pointer;
+}
+
 #playerHealthContainer {
     position: absolute;
     bottom: 20px;
@@ -1228,6 +1232,29 @@ body.noise-between-static-iframe-open #backButton {
 
 #dialogue-triangle.flashing {
   animation: flash 0.5s infinite;
+}
+
+@keyframes dialogue-nudge {
+  0%,
+  100% {
+    transform: translateX(-50%) translate(0, 0) rotate(0deg);
+  }
+  20% {
+    transform: translateX(-50%) translate(-7px, 2px) rotate(-0.6deg);
+  }
+  40% {
+    transform: translateX(-50%) translate(7px, -2px) rotate(0.6deg);
+  }
+  60% {
+    transform: translateX(-50%) translate(-5px, 1px) rotate(-0.4deg);
+  }
+  80% {
+    transform: translateX(-50%) translate(5px, -1px) rotate(0.4deg);
+  }
+}
+
+#dialogue-overlay.dialogue-nudge {
+  animation: dialogue-nudge 0.38s ease-out;
 }
 
 #computer {

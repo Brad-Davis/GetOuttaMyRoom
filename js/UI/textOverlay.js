@@ -19,6 +19,9 @@ class TextOverlay {
         this._dialogScrollTimeout = null;
         this._dialogLineClickHandler = null;
         this._dialogLineResolver = null;
+        this._dialogMissClickBound = false;
+        this._lastDialogShakeAt = 0;
+        this._onDialogMissClick = this._handleDialogMissClick.bind(this);
         this.bottomText = '[Click on the CD to start]';
         this.fullText = '';
         this.isVisible = true;
@@ -105,6 +108,7 @@ class TextOverlay {
         this.dialogueBox.textContent = '';
         this.startTextScroll(message);
         this.dialogueOverlay.style.pointerEvents = 'auto';
+        this._bindDialogMissClicks();
         const clickHandler = () => {
             this._cancelDialogScroll();
             this.dialogueBox.textContent = message;
@@ -142,6 +146,42 @@ class TextOverlay {
 
     _playDialogRevealSfx() {
         effectsService.playSfx('dialogReveal', { volume: 0.55 });
+    }
+
+    _isDialogueAwaitingClick() {
+        if (!this.dialogueOverlay || this.dialogueOverlay.style.display === 'none') {
+            return false;
+        }
+        return this.dialogueOverlay.style.pointerEvents === 'auto';
+    }
+
+    _bindDialogMissClicks() {
+        if (this._dialogMissClickBound) return;
+        this._dialogMissClickBound = true;
+        document.addEventListener('pointerdown', this._onDialogMissClick, true);
+    }
+
+    _unbindDialogMissClicks() {
+        if (!this._dialogMissClickBound) return;
+        this._dialogMissClickBound = false;
+        document.removeEventListener('pointerdown', this._onDialogMissClick, true);
+    }
+
+    _handleDialogMissClick(event) {
+        if (!this._isDialogueAwaitingClick()) return;
+        if (this.dialogueOverlay.contains(event.target)) return;
+        this._shakeDialogueBox();
+    }
+
+    _shakeDialogueBox() {
+        const el = this.dialogueOverlay;
+        if (!el) return;
+        const now = performance.now();
+        if (now - this._lastDialogShakeAt < 280) return;
+        this._lastDialogShakeAt = now;
+        el.classList.remove('dialogue-nudge');
+        void el.offsetWidth;
+        el.classList.add('dialogue-nudge');
     }
 
     /**
@@ -182,6 +222,7 @@ class TextOverlay {
             this._dialogLineClickHandler = onClick;
             this.dialogueOverlay.addEventListener('click', onClick);
             this.dialogueOverlay.style.pointerEvents = 'auto';
+            this._bindDialogMissClicks();
 
             const onTypingComplete = () => {
                 fullTextVisible = true;
@@ -213,6 +254,10 @@ class TextOverlay {
     }
 
     endDialog() {
+        this._unbindDialogMissClicks();
+        if (this.dialogueOverlay) {
+            this.dialogueOverlay.classList.remove('dialogue-nudge');
+        }
         this._cancelDialogScroll();
         if (this._dialogLineClickHandler) {
             this.dialogueOverlay.removeEventListener('click', this._dialogLineClickHandler);

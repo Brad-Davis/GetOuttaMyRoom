@@ -170,7 +170,7 @@ class Hallway extends Room {
             new THREE.PlaneGeometry(this.config.width, this.config.height),
             new THREE.MeshBasicMaterial({ color: 0x000000 })
         );
-        dadsRoomBacking.position.set(0, this.config.wallHeight, hallFarZ + 1.5);
+        dadsRoomBacking.position.set(0, this.config.wallHeight, backWallZ - 1.5);
         dadsRoomBacking.frustumCulled = false;
         hallway.add(dadsRoomBacking);
 
@@ -178,7 +178,7 @@ class Hallway extends Room {
             new THREE.PlaneGeometry(this.config.width, this.config.height),
             new THREE.MeshBasicMaterial({ color: 0x000000 })
         );
-        dadsRoomBacking2.position.set(0, this.config.wallHeight, hallFarZ + 0.08);
+        dadsRoomBacking2.position.set(0, this.config.wallHeight, backWallZ - 0.08);
         dadsRoomBacking2.frustumCulled = false;
         hallway.add(dadsRoomBacking2);
 

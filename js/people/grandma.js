@@ -26,7 +26,7 @@ const GRANDMA_FRAME_URLS = [1, 2, 3, 4, 5].map(
 
 class Grandma extends Enemy {
     constructor(hp, level, exp, gold) {
-        super("Grandma", [items["punch_heavy_001"]], hp, level, exp, gold, null, [0, -1, 0], null);
+        super("Grandma", [items["punch_heavy_001"], items["newspaper_001"]], hp, level, exp, gold, null, [0, -1, 0], null);
         /** @type {ReturnType<typeof setTimeout> | null} */
         this._attackPoseResetTimer = null;
     }

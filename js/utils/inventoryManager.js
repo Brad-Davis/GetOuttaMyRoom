@@ -29,6 +29,7 @@ class InventoryManager {
         });
 
         this.setupDragAndDrop();
+        this.setupShopClick();
 
         if (!hasPendingInventoryRestore()) {
             this.addTestItems();
@@ -85,6 +86,36 @@ class InventoryManager {
         document.addEventListener('dragend', (e) => {
             this.handleDragEnd(e);
         });
+    }
+
+    setupShopClick() {
+        document.addEventListener('click', (e) => {
+            if (this._suppressShopClick) {
+                this._suppressShopClick = false;
+                return;
+            }
+
+            const shopEl = document.getElementById('shop');
+            if (!shopEl?.classList.contains('is-open')) return;
+
+            const rowEl = e.target.closest('#shop-items .inventory-item');
+            if (!rowEl) return;
+
+            const item = store.items.find((i) => i.id === rowEl.dataset.itemId);
+            if (item) {
+                this.buyShopItem(item);
+            }
+        });
+    }
+
+    buyShopItem(item) {
+        const emptyIndex = this.activeItems.items.findIndex((i) => i === null);
+        const placementIndex = emptyIndex !== -1 ? emptyIndex : 0;
+        const containers = document.querySelectorAll('.active-item-container');
+        const targetContainer = containers[placementIndex];
+        if (!targetContainer) return;
+
+        this.moveItem(item, 'shop', 'active', targetContainer, placementIndex);
     }
 
     handleDragStart(e) {
@@ -188,6 +219,10 @@ class InventoryManager {
             : e.target.closest('.inventory-item, .active-item');
         if (rowEl) {
             rowEl.style.opacity = '1';
+        }
+
+        if (this.dragSource === 'shop') {
+            this._suppressShopClick = true;
         }
 
         this.draggedItem = null;

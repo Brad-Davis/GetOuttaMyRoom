@@ -774,6 +774,21 @@ const itemPool = {
         },
         /* sfx */ "existentialDread"
     ),
+    "Newspaper": new Item(
+        "Newspaper",
+        "Grandma's got a newspaper and she's not afraid to use it.",
+        /* value */ 5,
+        /* rechargeTime */ 5,
+        /* image */ "./resources/images/newspaper.png",
+        /* triggerFunction */ (fromEnemy = false) => {
+            // GIVE DOPAMINE
+            hurt(25, fromEnemy, false);
+        },
+        /* phyDamage */ 0,
+        /* emoDamage */ 0,
+        /* effects */ null,
+        /* sfx */ "newspaper"
+    ),
 }
 
 function generateItem(itemName, id = null) {
@@ -843,6 +858,7 @@ const items = {
     "scream_001": generateItem("scream", "scream_001"),
     "political_001": generateItem("political", "political_001"),
     "existentialDread_001": generateItem("Existential Dread", "existentialDread_001"),
+    "newspaper_001": generateItem("Newspaper", "newspaper_001"),
 }
 
 export default items;

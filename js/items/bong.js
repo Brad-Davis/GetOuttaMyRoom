@@ -50,9 +50,10 @@ class Bong {
   }
 
   onClick() {
-    this.hitCounter++;
     if (this.active) return;
     if (!cameraService.checkCameraPreset('DRESSER_VIEW')) return;
+
+    this.hitCounter++;
     this.active = true;
 
     if (this.hitCounter === 1) {

@@ -130,7 +130,9 @@ class GameInteractionManager {
                 }
             }
         });
-        this.addCursorListener(mesh);
+        this.addCursorListener(mesh, () =>
+            interactionService.checkEnabled() && cameraService.isAtInteriorDefault()
+        );
     }
 
     setupVoidInteraction(mesh) {
@@ -188,7 +190,9 @@ class GameInteractionManager {
             gameState.goToStore();
             cameraService.lookAtBed();
         });
-        this.addCursorListener(mesh);
+        this.addCursorListener(mesh, () =>
+            interactionService.checkEnabled() && !cameraService.isAtSleepingView()
+        );
     }
 
     setupDresserInteraction(mesh, dresser, camera) {
@@ -201,7 +205,6 @@ class GameInteractionManager {
             }
         });
         this.addCursorListener(mesh);
-        
     }
 
     setupComputerInteraction(mesh, computer, camera) {
@@ -216,7 +219,11 @@ class GameInteractionManager {
             console.log('Computer clicked');
             computer.lookAtComputer(camera, window.gsap, dresser.getDresserFocus());
         });
-        this.addCursorListener(mesh);
+        this.addCursorListener(mesh, () => {
+            if (!interactionService.checkEnabled()) return false;
+            const dresser = this.getGameObject('dresser');
+            return !!dresser?.getDresserFocus();
+        });
     }
 
     setupCDInteraction(mesh, cd) {
@@ -233,17 +240,26 @@ class GameInteractionManager {
         mesh.addEventListener('mouseleave', () => {
             cd.onHoverLeave();
         });
-        this.addCursorListener(mesh);
+        this.addCursorListener(mesh, () => !cd.exploded);
     }
 
     setupBongInteraction(mesh, bong) {
         mesh.addEventListener('click', () => {
             if (!interactionService.checkEnabled()) return;
 
+            const dresser = this.getGameObject('dresser');
+            if (!dresser?.getDresserFocus()) {
+                return;
+            }
+
             console.log('Bong clicked!');
             bong.onClick();
         });
-        this.addCursorListener(mesh);
+        this.addCursorListener(mesh, () => {
+            if (!interactionService.checkEnabled()) return false;
+            const dresser = this.getGameObject('dresser');
+            return !!dresser?.getDresserFocus();
+        });
     }
 
     setupMoonInteraction(mesh, moon) {
@@ -315,6 +331,7 @@ class GameInteractionManager {
         backButtonManager.updateVisibility();
         speakButtonManager.updateVisibility();
         cameraService.updateInteriorBgm();
+        this._updateHoverCursor();
         this.movement?.frameUpdate();
     }
 
@@ -330,13 +347,24 @@ class GameInteractionManager {
         speakButtonManager.dispose();
     }
 
-    addCursorListener(mesh) {
+    addCursorListener(mesh, isClickable = () => interactionService.checkEnabled()) {
         mesh.addEventListener('mouseenter', () => {
-            document.body.style.cursor = 'pointer';
+            this._hoveredInteractive = mesh;
+            this._hoveredIsClickable = isClickable;
+            this._updateHoverCursor();
         });
         mesh.addEventListener('mouseleave', () => {
-            document.body.style.cursor = '';
+            if (this._hoveredInteractive === mesh) {
+                this._hoveredInteractive = null;
+                this._hoveredIsClickable = null;
+                document.body.style.cursor = '';
+            }
         });
+    }
+
+    _updateHoverCursor() {
+        if (!this._hoveredInteractive) return;
+        document.body.style.cursor = this._hoveredIsClickable?.() ? 'pointer' : '';
     }
 
     getMovement(){

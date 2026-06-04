@@ -378,8 +378,15 @@ class Thirties extends Enemy {
         window.gameEngine?.getInteractionManager?.()?.movement?.enable();
     }
 
+    /** Full heal after a scroll-battle “win” — Thirties keeps chasing between rounds. */
+    rechargeHealth() {
+        this.isDefeated = false;
+        this.setHp(this.maxHp);
+    }
+
     /** Hallway scroll battle — keep the GLB in `gameGroup`, do not reparent to the scene root. */
     startBattle() {
+        this.isDefeated = false;
         this.startBattleChase();
         this.setHp(this.maxHp);
         this.enemyHealthBar.showHealthBar();
@@ -402,6 +409,9 @@ class Thirties extends Enemy {
 
     dieEvent() {
         dialogService.clearDialog();
+        if (this.scrollBattlePhase === 1) {
+            this.rechargeHealth();
+        }
         const lines =
             this.scrollBattlePhase === 2
                 ? [

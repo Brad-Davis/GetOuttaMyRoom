@@ -30,9 +30,42 @@
         display: block;
         pointer-events: none;
       }
+
+      #skip-hint {
+        position: fixed;
+        bottom: 12%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        max-width: 96vw;
+        padding: 14px 22px;
+        text-align: center;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 10px;
+        line-height: 1.5;
+        color: #fff;
+        text-shadow: 2px 2px 0 #ff2ba3bf, 4px 4px 8px rgba(0, 0, 0, 0.85);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-touch-callout: none;
+      }
+
+      #skip-hint.is-visible {
+        opacity: 1;
+      }
     </style>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+    />
   </head>
   <body>
+    <p id="skip-hint" hidden>Click again to skip</p>
     <div id="shake-root">
       <video
         id="welcome-video"
@@ -49,9 +82,13 @@
       (function () {
         const WAKE_MSG = { type: 'GOMR_IFRAME_WAKE_UP', v: 1 };
         const MAX_CLICKS = 10;
+        const SKIP_HINT_BASE_PX = 10;
+        const SKIP_HINT_GROW_PX = 2;
+        const SKIP_HINT_MAX_PX = 48;
 
         const root = document.getElementById('shake-root');
         const video = document.getElementById('welcome-video');
+        const skipHint = document.getElementById('skip-hint');
         if (!root || !video) return;
 
         video.volume = 1;
@@ -97,6 +134,35 @@
         let shakeToken = 0;
         let soundUnlocked = false;
 
+        function updateSkipHint() {
+          if (!skipHint) return;
+          const sizePx = Math.min(
+            SKIP_HINT_BASE_PX + clickCount * SKIP_HINT_GROW_PX,
+            SKIP_HINT_MAX_PX
+          );
+          skipHint.style.fontSize = sizePx + 'px';
+          const shadow = Math.max(2, Math.round(sizePx * 0.12));
+          skipHint.style.textShadow =
+            shadow +
+            'px ' +
+            shadow +
+            'px 0 #ff2ba3bf, ' +
+            shadow * 2 +
+            'px ' +
+            shadow * 2 +
+            'px 8px rgba(0, 0, 0, 0.85)';
+          skipHint.hidden = false;
+          skipHint.classList.add('is-visible');
+        }
+
+        function hideSkipHint() {
+          if (!skipHint) return;
+          skipHint.classList.remove('is-visible');
+          skipHint.hidden = true;
+          skipHint.style.fontSize = '';
+          skipHint.style.textShadow = '';
+        }
+
         function runShake(amplitudePx, durationMs) {
           shakeToken += 1;
           const token = shakeToken;
@@ -123,6 +189,7 @@
         }
 
         function wakeUp() {
+          hideSkipHint();
           shakeToken += 1;
           root.style.transform = '';
           try {
@@ -146,6 +213,8 @@
             if (clickCount >= MAX_CLICKS) return;
 
             clickCount += 1;
+            updateSkipHint();
+
             const amp = 2 + (clickCount - 1) * 2.2;
             const dur = 220 + clickCount * 35;
             runShake(amp, dur);

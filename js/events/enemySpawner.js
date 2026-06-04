@@ -6,7 +6,7 @@ class EnemySpawner {
     constructor() {
         const uncle = new Uncle(100, 1, 10, 10);
         const cousin = new Cousin(250, 1, 10, 10);
-        const grandma = new Grandma(500, 1, 10, 10);
+        const grandma = new Grandma(350, 1, 10, 10);
         this.enemies = [grandma, cousin, uncle];
         this.curEnemy = null;
     }
