@@ -134,7 +134,7 @@ class Store {
         this.items = [];
         this.addItem(items.scream_001);
         this.addItem(items.political_001);
-        this.addItem(items.musicTaste_001);
+        this.addItem(items.insult_001);
         if (this.shop?.classList.contains('is-open')) {
             this.renderShopItems();
         }

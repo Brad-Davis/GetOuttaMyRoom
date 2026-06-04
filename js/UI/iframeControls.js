@@ -202,7 +202,7 @@ class IframeControls {
         await dialogService.runLines([
             {
                 speaker: 'Inner Monologue',
-                text: 'You have no dopamine or clout. Your body is telling you to post on Youtube.',
+                text: 'You have no dopamine but a bunch of anger. Your body is telling you to comment on Youtube.',
             }
         ]);
         backButtonManager.enable();

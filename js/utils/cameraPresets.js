@@ -583,7 +583,7 @@ class CameraService {
 
     /** Fade ambient BGM back in whenever the camera settles at the room's starting pose. */
     updateInteriorBgm() {
-        if (!this.camera) return;
+        if (!this.camera || audioService.isEndingFinaleActive()) return;
 
         const atDefault = this.isAtInteriorDefault();
         if (atDefault === this._wasAtInteriorDefault) return;

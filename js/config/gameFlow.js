@@ -38,6 +38,9 @@ export const SPAWN_IN_KITCHEN = false;
 /** When true: wheel scroll moves the hallway/kitchen rail much faster (dev / testing). */
 export const FAST_SCROLL = false;
 
+/** When true: flip wheel direction (scroll up advances the rail instead of scroll down). */
+export const REVERSE_SCROLL = false;
+
 /**
  * When true: Dad's room still plays the hallway door camera sequence, then skips the
  * pleaseDaddyWakeUp iframe and runs the same post-wake flow as completing it (kitchen spawn).
@@ -45,7 +48,7 @@ export const FAST_SCROLL = false;
 export const SKIP_DADDY_WAKE_IFRAME = false;
 
 /** When true: log `gameGroup.position.z` every frame in the browser console. */
-export const LOG_PLAYER_Z = false;
+export const LOG_PLAYER_Z = true;
 
 /**
  * When true: skip Thirties hello dialog, run-away / return beats, anger shakes, and the
@@ -58,15 +61,64 @@ export const SKIP_THIRTIES_DIALOG = false;
  * checkpoint prep still runs (fight 1 → {@link prepareForSecondBattle}, fight 2 →
  * {@link prepareForThirdBattle}). Skip Grandma also jumps to the Thirties chapter
  * (default room camera + {@link startThirtiesChapter} on load / door skip).
+ *
+ * Dev-only overrides — runtime progress uses {@link saveBattleCheckpoint} and
+ * {@link shouldSkipFirstFight} / {@link shouldSkipSecondFight} / {@link shouldSkipThirdFight}.
  */
-export const SKIP_FIRST_FIGHT = false;
-export const SKIP_SECOND_FIGHT = false;
+export const SKIP_FIRST_FIGHT = true;
+export const SKIP_SECOND_FIGHT = true;
 export const SKIP_THIRD_FIGHT = false;
 
-/** Computer mini-game + wake monologue for the current dev skip checkpoint. */
+const BATTLE_CHECKPOINT_STORAGE_KEY = 'gomr_battle_checkpoint_v1';
+
+/** @returns {0 | 1 | 2 | 3} */
+function readSavedBattleCheckpoint() {
+    try {
+        const raw = sessionStorage.getItem(BATTLE_CHECKPOINT_STORAGE_KEY);
+        const n = parseInt(raw, 10);
+        if (Number.isFinite(n) && n >= 0 && n <= 3) return /** @type {0 | 1 | 2 | 3} */ (n);
+    } catch (_) {
+        /* sessionStorage unavailable */
+    }
+    return 0;
+}
+
+/** Persist door-battle progress so death reloads resume at the last victory. */
+export function saveBattleCheckpoint(level) {
+    const clamped = Math.min(3, Math.max(0, Math.floor(Number(level) || 0)));
+    const current = readSavedBattleCheckpoint();
+    if (clamped <= current) return;
+    try {
+        sessionStorage.setItem(BATTLE_CHECKPOINT_STORAGE_KEY, String(clamped));
+    } catch (_) {
+        /* sessionStorage unavailable */
+    }
+}
+
+export function clearBattleCheckpoint() {
+    try {
+        sessionStorage.removeItem(BATTLE_CHECKPOINT_STORAGE_KEY);
+    } catch (_) {
+        /* sessionStorage unavailable */
+    }
+}
+
+export function shouldSkipFirstFight() {
+    return SKIP_FIRST_FIGHT || readSavedBattleCheckpoint() >= 1;
+}
+
+export function shouldSkipSecondFight() {
+    return SKIP_SECOND_FIGHT || readSavedBattleCheckpoint() >= 2;
+}
+
+export function shouldSkipThirdFight() {
+    return SKIP_THIRD_FIGHT || readSavedBattleCheckpoint() >= 3;
+}
+
+/** Computer mini-game + wake monologue for the current checkpoint. */
 export function getInitialComputerPhase() {
-    if (SKIP_FIRST_FIGHT && SKIP_SECOND_FIGHT) return 'youtube';
-    if (SKIP_FIRST_FIGHT) return 'tinder';
+    if (shouldSkipFirstFight() && shouldSkipSecondFight()) return 'youtube';
+    if (shouldSkipFirstFight()) return 'tinder';
     return 'linkedin';
 }
 

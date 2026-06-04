@@ -1,4 +1,4 @@
-import { setSkipIntroForNextLoad } from '../config/gameFlow.js';
+import { clearBattleCheckpoint, setSkipIntroForNextLoad } from '../config/gameFlow.js';
 import { clearPlayerInventorySave } from './inventoryPersistence.js';
 
 const HOLD_DURATION_S = 5;
@@ -51,11 +51,17 @@ function cancelHold() {
     hideCountdown();
 }
 
-function completeHoldRestart() {
-    cancelHold();
+/** Full restart from intro (clears saves and reloads). */
+export function restartGameFromBeginning() {
     clearPlayerInventorySave();
+    clearBattleCheckpoint();
     setSkipIntroForNextLoad(false);
     window.location.reload();
+}
+
+function completeHoldRestart() {
+    cancelHold();
+    restartGameFromBeginning();
 }
 
 function tick() {

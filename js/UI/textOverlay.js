@@ -1,4 +1,9 @@
+import gsap from 'gsap';
 import interactionService from "../utils/interactionService.js";
+import effectsService from '../utils/effectsService.js';
+import { restartGameFromBeginning } from '../utils/holdToRestart.js';
+import audioService from '../utils/audioService.js';
+import inventoryManager from '../utils/inventoryManager.js';
 
 class TextOverlay {
     constructor() {
@@ -103,6 +108,7 @@ class TextOverlay {
         const clickHandler = () => {
             this._cancelDialogScroll();
             this.dialogueBox.textContent = message;
+            this._playDialogRevealSfx();
             this.dialogueOverlay.removeEventListener('click', clickHandler);
             this.showSolidTriangle();
         };
@@ -134,6 +140,10 @@ class TextOverlay {
         this.bottomOverlay.textContent = '';
     }
 
+    _playDialogRevealSfx() {
+        effectsService.playSfx('dialogReveal', { volume: 0.55 });
+    }
+
     /**
      * One dialog line: typewriter, click to skip typing, click again to continue.
      * @returns {Promise<void>}
@@ -158,6 +168,7 @@ class TextOverlay {
                 if (!fullTextVisible) {
                     this._cancelDialogScroll();
                     this.dialogueBox.textContent = text;
+                    this._playDialogRevealSfx();
                     this.showSolidTriangle();
                     fullTextVisible = true;
                     return;
@@ -239,6 +250,74 @@ class TextOverlay {
 
     showSolidTriangle() {
         this.dialogueTriangle.classList.remove('flashing');
+    }
+
+    /**
+     * Full-screen end message (kitchen finale).
+     * @param {string} [message]
+     * @param {{ duration?: number }} [options]
+     */
+    showEndCredits(message = 'Thank you for playing.', options = {}) {
+        const el = document.getElementById('end-credits-overlay');
+        if (!el) return;
+
+        const duration = options.duration ?? 2.8;
+        el.textContent = message;
+        el.hidden = false;
+        el.style.opacity = '0';
+        gsap.killTweensOf(el);
+        gsap.to(el, {
+            opacity: 1,
+            duration,
+            ease: 'power2.inOut',
+        });
+    }
+
+    /**
+     * Kitchen finale: slow fade to black, thank-you text only, then full game restart.
+     * @param {string} [message]
+     * @param {{ fadeDuration?: number, holdBeforeRestartS?: number, creditsFadeDelay?: number }} [options]
+     */
+    playKitchenEndingFinale(
+        message = 'Thank you for playing.',
+        {
+            fadeDuration = 5.5,
+            holdBeforeRestartS = 30,
+            creditsFadeDelay = 1.8,
+        } = {}
+    ) {
+        if (this._kitchenEndingFinaleActive) return;
+        this._kitchenEndingFinaleActive = true;
+        audioService.holdMusicDuringEndingFinale();
+        inventoryManager.hideGameplayHud();
+
+        const fadeEl = document.getElementById('end-fade-overlay');
+        const creditsEl = document.getElementById('end-credits-overlay');
+        if (!fadeEl || !creditsEl) return;
+
+        fadeEl.hidden = false;
+        fadeEl.style.opacity = '0';
+        gsap.killTweensOf(fadeEl);
+        gsap.to(fadeEl, {
+            opacity: 1,
+            duration: fadeDuration,
+            ease: 'power2.inOut',
+        });
+
+        creditsEl.textContent = message;
+        creditsEl.hidden = false;
+        creditsEl.style.opacity = '0';
+        gsap.killTweensOf(creditsEl);
+        gsap.to(creditsEl, {
+            opacity: 1,
+            duration: Math.max(0.5, fadeDuration - creditsFadeDelay),
+            delay: creditsFadeDelay,
+            ease: 'power2.inOut',
+        });
+
+        gsap.delayedCall(fadeDuration + holdBeforeRestartS, () => {
+            restartGameFromBeginning();
+        });
     }
 }
 

@@ -1,4 +1,4 @@
-import { setSkipIntroForNextLoad } from '../config/gameFlow.js';
+import { clearBattleCheckpoint, setSkipIntroForNextLoad } from '../config/gameFlow.js';
 import { clearPlayerInventorySave } from './inventoryPersistence.js';
 
 const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
@@ -18,6 +18,7 @@ function reloadToIntro() {
         checkIntervalId = null;
     }
     clearPlayerInventorySave();
+    clearBattleCheckpoint();
     setSkipIntroForNextLoad(false);
     window.location.reload();
 }

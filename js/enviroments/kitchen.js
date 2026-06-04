@@ -4,7 +4,13 @@ import gsap from 'gsap';
 import Door from '../items/door.js';
 import cameraService from '../utils/cameraPresets.js';
 import loaderService from '../utils/loaderService.js';
-import { KITCHEN_WORLD_Y } from './kitchenLayout.js';
+import effectsService from '../utils/effectsService.js';
+import textOverlay from '../UI/textOverlay.js';
+import inventoryManager from '../utils/inventoryManager.js';
+import {
+    KITCHEN_WORLD_Y,
+    getBehindScreenDoorLocalZ,
+} from './kitchenLayout.js';
 import Mom from '../people/mom.js';
 import Moon from '../items/moon.js';
 
@@ -12,17 +18,15 @@ const OUTSIDE2_MODEL_PATH = './resources/models/outside2.glb';
 const OUTSIDE_VIDEO_PATH = './resources/images/soFarGone.mp4';
 /** How many times the door-view video repeats horizontally on the backdrop plane. */
 const OUTSIDE_VIDEO_TILE_COUNT = 3;
-const OUTSIDE_VIDEO_TILE_WIDTH = 800;
-/** World-unit bleed so adjacent tile planes overlap (no repeat-UV seams). */
-const OUTSIDE_VIDEO_TILE_OVERLAP = 0;
+const OUTSIDE_VIDEO_TILE_WIDTH = 1500;
 const OUTSIDE_VIDEO_Y_OFFSET = 150;
 
-const OUTSIDE_MOON_SCALE = 3.5;
-const OUTSIDE_MOON_LIGHT_INTENSITY = 0.5;
-const OUTSIDE_KEY_LIGHT_INTENSITY = 0.65;
-const OUTSIDE_FILL_LIGHT_INTENSITY = 0.4;
-const OUTSIDE_RIM_LIGHT_INTENSITY = 0.9;
-const OUTSIDE_EMISSIVE_INTENSITY = 0.18;
+const OUTSIDE_MOON_SCALE = 3.2;
+const OUTSIDE_MOON_LIGHT_INTENSITY = 0.2;
+const OUTSIDE_KEY_LIGHT_INTENSITY = 0.22;
+const OUTSIDE_FILL_LIGHT_INTENSITY = 0.1;
+const OUTSIDE_RIM_LIGHT_INTENSITY = 0.18;
+const OUTSIDE_EMISSIVE_INTENSITY = 0.05;
 
 /** Door mesh size (see `door.js`). Back wall width matches bedroom/hallway doored wall. */
 const KITCHEN_DOOR_HEIGHT = 4;
@@ -56,6 +60,10 @@ class Kitchen extends Room {
         this._outsideEmissiveTargets = [];
         /** @type {{ group: THREE.Group; videoTexture: THREE.VideoTexture; video: HTMLVideoElement } | null} */
         this._outsideVideoScreen = null;
+        /** @type {THREE.Mesh | null} */
+        this._behindScreenDoor = null;
+        this._behindScreenDoorHingeOffsetX = 0;
+        this._endingSequenceStarted = false;
         this.createKitchen();
         // setTimeout(() => {
         //     cameraService.lookAtKitchen();
@@ -190,15 +198,16 @@ class Kitchen extends Room {
             const model = gltf.scene;
             this.outsideModel = model;
             this._configureOutsideModel(model);
-            model.scale.set(1, 0.7, 1);
+            model.scale.set(2, 0.7, 1);
             model.rotation.y = -Math.PI / 2;
             model.position.set(
                 -1.5,
                 this.config.floorLevel - 8,
-                backWallZ - 248
+                backWallZ - 498
             );
             
             kitchenGroup.add(model);
+            this._addBehindScreenEndDoor(kitchenGroup, model);
             this._addOutsideVideoScreen(kitchenGroup, model);
             this._setupOutsideBeyondDoorAtmosphere(kitchenGroup, model);
         } catch (error) {
@@ -215,7 +224,6 @@ class Kitchen extends Room {
         const tileCount = OUTSIDE_VIDEO_TILE_COUNT;
         const tileWidth = OUTSIDE_VIDEO_TILE_WIDTH;
         const tileHeight = tileWidth * (9 / 16);
-        const tileOverlap = OUTSIDE_VIDEO_TILE_OVERLAP;
 
         const video = document.createElement('video');
         video.src = OUTSIDE_VIDEO_PATH;
@@ -232,7 +240,7 @@ class Kitchen extends Room {
         videoTexture.magFilter = THREE.LinearFilter;
         videoTexture.generateMipmaps = false;
 
-        const geometry = new THREE.PlaneGeometry(tileWidth + tileOverlap, tileHeight);
+        const geometry = new THREE.PlaneGeometry(tileWidth, tileHeight);
         const material = new THREE.MeshBasicMaterial({
             map: videoTexture,
             side: THREE.DoubleSide,
@@ -258,6 +266,64 @@ class Kitchen extends Room {
         this._outsideVideoScreen = { group, videoTexture, video };
     }
 
+    /** Giant door directly behind the video backdrop (further -Z than the screen plane). */
+    _addBehindScreenEndDoor(kitchenGroup, landscapeModel) {
+        const { x, y } = landscapeModel.position;
+        const doorZ = getBehindScreenDoorLocalZ();
+        const doorY = y + OUTSIDE_VIDEO_Y_OFFSET;
+        const doorWidth = OUTSIDE_VIDEO_TILE_WIDTH - 600;
+        const doorHeight = 2000;
+
+        const texture = new THREE.TextureLoader().load('./resources/images/door.png', (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+        });
+        const material = new THREE.MeshStandardMaterial({
+            map: texture,
+            roughness: 0.52,
+            metalness: 0.18,
+            side: THREE.DoubleSide,
+            depthWrite: true,
+        });
+        const door = new THREE.Mesh(
+            new THREE.PlaneGeometry(doorWidth, doorHeight),
+            material
+        );
+        door.name = 'behindScreenEndDoor';
+        door.position.set(x, doorY, doorZ);
+        door.rotation.y = Math.PI;
+        door.frustumCulled = false;
+        door.renderOrder = -2;
+
+        kitchenGroup.add(door);
+        this._behindScreenDoor = door;
+        this._behindScreenDoorHingeOffsetX = doorWidth / 2;
+    }
+
+    /** Open the behind-screen door and fade in the end message. */
+    playEndingSequence() {
+        if (this._endingSequenceStarted) return;
+        this._endingSequenceStarted = true;
+
+        const door = this._behindScreenDoor;
+        if (door) {
+            effectsService.playSfx('doorOpen');
+            const hinge = this._behindScreenDoorHingeOffsetX;
+            gsap.to(door.rotation, {
+                y: door.rotation.y + Math.PI / 2,
+                duration: 2.4,
+                ease: 'power2.inOut',
+            });
+            gsap.to(door.position, {
+                x: door.position.x - hinge,
+                z: door.position.z + hinge * 0.12,
+                duration: 2.4,
+                ease: 'power2.inOut',
+            });
+        }
+
+        textOverlay.playKitchenEndingFinale('Thank you for playing.');
+    }
+
     /** Refresh video texture each frame (see AssetManager.updateAnimatedObjects). */
     update() {
         if (!this._outsideVideoScreen) return;
@@ -267,7 +333,7 @@ class Kitchen extends Room {
         }
     }
 
-    /** Moon + cool night lighting for the cityscape visible through the back door. */
+    /** Moon + dim cool night lighting for the cityscape visible through the back door. */
     _setupOutsideBeyondDoorAtmosphere(kitchenGroup, model) {
         const { x: cx, y: cy, z: cz } = model.position;
         const moonY = cy + 55;
@@ -275,33 +341,40 @@ class Kitchen extends Room {
         const outsideMoon = new Moon(kitchenGroup);
         outsideMoon.createMoon(cx, moonY, cz);
         outsideMoon.moonMesh.scale.setScalar(0);
+        if (outsideMoon.moonMesh?.material) {
+            outsideMoon.moonMesh.material.color?.setHex?.(0x8a95a8);
+        }
         if (outsideMoon.moonLight) {
-            outsideMoon.moonLight.color.setHex(0x8eb4ff);
+            outsideMoon.moonLight.color.setHex(0x4a5c78);
             outsideMoon.moonLight.intensity = 0;
             outsideMoon.moonLight.target.position.set(cx, cy, cz);
             kitchenGroup.add(outsideMoon.moonLight.target);
         }
 
-        const keyLight = new THREE.DirectionalLight(0x6b9fff, 0);
+        const keyLight = new THREE.DirectionalLight(0x2a3548, 0);
         keyLight.position.set(cx - 25, moonY - 5, cz + 35);
         keyLight.target.position.set(cx, cy + 20, cz);
         kitchenGroup.add(keyLight);
         kitchenGroup.add(keyLight.target);
 
-        const fill = new THREE.HemisphereLight(0x3d5f8a, 0x0a1018, 0);
+        const fill = new THREE.HemisphereLight(0x141c28, 0x020306, 0);
         fill.position.set(cx, cy + 35, cz);
         kitchenGroup.add(fill);
 
-        const rim = new THREE.PointLight(0x5a8fd4, 0, 180);
+        const rim = new THREE.PointLight(0x1e2d42, 0, 220);
         rim.position.set(cx + 30, cy + 40, cz - 50);
+        rim.decay = 2;
         kitchenGroup.add(rim);
 
         model.traverse((child) => {
             if (!child.isMesh || !child.material) return;
             const mats = Array.isArray(child.material) ? child.material : [child.material];
             mats.forEach((mat) => {
+                if (mat.color) {
+                    mat.color.multiplyScalar(0.72);
+                }
                 if (mat.emissive) {
-                    mat.emissive.setHex(0x0c1a2e);
+                    mat.emissive.setHex(0x050810);
                     mat.emissiveIntensity = 0;
                     this._outsideEmissiveTargets.push({
                         mat,
@@ -319,6 +392,8 @@ class Kitchen extends Room {
     activateOutsideBeyondDoorAtmosphere({ duration = 1.4 } = {}) {
         if (this._outsideAtmosphereActive) return;
         this._outsideAtmosphereActive = true;
+
+        inventoryManager.hideGameplayHud();
 
         const ease = 'power2.inOut';
         const moon = this.outsideMoon;

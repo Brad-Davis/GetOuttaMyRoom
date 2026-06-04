@@ -18,6 +18,8 @@ class AudioService {
         this._bgmCrossfadeTweens = [];
         /** Incremented to cancel in-flight crossfades when switching again. */
         this._bgmSwitchId = 0;
+        /** Kitchen end credits — keep current BGM / avoid crossfades until reload. */
+        this._endingFinaleActive = false;
         /** @type {Set<string>} */
         this._sfxPreloadedUrls = new Set();
         /** @type {Map<string, AudioBuffer>} decoded SFX for low-latency Web Audio playback */
@@ -164,6 +166,7 @@ class AudioService {
     }
 
     playDefaultBackgroundMusic() {
+        if (this._endingFinaleActive) return;
         if (this._isThirtiesChaseActive()) {
             return this.playThirtiesMusic();
         }
@@ -187,7 +190,18 @@ class AudioService {
      * When the camera returns to the room default view, restore ambient BGM if another
      * track took over or playback was paused / faded out.
      */
+    isEndingFinaleActive() {
+        return this._endingFinaleActive;
+    }
+
+    /** Freeze BGM during kitchen end credits — no fade-in, crossfade, or new playback. */
+    holdMusicDuringEndingFinale() {
+        this._endingFinaleActive = true;
+        this._killBgmTweens();
+    }
+
     async ensureDefaultBackgroundMusic(options = {}) {
+        if (this._endingFinaleActive) return;
         const { default: gameState } = await import('../gameState.js');
         if (gameState.currentEvent?.battleRunning) return;
         if (this._isThirtiesChaseActive()) return;
@@ -235,6 +249,7 @@ class AudioService {
      */
     async switchBackgroundMusic(trackPath, options = {}) {
         if (!trackPath) return;
+        if (this._endingFinaleActive) return;
 
         const duration = Math.max(0, options.duration ?? DEFAULT_CROSSFADE_DURATION);
         const volume = Math.max(0, Math.min(1, options.volume ?? this._bgmTargetVolume));
@@ -358,6 +373,7 @@ class AudioService {
     }
 
     startBackgroundMusic() {
+        if (this._endingFinaleActive) return;
         if (!this.isPlaying) {
             this._ensureBgmPlaying(this.bgmAudio);
         }
@@ -384,6 +400,7 @@ class AudioService {
     }
 
     fadeOutBackgroundMusic(duration = 1) {
+        if (this._endingFinaleActive) return;
         this._killBgmTweens();
         this._bgmVolumeTween = gsap.to(this.bgmAudio, {
             volume: 0,
@@ -393,6 +410,7 @@ class AudioService {
     }
 
     fadeInBackgroundMusic(volume = DEFAULT_BGM_VOLUME, duration = 1) {
+        if (this._endingFinaleActive) return;
         this._bgmTargetVolume = Math.max(0, Math.min(1, volume));
         if (!this.isPlaying) {
             void this._ensureBgmPlaying(this.bgmAudio);

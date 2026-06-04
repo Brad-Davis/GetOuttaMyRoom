@@ -22,6 +22,8 @@ const SFX_LIBRARY = {
     bongHit3: './resources/sounds/bong3.mp3',
     callEx: './resources/sounds/callEx.mp3',
     shot: './resources/sounds/shot.mp3',
+    /** Dialog click — instant full line (typewriter skip). */
+    dialogReveal: './resources/sounds/skip.mp3',
 };
 
 class EffectsService {

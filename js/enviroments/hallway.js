@@ -2,10 +2,10 @@ import Room from '../controls/room.js';
 import * as THREE from 'three';
 import Door from '../items/door.js';
 
-/** Depth of Dad's room end cap along -Z — long enough you never scroll through it visually. */
-export const DADS_ROOM_WALL_DEPTH = 280;
 /** Local Z of the wall face toward the bedroom (hallway seal plane). */
 export const DADS_ROOM_WALL_LOCAL_Z = -200;
+/** How far hallway floor/walls/ceiling continue past the Dad's room door (-Z). */
+export const HALLWAY_END_PAST_DOOR = 15;
 
 /** Match kitchen: shrink alpha cutout on 12-wide doored walls so the frame fits the 2-unit door mesh. */
 const DOOR_TEX_SCALE_X = 1.2;
@@ -80,10 +80,14 @@ class Hallway extends Room {
 
     createHallway() {
         const hallway = new THREE.Group();
-        const hallLength = 2000;
-        const hallCenterZ = -this.config.depth / 2 - hallLength / 2;
+        const hallNearZ = -this.config.depth / 2;
+        const backWallZ = DADS_ROOM_WALL_LOCAL_Z - 10;
+        const hallFarZ = backWallZ - HALLWAY_END_PAST_DOOR;
+        const hallLength = hallNearZ - hallFarZ;
+        const hallCenterZ = (hallNearZ + hallFarZ) / 2;
         const halfW = this.config.width / 2;
         const wallH = this.config.height;
+        const wallRepeatX = Math.max(1, hallLength / 20);
 
         const leftWall = this.createSurface('wall', {
             width: hallLength,
@@ -95,7 +99,7 @@ class Hallway extends Room {
             rotY: Math.PI / 2,
             rotZ: 0,
             texture: 'wall.jpg',
-            textureOptions: { repeat: { x: 100, y: 1 } }
+            textureOptions: { repeat: { x: wallRepeatX, y: 1 } }
         });
         hallway.add(leftWall);
 
@@ -109,7 +113,7 @@ class Hallway extends Room {
             rotY: -Math.PI / 2,
             rotZ: 0,
             texture: 'wall.jpg',
-            textureOptions: { repeat: { x: 100, y: 1 } }
+            textureOptions: { repeat: { x: wallRepeatX, y: 1 } }
         });
 
         // Same rot convention as bedroom floor: width = X, height = Z (no rotZ swap).
@@ -123,7 +127,7 @@ class Hallway extends Room {
             rotX: -Math.PI / 2,
             rotY: 0,
             rotZ: 0,
-            textureOptions: { repeat: { x: 4, y: 400 } }
+            textureOptions: { repeat: { x: 4, y: Math.max(4, hallLength / 5) } }
         });
         floor.frustumCulled = false;
         hallway.add(floor);
@@ -139,7 +143,7 @@ class Hallway extends Room {
             rotX: Math.PI / 2,
             rotY: 0,
             rotZ: 0,
-            textureOptions: { repeat: { x: 1, y: 100 } }
+            textureOptions: { repeat: { x: 1, y: wallRepeatX } }
         });
         ceiling.frustumCulled = false;
         hallway.add(ceiling);
@@ -162,12 +166,11 @@ class Hallway extends Room {
         bridgeFloor.frustumCulled = false;
         hallway.add(bridgeFloor);
 
-        const backWallZ = DADS_ROOM_WALL_LOCAL_Z - 10;
         const dadsRoomBacking = new THREE.Mesh(
             new THREE.PlaneGeometry(this.config.width, this.config.height),
             new THREE.MeshBasicMaterial({ color: 0x000000 })
         );
-        dadsRoomBacking.position.set(0, this.config.wallHeight, backWallZ - 1.5);
+        dadsRoomBacking.position.set(0, this.config.wallHeight, hallFarZ + 1.5);
         dadsRoomBacking.frustumCulled = false;
         hallway.add(dadsRoomBacking);
 
@@ -175,7 +178,7 @@ class Hallway extends Room {
             new THREE.PlaneGeometry(this.config.width, this.config.height),
             new THREE.MeshBasicMaterial({ color: 0x000000 })
         );
-        dadsRoomBacking2.position.set(0, this.config.wallHeight, backWallZ - 0.08);
+        dadsRoomBacking2.position.set(0, this.config.wallHeight, hallFarZ + 0.08);
         dadsRoomBacking2.frustumCulled = false;
         hallway.add(dadsRoomBacking2);
 

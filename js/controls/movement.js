@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import gsap from 'gsap';
 import iframeControls from '../UI/iframeControls.js';
 import SpeedBar from '../UI/speedBar.js';
 import cameraService, { CAMERA_PRESETS } from '../utils/cameraPresets.js';
@@ -10,13 +11,23 @@ import interactionService from '../utils/interactionService.js';
 import backButtonManager from './backButton.js';
 import speakButtonManager from './speakButton.js';
 
-import { FAST_SCROLL, LOG_PLAYER_Z, SKIP_DADDY_WAKE_IFRAME } from '../config/gameFlow.js';
+import {
+    FAST_SCROLL,
+    LOG_PLAYER_Z,
+    REVERSE_SCROLL,
+    SKIP_DADDY_WAKE_IFRAME,
+} from '../config/gameFlow.js';
 import {
     FIRST_BATTLE_POSITION,
     SECOND_BATTLE_POSITION,
     scrollBattleZ,
 } from '../people/thirties.js';
 import { DADS_ROOM_WALL_LOCAL_Z } from '../enviroments/hallway.js';
+import {
+    getKitchenEndingTriggerScrollZ,
+    getKitchenMaxGameGroupZ,
+} from '../enviroments/kitchenLayout.js';
+import audioService from '../utils/audioService.js';
 
 /** Matches `SceneManager` initial `gameGroup.position.z`. */
 const INITIAL_GAME_GROUP_Z = -5;
@@ -44,6 +55,7 @@ const MOVEMENT_SPEED = 0.001;
 /** Multiplier applied when {@link FAST_SCROLL} is enabled in gameFlow.js. */
 const FAST_SCROLL_MULTIPLIER = 12;
 const EFFECTIVE_MOVEMENT_SPEED = MOVEMENT_SPEED * (FAST_SCROLL ? FAST_SCROLL_MULTIPLIER : 1);
+const SCROLL_DIRECTION = REVERSE_SCROLL ? -1 : 1;
 /** Wheel deltaY equivalent needed for 100% fill (higher = harder to max out). */
 const REFERENCE_WHEEL_DELTA = 400;
 const MAX_DISPLAY_SPEED = EFFECTIVE_MOVEMENT_SPEED * REFERENCE_WHEEL_DELTA;
@@ -53,6 +65,9 @@ const SCROLL_EMA_ALPHA = 0.06;
 const IDLE_DECAY_PER_FRAME = 0.99;
 
 const MOM_ENCOUNTER_Z = 0;
+
+const OUTSIDE_START_FLYING = 100;
+const KITCHEN_ENDING_SCROLL_EPSILON = 0.5;
 
 export default class Movement {
     constructor(camera, gameGroup) {
@@ -72,6 +87,8 @@ export default class Movement {
       this.kitchenEnabled = false;
       this._momEncounterStarted = false;
       this._daddyKitchenWakeDone = false;
+      this._flyingStarted = false;
+      this._kitchenEndingStarted = false;
 
       window.addEventListener('wheel', this.handleScroll.bind(this));
     //   this.enable(true); // Start in kitchen mode
@@ -126,29 +143,44 @@ export default class Movement {
         }
     }
 
+    _clampGameGroupScrollZ() {
+        if (!this.gameGroup) return;
+
+        const maxZ = this.kitchenEnabled
+            ? getKitchenMaxGameGroupZ(this.camera?.position?.z)
+            : MAX_GAME_GROUP_Z;
+
+        if (this.gameGroup.position.z > maxZ) {
+            this.gameGroup.position.z = maxZ;
+        }
+
+        if (REVERSE_SCROLL && this.gameGroup.position.z < INITIAL_GAME_GROUP_Z) {
+            this.gameGroup.position.z = INITIAL_GAME_GROUP_Z;
+        }
+    }
+
     handleScroll(event) {
         if (!this.enableMovement) return;
         if (!this.gameGroup || !this.camera) return;
-        if (event.deltaY <= 0) return;
+        if (event.deltaY * SCROLL_DIRECTION <= 0) return;
 
       this._lastWheelAt = performance.now();
 
-      const deltaZ = EFFECTIVE_MOVEMENT_SPEED * event.deltaY;
+      const deltaZ = EFFECTIVE_MOVEMENT_SPEED * event.deltaY * SCROLL_DIRECTION;
       const instantSpeed = Math.abs(deltaZ);
 
       this._averageScrollSpeed +=
           (instantSpeed - this._averageScrollSpeed) * SCROLL_EMA_ALPHA;
 
       this.gameGroup.position.z += deltaZ;
-
-      if (this.gameGroup.position.z > MAX_GAME_GROUP_Z) {
-          this.gameGroup.position.z = MAX_GAME_GROUP_Z;
-      }
+      this._clampGameGroupScrollZ();
 
       this._updateThirtiesChase(instantSpeed);
       this._updateSpeedBar();
       this._checkScrollBattleTriggers();
-      if (!this.kitchenEnabled) {
+      if (this.kitchenEnabled) {
+          this._maybeTriggerKitchenEnding();
+      } else {
           this._maybeTriggerDadsRoomSequence();
           this._syncHallwayShake();
       }
@@ -223,6 +255,33 @@ export default class Movement {
                 gameState.kill('Your Thirties caught you.');
             },
         });
+    }
+
+    _maybeTriggerKitchenEnding() {
+        if (
+            this._kitchenEndingStarted ||
+            !this.kitchenEnabled ||
+            !this.enableMovement ||
+            !this.gameGroup
+        ) {
+            return;
+        }
+
+        const threshold = getKitchenEndingTriggerScrollZ(this.camera?.position?.z);
+        if (this.gameGroup.position.z < threshold - KITCHEN_ENDING_SCROLL_EPSILON) {
+            return;
+        }
+
+        this._kitchenEndingStarted = true;
+        audioService.holdMusicDuringEndingFinale();
+        this.gameGroup.position.z = Math.max(
+            this.gameGroup.position.z,
+            threshold
+        );
+        this.disable();
+
+        const kitchen = window.gameEngine?.getAssetManager?.()?.getGameObject('kitchen');
+        kitchen?.playEndingSequence?.();
     }
 
     _maybeTriggerDadsRoomSequence() {
@@ -355,23 +414,28 @@ export default class Movement {
             if (youZ > MOM_ENCOUNTER_Z) {
                 this.encounterMom();
             }
+            if (youZ > OUTSIDE_START_FLYING) {
+                this.startFlying();
+            }
             return;
-        }
+        } else {
 
-        if (
-            !this._firstScrollBattleDone &&
-            youZ >= FIRST_BATTLE_Z - BATTLE_TRIGGER_EPSILON
-        ) {
-            this._beginScrollBattle(1, FIRST_BATTLE_Z);
-            return;
-        }
+            if (
+                !this._firstScrollBattleDone &&
+                youZ >= FIRST_BATTLE_Z - BATTLE_TRIGGER_EPSILON
+            ) {
+                this._beginScrollBattle(1, FIRST_BATTLE_Z);
+                return;
+            }
 
-        if (
-            !this._secondScrollBattleDone &&
-            this._firstScrollBattleWon &&
-            youZ >= SECOND_BATTLE_Z - BATTLE_TRIGGER_EPSILON
-        ) {
-            this._beginScrollBattle(2, SECOND_BATTLE_Z);
+            if (
+                !this._secondScrollBattleDone &&
+                this._firstScrollBattleWon &&
+                youZ >= SECOND_BATTLE_Z - BATTLE_TRIGGER_EPSILON
+            ) {
+                this._beginScrollBattle(2, SECOND_BATTLE_Z);
+            }
+
         }
 
     }
@@ -449,6 +513,23 @@ export default class Movement {
                     },
                 });
             },
+        });
+    }
+
+    startFlying() {
+        if (this._flyingStarted || !this.camera) return;
+        this._flyingStarted = true;
+
+        const targetY = 250;
+        const startY = this.camera.position.y;
+        const flySpeed = 2;
+        const duration = Math.max(0.01, Math.abs(targetY - startY) / flySpeed);
+
+        gsap.killTweensOf(this.camera.position);
+        gsap.to(this.camera.position, {
+            y: targetY,
+            duration,
+            ease: 'none',
         });
     }
 

@@ -11,9 +11,10 @@ import dialogService from "./utils/dialogService.js";
 import iframeControls from "./UI/iframeControls.js";
 import {
     setSkipIntroForNextLoad,
-    SKIP_FIRST_FIGHT,
-    SKIP_SECOND_FIGHT,
-    SKIP_THIRD_FIGHT,
+    saveBattleCheckpoint,
+    shouldSkipFirstFight,
+    shouldSkipSecondFight,
+    shouldSkipThirdFight,
 } from "./config/gameFlow.js";
 import speakButtonManager from "./controls/speakButton.js";
 import {
@@ -172,9 +173,9 @@ class GameState {
     }
 
     _shouldSkipDoorFight(enemyName) {
-        if (enemyName === 'Uncle') return SKIP_FIRST_FIGHT;
-        if (enemyName === 'Cousin') return SKIP_SECOND_FIGHT;
-        if (enemyName === 'Grandma') return SKIP_THIRD_FIGHT;
+        if (enemyName === 'Uncle') return shouldSkipFirstFight();
+        if (enemyName === 'Cousin') return shouldSkipSecondFight();
+        if (enemyName === 'Grandma') return shouldSkipThirdFight();
         return false;
     }
 
@@ -190,15 +191,15 @@ class GameState {
      * match the current checkpoint (not only after opening the door).
      */
     applyDevSkipCheckpointsAtStart() {
-        if (SKIP_FIRST_FIGHT && this.enemySpawner.peekNextEnemy()?.name === 'Uncle') {
+        if (shouldSkipFirstFight() && this.enemySpawner.peekNextEnemy()?.name === 'Uncle') {
             this.enemySpawner.skipNextEnemy();
             this.prepareForSecondBattle({ silent: true });
         }
-        if (SKIP_SECOND_FIGHT && this.enemySpawner.peekNextEnemy()?.name === 'Cousin') {
+        if (shouldSkipSecondFight() && this.enemySpawner.peekNextEnemy()?.name === 'Cousin') {
             this.enemySpawner.skipNextEnemy();
             this.prepareForThirdBattle({ silent: true });
         }
-        if (SKIP_THIRD_FIGHT && this.enemySpawner.peekNextEnemy()?.name === 'Grandma') {
+        if (shouldSkipThirdFight() && this.enemySpawner.peekNextEnemy()?.name === 'Grandma') {
             this.enemySpawner.skipNextEnemy();
         }
         restorePlayerInventoryAfterRespawn(this.inventoryManager);
@@ -287,6 +288,13 @@ class GameState {
     async winBattle() {
         this.inventoryManager.resetAllActiveItems();
         const defeatedEnemy = this.currentEvent.enemy;
+        if (defeatedEnemy.name === 'Uncle') {
+            saveBattleCheckpoint(1);
+        } else if (defeatedEnemy.name === 'Cousin') {
+            saveBattleCheckpoint(2);
+        } else if (defeatedEnemy.name === 'Grandma') {
+            saveBattleCheckpoint(3);
+        }
         const shouldCloseDoor =
             defeatedEnemy.name === 'Uncle' || defeatedEnemy.name === 'Cousin';
         if (shouldCloseDoor) {

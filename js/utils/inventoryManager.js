@@ -6,6 +6,7 @@ import dopamineManager from "../managers/dopamineManager.js";
 import dialogService from "./dialogService.js";
 import effectsService from "./effectsService.js";
 import { hasPendingInventoryRestore } from "./inventoryPersistence.js";
+import backButtonManager from "../controls/backButton.js";
 
 class InventoryManager {
     constructor() {
@@ -344,13 +345,45 @@ class InventoryManager {
     }
 
     hideAllElements() {
-        this.inventoryContainer.style.opacity = 0;
-        this.inventoryContainer.style.pointerEvents = "none";
+        if (!this.inventoryContainer) return;
+        this.inventoryContainer.style.opacity = '0';
+        this.inventoryContainer.style.pointerEvents = 'none';
     }
 
     showAllElements() {
-        this.inventoryContainer.style.opacity = 1;
-        this.inventoryContainer.style.pointerEvents = "auto";
+        if (!this.inventoryContainer) return;
+        this.inventoryContainer.style.opacity = '1';
+        this.inventoryContainer.style.pointerEvents = 'auto';
+    }
+
+    /** Backpack, active slots, dopamine, damage multipliers — kitchen walk / end credits. */
+    hideGameplayHud() {
+        if (this._gameplayHudHidden) return;
+        this._gameplayHudHidden = true;
+
+        this.hideInventory();
+        this.hideAllElements();
+
+        this._savedHudDisplay = this._savedHudDisplay ?? {};
+        for (const id of ['dopamine-container', 'damage-multiplier-hud']) {
+            const el = document.getElementById(id);
+            if (!el) continue;
+            this._savedHudDisplay[id] = el.style.display;
+            el.style.display = 'none';
+        }
+
+        const itemInfo = document.getElementById('item-info-block');
+        if (itemInfo) {
+            this._savedHudDisplay['item-info-block'] = itemInfo.style.display;
+            itemInfo.style.display = 'none';
+        }
+
+        backButtonManager.hideBackButton();
+        backButtonManager.disable();
+    }
+
+    isGameplayHudHidden() {
+        return Boolean(this._gameplayHudHidden);
     }
 
     hasAnyItems() {

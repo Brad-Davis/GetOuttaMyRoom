@@ -9,7 +9,7 @@ import Thirties from '../people/thirties.js';
 import {
     CD_STARTS_BATTLE_IMMEDIATELY,
     SKIP_INTRO,
-    SKIP_THIRD_FIGHT,
+    shouldSkipThirdFight,
     SPAWN_IN_KITCHEN,
 } from '../config/gameFlow.js';
 import effectsService from '../utils/effectsService.js';
@@ -127,7 +127,7 @@ class GameEngine {
 
         dismissInitialLoadingScreen();
 
-        if (SKIP_THIRD_FIGHT) {
+        if (shouldSkipThirdFight()) {
             applyCameraPreset('INTERIOR_START', { duration: 0 });
             cameraService.openEyes();
             await iframeControls.hideIframe(false);

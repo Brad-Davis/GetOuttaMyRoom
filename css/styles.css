@@ -522,6 +522,41 @@ body.noise-between-static-iframe-open #backButton {
   display: none !important;
 }
 
+#end-fade-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10040;
+}
+
+#end-fade-overlay[hidden] {
+  display: none !important;
+}
+
+#end-credits-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  font-size: clamp(22px, 4.5vw, 52px);
+  font-weight: bold;
+  line-height: 1.35;
+  color: #fff;
+  text-shadow: 2px 2px 0 #ff2ba3bf, 4px 4px 12px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  z-index: 10050;
+  opacity: 0;
+}
+
+#end-credits-overlay[hidden] {
+  display: none !important;
+}
+
 #full-overlay {
   position: absolute;
   inset: 0;
