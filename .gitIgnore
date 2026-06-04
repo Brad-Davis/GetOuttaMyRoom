@@ -2,3 +2,6 @@ node_modules/
 dist/
 .env
 resources/models/Outside.source.glb
+
+# macOS custom folder icons (Icon + carriage return — invalid on Windows)
+Icon?
