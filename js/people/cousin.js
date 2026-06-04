@@ -26,7 +26,7 @@ const COUSIN_FRAME_URLS = [1, 2, 3, 4, 5].map(
 
 class Cousin extends Enemy {
     constructor(hp, level, exp, gold) {
-        super("Cousin", [items["bite_001"], items["shot_001"]], hp, level, exp, gold, null, [0, -1, 2], null);
+        super("Cousin", [items["bite_001"], items["chips_001"]], hp, level, exp, gold, null, [0, -1, 2], null);
         /** @type {ReturnType<typeof setTimeout> | null} */
         this._attackPoseResetTimer = null;
     }

@@ -182,27 +182,18 @@ class CameraService {
     }
 
     lookAtBed() {
-        console.log('Looking at bed');
         if (!this.camera) {
             console.warn('Camera not initialized');
             return;
         }
+        applyCameraPreset('BED_VIEW');
+    }
 
-        gsap.to(this.camera.position, {
-            x: 0,
-            z: -7,
-            y: -1.5,
-            duration: 1,
-            ease: 'power2.inOut',
-        });
-        
-        gsap.to(this.camera.rotation, {
-            x: -Math.PI/2,
-            z: -Math.PI/2,
-            y: -Math.PI/4,
-            duration: 1,
-            ease: 'power2.inOut',
-        });
+    isAtSleepingView(cam = this.camera) {
+        return (
+            this.currentPreset === 'SLEEPING_VIEW' ||
+            this.checkCameraPreset('SLEEPING_VIEW', cam)
+        );
     }
 
     lookAtDresser() {
@@ -435,11 +426,11 @@ class CameraService {
         return this.camera ? { ...this.camera.rotation } : null;
     }
 
-    checkCameraPreset(presetName) {
+    checkCameraPreset(presetName, cam = this.camera) {
         const preset = CAMERA_PRESETS[presetName];
-        if (!preset || !this.camera) return false;
-        const p = this.camera.position;
-        const r = this.camera.rotation;
+        if (!preset || !cam) return false;
+        const p = cam.position;
+        const r = cam.rotation;
         const ref = preset;
         return (
             nearlyEqual(p.x, ref.position.x) &&

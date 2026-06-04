@@ -1,3 +1,22 @@
+const LOADING_DISCLAIMERS = [
+    "Disclaimer: this game was made by a gay man, so you are supporting queer art right now. he is homophobic tho womp womp",
+    "Disclaimer: I made this game drunk as hell.",
+    "Disclaimer: this game kinda sucks sorry.",
+    "Fun fact: I wanted to display this game in the bathroom but Aaron said no so now it's here.",
+    "Fun fact: ONX told me if this game isn't good they would bully me.",
+    "Fun fact: I made this game all in javascript so it's probably gonna break",
+    "Fun fact: I've been staring at this dumb ass game for so long I'm not sure if it's good or not.",
+    "Hit the bong three times I dare you.",
+    "Fun fact: The dude outside was supposed to do stuff but then I ran out of time.",
+]
+function initInitialLoadingDisclaimer() {
+    const el = document.getElementById('initial-loading-disclaimer');
+    if (!el || LOADING_DISCLAIMERS.length === 0) return;
+    el.textContent = LOADING_DISCLAIMERS[Math.floor(Math.random() * LOADING_DISCLAIMERS.length)];
+}
+
+initInitialLoadingDisclaimer();
+
 /** Single place so SKIP_INTRO (and loaders) can dismiss before blocking dialogs. */
 export function dismissInitialLoadingScreen() {
     const el = document.getElementById('initial-loading-screen');

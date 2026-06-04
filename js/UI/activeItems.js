@@ -52,9 +52,9 @@ class ActiveItems {
             if (item) {
                 item.tick(timeAmount, index, activeItemsElement.children);
                 if (this instanceof EnemyActiveItems) {
-                    if (item.isReady) {
+                    if (item.isReady && this._currentEnemy && !this._currentEnemy.isDefeated) {
                         const container = activeItemsElement.children[index + 1];
-                        this._currentEnemy?.onEnemyItemUsed?.(item, index);
+                        this._currentEnemy.onEnemyItemUsed?.(item, index);
                         item.onUse(container.children[0], container, true); // USE ITEM!
                     }
                 }

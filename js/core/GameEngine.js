@@ -6,7 +6,12 @@ import interactionService from '../utils/interactionService.js';
 import cameraService, { applyCameraPreset } from '../utils/cameraPresets.js';
 import textOverlay from '../UI/textOverlay.js';
 import Thirties from '../people/thirties.js';
-import { CD_STARTS_BATTLE_IMMEDIATELY, SKIP_INTRO, SPAWN_IN_KITCHEN } from '../config/gameFlow.js';
+import {
+    CD_STARTS_BATTLE_IMMEDIATELY,
+    SKIP_INTRO,
+    SKIP_THIRD_FIGHT,
+    SPAWN_IN_KITCHEN,
+} from '../config/gameFlow.js';
 import effectsService from '../utils/effectsService.js';
 import iframeControls from '../UI/iframeControls.js';
 import { dismissInitialLoadingScreen } from '../utils/initialLoadingScreen.js';
@@ -115,15 +120,26 @@ class GameEngine {
             door2.open();
         }
 
-        cameraService.sleepInBed({ fastEyelids: true });
         const activeItems = document.getElementById('active-items');
         const invBtn = document.getElementById('inventory-button');
         if (activeItems) activeItems.style.display = 'block';
         if (invBtn) invBtn.style.display = 'block';
 
-        // `hideIframe(true)` awaits dialog — dismiss loader first or it never leaves.
         dismissInitialLoadingScreen();
 
+        if (SKIP_THIRD_FIGHT) {
+            applyCameraPreset('INTERIOR_START', { duration: 0 });
+            cameraService.openEyes();
+            await iframeControls.hideIframe(false);
+            textOverlay.hide();
+            interactionService.enable();
+            gameState.startThirtiesChapter();
+            return;
+        }
+
+        cameraService.sleepInBed({ fastEyelids: true });
+
+        // `hideIframe(true)` awaits dialog — dismiss loader first or it never leaves.
         await iframeControls.hideIframe(true);
         // `endDialog()` shows bottom HUD again — keep overlay hidden during normal play.
         textOverlay.hide();

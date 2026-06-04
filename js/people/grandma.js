@@ -5,6 +5,7 @@ import loaderService from "../utils/loaderService.js";
 import items from "../templates/items.js";
 import effectsService from "../utils/effectsService.js";
 import dialogService from "../utils/dialogService.js";
+import speakButtonManager from "../controls/speakButton.js";
 
 /**
  * Pose name → 0-based frame index (same order as grandma1.png … grandma5.png).
@@ -166,12 +167,16 @@ class Grandma extends Enemy {
 
     dieEvent() {
         dialogService.clearDialog();
-        dialogService.runLines([
-            {
-                speaker: "Grandma",
-                text: "I only wanted you to eat something.",
-            },
-        ]);
+        dialogService
+            .runLines([
+                {
+                    speaker: "Grandma",
+                    text: "I only wanted you to eat something.",
+                },
+            ])
+            .then(() => {
+                speakButtonManager.startThirties();
+            });
     }
 
     getRandomDialog() {

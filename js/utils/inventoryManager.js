@@ -5,6 +5,7 @@ import store from "../enviroments/store.js";
 import dopamineManager from "../managers/dopamineManager.js";
 import dialogService from "./dialogService.js";
 import effectsService from "./effectsService.js";
+import { hasPendingInventoryRestore } from "./inventoryPersistence.js";
 
 class InventoryManager {
     constructor() {
@@ -27,14 +28,14 @@ class InventoryManager {
         });
 
         this.setupDragAndDrop();
-        
-        // Add test items to inventory for testing
-        this.addTestItems();
+
+        if (!hasPendingInventoryRestore()) {
+            this.addTestItems();
+        }
     }
 
     addTestItems() {
-        // Add some test items to the inventory
-        this.inventory.addItem(items.punch_001);
+        // this.inventory.addItem(items.punch_001);
         // this.inventory.addItem(items.shot_001);
         // this.inventory.addItem(items.scream_001);
     }

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import loaderService from '../utils/loaderService.js';
 import cameraService from '../utils/cameraPresets.js';
 import iframeControls from '../UI/iframeControls.js';
-import { linkedInScore } from '../services/aiScoring.js';
+import { linkedInScore, youtubeScore } from '../services/aiScoring.js';
 import dialogService from '../utils/dialogService.js';
 import dopamineManager from '../managers/dopamineManager.js';
 import missionService from '../utils/missionService.js';
@@ -17,8 +17,11 @@ const TINDER_COMPUTER_IFRAME_URL = '/evilTinder/index.html';
 
 const YOUTUBE_COMPUTER_IFRAME_URL = '/evilYoutube/index.html';
 
-/** After LinkedIn submit, block re-opening the computer iframe for this long (ms). */
+/** After LinkedIn / Youtube submit, block re-opening the computer iframe for this long (ms). */
 const COMPUTER_REOPEN_COOLDOWN_MS = 4000;
+
+/** Dopamine awarded after posting on Evil Youtube (always, regardless of score). */
+const YOUTUBE_DOPAMINE_REWARD = 15;
 
 /** First computer open after cooldown loads this URL instead of Evil LinkedIn. */
 const POST_SUBMIT_COMPUTER_IFRAME_URL = 'https://noisebetweenstatic.com/';
@@ -121,6 +124,13 @@ class Computer {
       this.unsetFocus();
       this.computerTimeUsed = true;
       await this.gradeLinkedIn(text);
+    } else if (COMPUTER_IFRAME_URL === YOUTUBE_COMPUTER_IFRAME_URL) {
+      this._computerIframeOpensBlockedUntil = Date.now() + COMPUTER_REOPEN_COOLDOWN_MS;
+      this.lastIframeSubmitText = text;
+      console.log(text);
+      this.unsetFocus();
+      this.computerTimeUsed = true;
+      await this.gradeYoutube(text);
     }
   }
 
@@ -197,6 +207,36 @@ class Computer {
       missionService.completeCurrentMission();
       await this.firstMission();
     }
+  }
+
+  async gradeYoutube(text) {
+    try {
+      const scoreResult = await youtubeScore(text);
+      console.log('[Youtube score result]', scoreResult);
+
+      let responseText = `Your toxicity score is ${scoreResult.score} out of 100.`;
+      if (typeof scoreResult.reason === 'string') {
+        responseText += `\n\n${scoreResult.reason}`;
+      }
+      responseText += '\n\nEither way, no one read it, but you feel better.';
+      await dialogService.runLines([
+        {
+          speaker: 'The Youtube Algorithm',
+          text: responseText,
+        },
+      ]);
+    } catch (err) {
+      console.error('[gradeYoutube] Error:', err);
+      await dialogService.runLines([
+        {
+          speaker: 'The Youtube Algorithm',
+          text: "Something went wrong scoring your comment. Either way, no one read it, but you feel better.",
+        },
+      ]);
+    }
+
+    dopamineManager.giveDopamine(YOUTUBE_DOPAMINE_REWARD);
+    missionService.completeCurrentMission();
   }
 
   async firstMission() {

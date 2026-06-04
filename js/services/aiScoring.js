@@ -76,4 +76,12 @@ async function linkedInScore(userResponse) {
     return scoreViaProxy('linkedin', { text: userResponse });
 }
 
-export { podcastScore, insultScore, linkedInScore, musicTasteScore };
+async function youtubeScore(userResponse) {
+    return scoreViaProxy('youtube', { text: userResponse });
+}
+
+async function politicalScore(userResponse, question) {
+    return scoreViaProxy('political', { text: userResponse, question });
+}
+
+export { podcastScore, insultScore, linkedInScore, youtubeScore, musicTasteScore, politicalScore };

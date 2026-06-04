@@ -115,6 +115,7 @@ class GameInteractionManager {
     setupDoorInteraction(mesh, door, gameState) {
         mesh.addEventListener('click', async () => {
             if (!interactionService.checkEnabled()) return;
+            if (!cameraService.isAtInteriorDefault()) return;
 
             if (door.doorOpen) {
                 door.close();
@@ -170,6 +171,7 @@ class GameInteractionManager {
     setupBedInteraction(mesh, _bed, gameState) {
         mesh.addEventListener('click', async () => {
             if (!interactionService.checkEnabled()) return;
+            if (cameraService.isAtSleepingView()) return;
 
             await dialogService.start('bed_goblin_intro');
             gameState.goToStore();

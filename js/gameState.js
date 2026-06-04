@@ -6,7 +6,6 @@ import player from "./templates/player.js";
 import sceneService from "./utils/sceneService.js";
 import store from "./enviroments/store.js";
 import effectsService from "./utils/effectsService.js";
-import { shakeDamageMultiplierHud } from "./utils/damageMultiplierHud.js";
 import missionService from "./utils/missionService.js";
 import dialogService from "./utils/dialogService.js";
 import iframeControls from "./UI/iframeControls.js";
@@ -16,6 +15,11 @@ import {
     SKIP_SECOND_FIGHT,
     SKIP_THIRD_FIGHT,
 } from "./config/gameFlow.js";
+import speakButtonManager from "./controls/speakButton.js";
+import {
+    restorePlayerInventoryAfterRespawn,
+    savePlayerInventoryForRespawn,
+} from "./utils/inventoryPersistence.js";
 
 /** @typedef {'linkedin' | 'tinder' | 'youtube'} ComputerPhase */
 
@@ -67,8 +71,12 @@ class GameState {
             damage = Math.floor(damage);
             this.player.changeHp(-damage);
             this.player.takeDamage(damage);
+            this.generatePainText(damage, fromEnemy, physical);
         } else {
         // Deal damage to the current enemy
+            if (this.currentEvent.enemy.isDefeated) {
+                return false;
+            }
             if (physical) {
                 damage *= this.player.phyDamage;
             } else {
@@ -79,11 +87,6 @@ class GameState {
             this.currentEvent.enemy.changeHp(-damage);
             this.currentEvent.enemy.takeDamage(damage);
             this.generatePainText(damage, fromEnemy, physical);
-            if (physical) {
-                shakeDamageMultiplierHud('physical');
-            } else {
-                shakeDamageMultiplierHud('emotional');
-            }
         }
 
         
@@ -98,7 +101,11 @@ class GameState {
             this.player.changeHp(healAmount);
             this.generateHealText(healAmount, fromEnemy);
         } else if (this.currentEvent?.enemy) {
-            this.currentEvent.enemy.changeHp(healAmount);
+            const enemy = this.currentEvent.enemy;
+            if (enemy.isDefeated) {
+                return;
+            }
+            enemy.changeHp(healAmount);
             this.generateHealText(healAmount, fromEnemy);
         }
     }
@@ -106,12 +113,10 @@ class GameState {
     generatePainText(damage, fromEnemy = false, physical = true) {
         const painText = document.createElement('div');
         painText.classList.add('pain-text');
+        painText.textContent = `-${damage} HP`;
         if (physical) {
-            painText.textContent += `-${damage} HP`;
             painText.style.color = 'rgb(255, 0, 0, 0.75)';
-        }
-        if (!physical) {
-            painText.textContent += `-${damage * this.player.emoDamage} HP`;
+        } else {
             painText.style.color = 'rgb(255, 43, 163, 0.75)';
         }
         if (fromEnemy) {
@@ -196,6 +201,7 @@ class GameState {
         if (SKIP_THIRD_FIGHT && this.enemySpawner.peekNextEnemy()?.name === 'Grandma') {
             this.enemySpawner.skipNextEnemy();
         }
+        restorePlayerInventoryAfterRespawn(this.inventoryManager);
     }
 
     /** Dev skip: same door/post-fight bookkeeping as winning, plus battle prep checkpoints. */
@@ -208,7 +214,14 @@ class GameState {
             this.prepareForSecondBattle({ silent: this.computerPhase !== 'linkedin' });
         } else if (enemyName === 'Cousin') {
             this.prepareForThirdBattle({ silent: this.computerPhase === 'youtube' });
+        } else if (enemyName === 'Grandma') {
+            this.startThirtiesChapter();
         }
+    }
+
+    /** Post–Grandma beat: turn around and run the Thirties hello / chase intro. */
+    startThirtiesChapter() {
+        speakButtonManager.startThirties();
     }
 
     async goToBattle(door, options = {}) {
@@ -306,6 +319,7 @@ class GameState {
                 : 'You have died.';
         this.textOverlay.showWindowOverlay(message, 'Game over', ['Okay'], [
             () => {
+                savePlayerInventoryForRespawn(this.inventoryManager);
                 setSkipIntroForNextLoad(true);
                 window.location.reload();
             },
@@ -343,8 +357,8 @@ class GameState {
 const gameState = new GameState();
 
 // Make hurtEnemy globally available for weapons
-window.hurt = (damage, fromEnemy = false) => {
-    return gameState.hurt(damage, fromEnemy);
+window.hurt = (damage, fromEnemy = false, physical = true) => {
+    return gameState.hurt(damage, fromEnemy, physical);
 };
 
 window.heal = (healAmount, fromEnemy = false) => {

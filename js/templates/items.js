@@ -1,7 +1,8 @@
 import effectsService from "../utils/effectsService.js";
+import { shakeDamageMultiplierHud } from "../utils/damageMultiplierHud.js";
 import voiceRecognition from "../services/voiceRecognition.js";
 import dialogService from "../utils/dialogService.js";
-import {podcastScore, insultScore, musicTasteScore} from "../services/aiScoring.js";
+import {podcastScore, insultScore, musicTasteScore, politicalScore} from "../services/aiScoring.js";
 import micVolumeScoring from "../services/micVolumeScoring.js";
 import dopamineManager from "../managers/dopamineManager.js";
 
@@ -27,6 +28,14 @@ class Item {
 
     use(fromEnemy = false) {
         console.log(`${this.name} is used.`);
+        if (!fromEnemy) {
+            if (this.phyDamage > 0) {
+                shakeDamageMultiplierHud('physical');
+            }
+            if (this.emoDamage > 0) {
+                shakeDamageMultiplierHud('emotional');
+            }
+        }
         this.triggerFunction(fromEnemy);
     }
 
@@ -374,7 +383,7 @@ const itemPool = {
         "Scream",
         "Scream at your family members to hurt them a lot and yourself a little.",
         /* value */ 5,
-        /* rechargeTime */ 10,
+        /* rechargeTime */ 20,
         /* image */ "./resources/images/scream.png",
         /* triggerFunction */ async (fromEnemy = false) => {
             if (speakingActive) {
@@ -420,8 +429,8 @@ const itemPool = {
                         });
                     },
                 });
-                const familyDamage = Math.max(8, Math.round(screamScore.score * 10));
-                const selfDamage = Math.max(2, Math.round(familyDamage * 0.2));
+                const familyDamage = Math.max(8, Math.round(screamScore.score * 5));
+                const selfDamage = Math.max(2, Math.round(familyDamage));
 
                 hurt(familyDamage, fromEnemy, false);
                 hurt(selfDamage, !fromEnemy, false);
@@ -554,20 +563,71 @@ const itemPool = {
         /* effects */ null,
         /* sfx */ null,
     ),
-    "Uninformed Political Discussion": new Item(
+    "political": new Item(
         "Uninformed Political Discussion",
         "Discuss politics with your family.",
         /* value */ 5,
         /* rechargeTime */ 5,
-        /* image */ "./resources/images/political.png",
-        /* triggerFunction */ (fromEnemy = false) => {
-            // GIVE DOPAMINE
-            //Name a senetor you have 5 seconds.
-            //Name a woman politician you have 5 seconds.
+        /* image */ "./resources/images/politics.png",
+        /* triggerFunction */ async (fromEnemy = false) => {
+            if (speakingActive) {
+                return;
+            }
+            speakingActive = true;
+            const lengthOfTime = 5;
+            const questions = [
+                "Name a U.S. senator.",
+                "Name a female politician.",
+                "Name the current U.S. president.",
+                "Name a U.S. state governor.",
+                "Name a member of the U.S. Supreme Court.",
+                "Name a U.S. cabinet secretary.",
+                "Name a political party in the United States.",
+                "Name a country that is a member of the United Nations.",
+            ];
+            const question = questions[Math.floor(Math.random() * questions.length)];
+
+            try {
+                await dialogService.runLines([
+                    {
+                        speaker: 'Disappointed Parent',
+                        text: `${question} You have ${lengthOfTime} seconds. Start talking after clicking this box (your words will show up on the screen).`,
+                    },
+                ]);
+            } catch (error) {
+                console.warn("[Political intro] failed:", error);
+            }
+
+            try {
+                const statement = await voiceRecognition.getAndPrintStatement(lengthOfTime);
+                const score = await politicalScore(statement, question);
+                console.log("[Political score]", score);
+                hurt(score.score, fromEnemy, false);
+
+                let response = `Your political answer score is ${score.score} out of 100.`;
+                if (score.score > 50) {
+                    response += ` You actually knew that?! Your family is furious you showed off at dinner.`;
+                } else {
+                    response += ` Classic uninformed energy. Your family is relieved you embarrassed yourself.`;
+                }
+                dialogService.runLines([{
+                    speaker: 'Disappointed Parent',
+                    text: response,
+                }]);
+            } catch (error) {
+                console.warn("[Political item] failed:", error);
+            } finally {
+                speakingActive = false;
+            }
         },
         /* phyDamage */ 0,
-        /* emoDamage */ 0,
-        /* effects */ null,
+        /* emoDamage */ 3,
+        /* effects */ {
+            sfx: "punchLight",
+            sfxOptions: { volume: 0.65, playbackRate: 1.05 },
+            screenShake: { intensity: 6, duration: 120 },
+            flash: { color: "#ffffff", alpha: 0.08, duration: 80 }
+        },
         /* sfx */ "political"
     ),
     "Facial Piercing": new Item(
@@ -600,7 +660,7 @@ const itemPool = {
     ),
     "Music Taste": new Item(
         "Music Taste",
-        "Change your music taste to hurt yourself and your family.",
+        "Explain your music taste to hurt your family.",
         /* value */ 5,
         /* rechargeTime */ 5,
         /* image */ "./resources/images/musicTaste.png",
@@ -745,6 +805,29 @@ function generateId(itemName) {
     return itemName + "_" + Math.random().toString(36).substr(2, 9);
 }
 
+/** Fresh instance from a catalog entry (inventory / equipped slots must not share charge state). */
+export function cloneItemFromTemplate(template, { currentCharge = 0, isReady = false } = {}) {
+    if (!template) return null;
+    const item = new Item(
+        template.name,
+        template.description,
+        template.value,
+        template.rechargeTime,
+        template.image,
+        template.triggerFunction,
+        template.id,
+        template.phyDamage,
+        template.emoDamage,
+        template.effects,
+        template.sfx,
+        template.phyBuff,
+        template.emoBuff
+    );
+    item.currentCharge = currentCharge;
+    item.isReady = isReady;
+    return item;
+}
+
 const items = {
     "punch_001": generateItem("punch", "punch_001"),
     "punch_heavy_001": generateItem("punch_heavy", "punch_heavy_001"),
@@ -760,6 +843,7 @@ const items = {
     "bite_001": generateItem("bite", "bite_001"),
     "callEx_001": generateItem("callEx", "callEx_001"),
     "scream_001": generateItem("scream", "scream_001"),
+    "political_001": generateItem("political", "political_001"),
     "existentialDread_001": generateItem("Existential Dread", "existentialDread_001"),
 }
 

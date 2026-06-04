@@ -30,6 +30,7 @@ class Enemy {
         this._currentSpriteFrame = 0;
         this.phyDamage = 1;
         this.emoDamage = 1;
+        this.isDefeated = false;
     }
 
     /**
@@ -73,6 +74,9 @@ class Enemy {
     }
 
     changeHp (hp) {
+        if (this.isDefeated) {
+            return;
+        }
         this.currentHp += hp;
         if (hp < 0) {
             // TAKING DAMAGE
@@ -96,7 +100,7 @@ class Enemy {
         } else {
             this.triggerOverheal();
         }
-        if (this.currentHp < 0) {
+        if (this.currentHp <= 0) {
             this.die();
         }
         this.enemyHealthBar.updateHealthBar();
@@ -107,6 +111,10 @@ class Enemy {
     }
 
     die () {
+        if (this.isDefeated) {
+            return;
+        }
+        this.isDefeated = true;
         this.currentHp = 0;
         if (this.deathPose) {
             this.deathPose();
@@ -210,6 +218,7 @@ class Enemy {
     }
 
     startBattle() {
+        this.isDefeated = false;
         this.enterScene();
         this.setHp(this.maxHp);
         this.enemyHealthBar.showHealthBar();

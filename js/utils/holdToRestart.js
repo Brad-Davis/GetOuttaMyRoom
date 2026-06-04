@@ -1,4 +1,5 @@
 import { setSkipIntroForNextLoad } from '../config/gameFlow.js';
+import { clearPlayerInventorySave } from './inventoryPersistence.js';
 
 const HOLD_DURATION_S = 5;
 const COUNT_START_S = 2;
@@ -52,6 +53,7 @@ function cancelHold() {
 
 function completeHoldRestart() {
     cancelHold();
+    clearPlayerInventorySave();
     setSkipIntroForNextLoad(false);
     window.location.reload();
 }

@@ -151,9 +151,11 @@ class Battle {
 
         this.randomDialogTime -= 100;
         // In event of tie the player wins
-        if (this.enemy.getHp() <= 0) {
+        if (this.enemy.isDefeated || this.enemy.getHp() <= 0) {
             this.battleLog.push("Enemy has died!");
-            this.enemy.die();
+            if (!this.enemy.isDefeated) {
+                this.enemy.die();
+            }
             this.endBattle(/*playerWon*/true);
             return;
         }

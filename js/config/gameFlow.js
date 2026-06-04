@@ -36,7 +36,7 @@ export function setSkipIntroForNextLoad(value) {
 export const SPAWN_IN_KITCHEN = false;
 
 /** When true: wheel scroll moves the hallway/kitchen rail much faster (dev / testing). */
-export const FAST_SCROLL = true;
+export const FAST_SCROLL = false;
 
 /**
  * When true: Dad's room still plays the hallway door camera sequence, then skips the
@@ -51,15 +51,16 @@ export const LOG_PLAYER_Z = false;
  * When true: skip Thirties hello dialog, run-away / return beats, anger shakes, and the
  * intro `turnCamera` — jump straight to hallway scroll chase.
  */
-export const SKIP_THIRTIES_DIALOG = true;
+export const SKIP_THIRTIES_DIALOG = false;
 
 /**
  * Door battles (Uncle → Cousin → Grandma). When true, that fight is not played;
  * checkpoint prep still runs (fight 1 → {@link prepareForSecondBattle}, fight 2 →
- * {@link prepareForThirdBattle}).
+ * {@link prepareForThirdBattle}). Skip Grandma also jumps to the Thirties chapter
+ * (default room camera + {@link startThirtiesChapter} on load / door skip).
  */
 export const SKIP_FIRST_FIGHT = true;
-export const SKIP_SECOND_FIGHT = false;
+export const SKIP_SECOND_FIGHT = true;
 export const SKIP_THIRD_FIGHT = false;
 
 /** Computer mini-game + wake monologue for the current dev skip checkpoint. */
