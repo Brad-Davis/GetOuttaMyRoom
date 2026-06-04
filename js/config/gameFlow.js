@@ -36,10 +36,10 @@ export function setSkipIntroForNextLoad(value) {
 export const SPAWN_IN_KITCHEN = false;
 
 /** When true: wheel scroll moves the hallway/kitchen rail much faster (dev / testing). */
-export const FAST_SCROLL = false;
+export const FAST_SCROLL = true;
 
 /** When true: flip wheel direction (scroll up advances the rail instead of scroll down). */
-export const REVERSE_SCROLL = false;
+export const REVERSE_SCROLL = true;
 
 /**
  * When true: Dad's room still plays the hallway door camera sequence, then skips the
@@ -65,7 +65,7 @@ export const SKIP_THIRTIES_DIALOG = false;
  * Dev-only overrides — runtime progress uses {@link saveBattleCheckpoint} and
  * {@link shouldSkipFirstFight} / {@link shouldSkipSecondFight} / {@link shouldSkipThirdFight}.
  */
-export const SKIP_FIRST_FIGHT = true;
+export const SKIP_FIRST_FIGHT = false;
 export const SKIP_SECOND_FIGHT = false;
 export const SKIP_THIRD_FIGHT = false;
 

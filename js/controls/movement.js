@@ -53,7 +53,7 @@ const BATTLE_TRIGGER_EPSILON = 0.05;
 
 const MOVEMENT_SPEED = 0.001;
 /** Multiplier applied when {@link FAST_SCROLL} is enabled in gameFlow.js. */
-const FAST_SCROLL_MULTIPLIER = 12;
+const FAST_SCROLL_MULTIPLIER = 3;
 const EFFECTIVE_MOVEMENT_SPEED = MOVEMENT_SPEED * (FAST_SCROLL ? FAST_SCROLL_MULTIPLIER : 1);
 const SCROLL_DIRECTION = REVERSE_SCROLL ? -1 : 1;
 /** Wheel deltaY equivalent needed for 100% fill (higher = harder to max out). */
