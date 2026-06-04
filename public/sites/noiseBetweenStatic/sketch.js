@@ -159,8 +159,13 @@ function setup() {
     rotate(0);
     background(0);
     textFont('Press Start 2P');
-    startButton = createButton('Start');
-    startButton.position(windowWidth / 2 - startButton.width / 2, windowHeight / 2 - startButton.height / 2);
+    startButton = createButton('START');
+    const startEl = startButton.elt;
+    startEl.id = 'noise-start-btn';
+    startEl.style.opacity = '0';
+    startEl.style.visibility = 'hidden';
+    startEl.style.pointerEvents = 'none';
+    startButton.class('noise-start-btn');
     startButton.mousePressed(enterSite);
     $("#wholeRadio").on("click", function () {
         onObjectClick();
@@ -168,8 +173,6 @@ function setup() {
     $("#radioBackground").on("click", function () {
         onObjectClick();
     });
-    startButton.style('font-family', "'Press Start 2P', cursive");
-    startButton.style('z-index', '3');
 
     fitCanvasToViewport();
     if (typeof ResizeObserver !== 'undefined') {
@@ -183,9 +186,6 @@ function fitCanvasToViewport() {
     resizeCanvas(w, h);
     centerX = w / 2;
     centerY = h / 2;
-    if (startButton) {
-        startButton.position(w / 2 - startButton.width / 2, h / 2 - startButton.height / 2);
-    }
 }
 
 

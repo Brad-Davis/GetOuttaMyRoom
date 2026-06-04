@@ -2,11 +2,10 @@ import voiceRecognition from '../services/voiceRecognition.js';
 
 const GOMR_COMPUTER_SUBMIT = 'GOMR_COMPUTER_SUBMIT';
 
-/** Tourette's Guy picks — matches the 2006 youtube.png screenshot vibe. */
 const EVIL_YOUTUBE_VIDEOS = [
-  '5wcKpoAQKj4', // Best Of The Tourettes Guy (1 of 4)
-  '-8JyX-rqZ10', // Best Of The Tourettes Guy (2 of 4)
-  'yZKi9xXleaE', // Tourettes Guy - Ordering A Pizza
+  'tRHhyocsbv8', 
+  'P1Xm2Yo_lz8', 
+  'pIMy4srOf7w', 
 ];
 
 const textarea = document.getElementById('comment');

@@ -103,8 +103,17 @@ function onYouTubeIframeAPIReady() {
         height: '100%',
         width: '100%',
         videoId: 'g_FtYHLgNbE',
-        playerVars: { 'autoplay': 1, 'controls': 0 },
-
+        playerVars: {
+            autoplay: 1,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            modestbranding: 1,
+            rel: 0,
+            iv_load_policy: 3,
+            cc_load_policy: 0,
+            playsinline: 1,
+        },
     });
 }
 

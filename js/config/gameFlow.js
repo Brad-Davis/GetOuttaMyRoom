@@ -7,7 +7,7 @@ export const CD_STARTS_BATTLE_IMMEDIATELY = false;
  * monologue, mission). When false: normal CD → bed → iframe intro.
  * Overridden at runtime via sessionStorage when the player holds mouse to restart from the beginning.
  */
-export const SKIP_INTRO_DEFAULT = true;
+export const SKIP_INTRO_DEFAULT = false;
 
 const SKIP_INTRO_STORAGE_KEY = 'skip_intro';
 
@@ -22,7 +22,7 @@ function readSkipIntroOverride() {
     return null;
 }
 
-export const SKIP_INTRO = true; //readSkipIntroOverride() ?? SKIP_INTRO_DEFAULT;
+export const SKIP_INTRO = readSkipIntroOverride() ?? SKIP_INTRO_DEFAULT;
 
 export function setSkipIntroForNextLoad(value) {
     try {
@@ -66,7 +66,7 @@ export const SKIP_THIRTIES_DIALOG = false;
  * {@link shouldSkipFirstFight} / {@link shouldSkipSecondFight} / {@link shouldSkipThirdFight}.
  */
 export const SKIP_FIRST_FIGHT = true;
-export const SKIP_SECOND_FIGHT = true;
+export const SKIP_SECOND_FIGHT = false;
 export const SKIP_THIRD_FIGHT = false;
 
 const BATTLE_CHECKPOINT_STORAGE_KEY = 'gomr_battle_checkpoint_v1';

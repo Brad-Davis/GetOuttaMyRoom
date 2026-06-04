@@ -182,7 +182,7 @@ class Computer {
         }
       ]);
 
-      if (scoreResult.score > 50) {
+      if (scoreResult.score >= 30) {
         dopamineManager.giveDopamine(10);
         missionService.completeCurrentMission();
         await this.firstMission();
@@ -255,7 +255,6 @@ class Computer {
         }
       ]);
       missionService.setCurrentMission([
-        'Go wake up your dad.',
         'Go talk to the Bed Goblin to get help.',
       ]);
     }, 2000);

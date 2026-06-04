@@ -156,7 +156,7 @@ const itemPool = {
         /* rechargeTime */ 0.5,
         /* image */ "./resources/images/punch.png",
         /* triggerFunction */ (fromEnemy = false) => {
-            hurt(120, fromEnemy);
+            hurt(10, fromEnemy);
         },
         /* id */ "punch",
         /* phyDamage */ 10,
@@ -495,7 +495,7 @@ const itemPool = {
         /* rechargeTime */ 3,
         /* image */ "./resources/images/callFromEx.png",
         /* triggerFunction */ async (fromEnemy = false) => {
-            effectsService.playSfx("callEx", { volume: 0.2 });
+            effectsService.playSfx("callEx", { volume: 0.05 });
 
             const outcomes = [
                 {
@@ -578,19 +578,17 @@ const itemPool = {
             const questions = [
                 "Name a U.S. senator.",
                 "Name a female politician.",
-                "Name the current U.S. president.",
+                "Name a U.S. president before 2000.",
                 "Name a U.S. state governor.",
                 "Name a member of the U.S. Supreme Court.",
                 "Name a U.S. cabinet secretary.",
-                "Name a political party in the United States.",
-                "Name a country that is a member of the United Nations.",
             ];
             const question = questions[Math.floor(Math.random() * questions.length)];
 
             try {
                 await dialogService.runLines([
                     {
-                        speaker: 'Disappointed Parent',
+                        speaker: 'Inner Monologue',
                         text: `${question} You have ${lengthOfTime} seconds. Start talking after clicking this box (your words will show up on the screen).`,
                     },
                 ]);
@@ -604,14 +602,14 @@ const itemPool = {
                 console.log("[Political score]", score);
                 hurt(score.score, fromEnemy, false);
 
-                let response = `Your political answer score is ${score.score} out of 100.`;
+                let response = ``;
                 if (score.score > 50) {
                     response += ` You actually knew that?! Your family is furious you showed off at dinner.`;
                 } else {
                     response += ` Classic uninformed energy. Your family is relieved you embarrassed yourself.`;
                 }
                 dialogService.runLines([{
-                    speaker: 'Disappointed Parent',
+                    speaker: 'Inner Monologue',
                     text: response,
                 }]);
             } catch (error) {

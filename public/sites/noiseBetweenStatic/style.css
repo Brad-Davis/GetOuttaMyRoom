@@ -83,6 +83,49 @@ button:hover {
   color: white;
 }
 
+@keyframes noise-start-fade-in {
+  from {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  to {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+}
+
+.noise-start-btn,
+#noise-start-btn {
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 25 !important;
+  font-family: 'Press Start 2P', cursive !important;
+  font-size: clamp(14px, 3.2vw, 28px) !important;
+  padding: clamp(16px, 3vw, 28px) clamp(32px, 8vw, 64px) !important;
+  color: #fff !important;
+  background-color: #1a1a1a !important;
+  border: 3px solid #fff !important;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(255, 255, 255, 0.4);
+  margin: 0 !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  animation: noise-start-fade-in 1.2s ease-out 0.5s both;
+}
+
+.noise-start-btn:hover {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-color: #fff !important;
+  transform: translate(-50%, -50%) !important;
+}
+
 #fullBackground {
   position: absolute;
   top: 0;
@@ -92,6 +135,28 @@ button:hover {
   background-color: black;
   z-index: 0;
   opacity: 0;
+  overflow: hidden;
+}
+
+#player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#player iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 118%;
+  min-width: 100%;
+  min-height: 100%;
+  border: 0;
+  transform: translate(-50%, -52%);
+  pointer-events: none;
 }
 
 .sidebar {
