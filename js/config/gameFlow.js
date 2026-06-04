@@ -36,10 +36,10 @@ export function setSkipIntroForNextLoad(value) {
 export const SPAWN_IN_KITCHEN = false;
 
 /** When true: wheel scroll moves the hallway/kitchen rail much faster (dev / testing). */
-export const FAST_SCROLL = false;
+export const FAST_SCROLL = true;
 
 /** When true: flip wheel direction (scroll up advances the rail instead of scroll down). */
-export const REVERSE_SCROLL = false;
+export const REVERSE_SCROLL = true;
 
 /**
  * When true: Dad's room still plays the hallway door camera sequence, then skips the
