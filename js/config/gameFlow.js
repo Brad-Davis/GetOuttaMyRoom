@@ -12,24 +12,24 @@ export const SKIP_INTRO_DEFAULT = true;
 const SKIP_INTRO_STORAGE_KEY = 'skip_intro';
 
 function readSkipIntroOverride() {
-    // try {
-    //     const stored = sessionStorage.getItem(SKIP_INTRO_STORAGE_KEY);
-    //     if (stored === 'true') return true;
-    //     if (stored === 'false') return false;
-    // } catch (_) {
-    //     /* sessionStorage unavailable */
-    // }
-    // return null;
+    try {
+        const stored = sessionStorage.getItem(SKIP_INTRO_STORAGE_KEY);
+        if (stored === 'true') return true;
+        if (stored === 'false') return false;
+    } catch (_) {
+        /* sessionStorage unavailable */
+    }
+    return null;
 }
 
 export const SKIP_INTRO = true; //readSkipIntroOverride() ?? SKIP_INTRO_DEFAULT;
 
 export function setSkipIntroForNextLoad(value) {
-    // try {
-    //     sessionStorage.setItem(SKIP_INTRO_STORAGE_KEY, value ? 'true' : 'false');
-    // } catch (_) {
-    //     /* sessionStorage unavailable */
-    // }
+    try {
+        sessionStorage.setItem(SKIP_INTRO_STORAGE_KEY, value ? 'true' : 'false');
+    } catch (_) {
+        /* sessionStorage unavailable */
+    }
 }
 
 /** When true: skip intro/bed flow — spawn in the kitchen with scroll movement enabled. */
