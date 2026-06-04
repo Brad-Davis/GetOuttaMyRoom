@@ -1,7 +1,7 @@
 import { setSkipIntroForNextLoad } from '../config/gameFlow.js';
 import { clearPlayerInventorySave } from './inventoryPersistence.js';
 
-const IDLE_TIMEOUT_MS = 2 * 60 * 1000;
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
 const CHECK_INTERVAL_MS = 1000;
 
 let lastActivityAt = Date.now();

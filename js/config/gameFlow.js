@@ -22,7 +22,7 @@ function readSkipIntroOverride() {
     // return null;
 }
 
-export const SKIP_INTRO = readSkipIntroOverride() ?? SKIP_INTRO_DEFAULT;
+export const SKIP_INTRO = true; //readSkipIntroOverride() ?? SKIP_INTRO_DEFAULT;
 
 export function setSkipIntroForNextLoad(value) {
     // try {
@@ -59,8 +59,8 @@ export const SKIP_THIRTIES_DIALOG = false;
  * {@link prepareForThirdBattle}). Skip Grandma also jumps to the Thirties chapter
  * (default room camera + {@link startThirtiesChapter} on load / door skip).
  */
-export const SKIP_FIRST_FIGHT = true;
-export const SKIP_SECOND_FIGHT = true;
+export const SKIP_FIRST_FIGHT = false;
+export const SKIP_SECOND_FIGHT = false;
 export const SKIP_THIRD_FIGHT = false;
 
 /** Computer mini-game + wake monologue for the current dev skip checkpoint. */

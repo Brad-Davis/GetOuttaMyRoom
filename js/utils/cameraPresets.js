@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import interactionService from './interactionService.js';
 import audioService from './audioService.js';
 import iframeControls from '../UI/iframeControls.js';
+import iframeSites from '../config/iframeSites.js';
 import dialogService from './dialogService.js';
 import { DADS_ROOM_WALL_LOCAL_Z } from '../enviroments/hallway.js';
 import {
@@ -78,6 +79,11 @@ export const CAMERA_PRESETS = {
         position: { x: 3.1, y: 0.15, z: -7.7 },
         rotation: { x: 0, y: 0, z: 0 }
     },
+    /** Editor's note poster on the right wall (`poster5` in bedroom). */
+    POSTER5_VIEW: {
+        position: { x: 3.4, y: 0.05, z: -4 },
+        rotation: { x: 0, y: -Math.PI / 2, z: 0 }
+    },
     KITCHEN_VIEW: {
         position: { ...KITCHEN_CENTER },
         rotation: { x: 0, y: 0, z: 0 }
@@ -98,11 +104,25 @@ class CameraService {
         this.defaultRotation = { x: 0, y: 0, z: 0 };
         this._wasAtInteriorDefault = true;
         this.grandpaDialogShown = false;
+        this.editorsNoteDialogShown = false;
         /** @type {import('three').Mesh | null} */
         this._poster2Mesh = null;
         this._poster2DefaultPose = null;
         this._poster2PivotUp = 1.5;
         this._poster2Tilted = false;
+        this.voidIntroShown = false;
+        /** True only after VOID_VIEW is framed; next void click may open the iframe. */
+        this._voidCanOpenIframe = false;
+        this._voidDeepClickRaf = null;
+    }
+
+    /** Clears armed deep-click (BACK / leave void). Prevents same-frame multi-mesh double fire. */
+    resetVoidDeepClick() {
+        this._voidCanOpenIframe = false;
+        if (this._voidDeepClickRaf != null) {
+            cancelAnimationFrame(this._voidDeepClickRaf);
+            this._voidDeepClickRaf = null;
+        }
     }
 
     /** Call once after bedroom build (see AssetManager). */
@@ -212,12 +232,40 @@ class CameraService {
         applyCameraPreset('COMPUTER_VIEW');
     }
 
-    lookAtVoid() {
+
+    async lookAtVoid() {
         if (!this.camera) return;
-        applyCameraPreset('VOID_VIEW');
-        setTimeout(() => {
-            iframeControls.openIframe('https://noisebetweenstatic.com/', { externalEmbed: true });
-        }, 1500);
+
+        if (this.currentPreset !== 'VOID_VIEW') {
+            this.resetVoidDeepClick();
+            applyCameraPreset('VOID_VIEW');
+            if (!this.voidIntroShown) {
+                this.voidIntroShown = true;
+                await dialogService.runLines([
+                    {
+                        speaker: 'Inner Monologue',
+                        text: 'You reach into the void and feel Noise Between Static. An old game that will not progress the main story but has it\'s own secrets.',
+                    },
+                    {
+                        speaker: 'Inner Monologue',
+                        text: 'Click again to go deeper.',
+                    },
+                ]);
+            }
+            this._voidDeepClickRaf = requestAnimationFrame(() => {
+                this._voidDeepClickRaf = null;
+                if (this.currentPreset === 'VOID_VIEW') {
+                    this._voidCanOpenIframe = true;
+                }
+            });
+            return;
+        }
+
+        if (!this._voidCanOpenIframe) return;
+
+        this.resetVoidDeepClick();
+        const site = iframeSites.noiseBetweenStatic;
+        iframeControls.openIframe(site.url, { allow: site.allow });
     }
 
     lookAtVideoWall() {
@@ -266,6 +314,43 @@ class CameraService {
         }
     }
 
+    lookAtPoster5() {
+        if (!this.camera) return;
+        if (this.currentPreset === 'POSTER5_VIEW') {
+            if (this.editorsNoteDialogShown) return;
+            this.editorsNoteDialogShown = true;
+
+            dialogService.runLines([
+                {
+                    speaker: "Editor's Note",
+                    text: "Okay this is maybe self conscious or just honest as I'm writing this at 2:03am on June 4th, but I wanted to share an original intention of this piece that isn't in this current iteration.",
+                },
+                {
+                    speaker: "Editor's Note",
+                    text: 'I wanted this game to have two sides.',
+                },
+                {
+                    speaker: "Editor's Note",
+                    text: "The player what you are now and a guardian who would be secretly grading you from another location. You wouldn't know it's a grader and you would assume it's AI, as it currently is, but they would be watching you and deciding your fate.",
+                },
+                {
+                    speaker: "Editor's Note",
+                    text: 'In order to recreate this feeling to the best of my ability on a tight deadline 1/10 of your graders are replaced with just a random number generator returning your score.',
+                },
+                {
+                    speaker: "Editor's Note",
+                    text: "If you have qualms about the AI being in this game you are not alone so just assume you're one of the lucky ones.",
+                },
+                {
+                    speaker: "Editor's Note",
+                    text: "In any case this game is very token conscious, genuinely a full playthru is like 0.001 cents of tokens if that makes u feel any better. Next time I'll use human labor instead <3",
+                },
+            ]);
+        } else {
+            applyCameraPreset('POSTER5_VIEW');
+        }
+    }
+
     turnCamera(direction, options = {}) {
         if (!this.camera) return;
         gsap.to(this.camera.rotation, {
@@ -279,6 +364,8 @@ class CameraService {
     resetToDefault() {
         if (!this.camera) return;
         this.stopDresserMirrorWebcam();
+        this.voidIntroShown = false;
+        this.resetVoidDeepClick();
         this.currentPreset = null;
         gsap.to(this.camera.position, {
             ...this.defaultPosition,

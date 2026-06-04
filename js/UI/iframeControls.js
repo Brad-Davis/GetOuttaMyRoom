@@ -22,8 +22,18 @@ export const IFRAME_TINDER_MATCH_MESSAGE = 'GOMR_TINDER_MATCH';
 /** Body class: shifts #backButton / #mission-hud right of the Evil Tinder sidebar. */
 const EVIL_TINDER_HUD_BODY_CLASS = 'evil-tinder-iframe-open';
 
+/** Body class: keeps #backButton above fullscreen #computer iframe (z-index 10000). */
+const FULLSCREEN_IFRAME_HUD_BODY_CLASS = 'fullscreen-iframe-open';
+
+/** Body class: shifts #backButton right of Noise Between Static menu control (☰). */
+const NOISE_BETWEEN_STATIC_HUD_BODY_CLASS = 'noise-between-static-iframe-open';
+
 function isEvilTinderUrl(url) {
     return typeof url === 'string' && url.includes('/evilTinder/');
+}
+
+function isNoiseBetweenStaticUrl(url) {
+    return typeof url === 'string' && url.includes('/noiseBetweenStatic/');
 }
 
 /** These iframes keep ambient BGM; everything else fades it out. */
@@ -87,6 +97,14 @@ class IframeControls {
         document.body.classList.toggle(EVIL_TINDER_HUD_BODY_CLASS, Boolean(active));
     }
 
+    _setFullscreenIframeHudLayout(active) {
+        document.body.classList.toggle(FULLSCREEN_IFRAME_HUD_BODY_CLASS, Boolean(active));
+    }
+
+    _setNoiseBetweenStaticHudLayout(active) {
+        document.body.classList.toggle(NOISE_BETWEEN_STATIC_HUD_BODY_CLASS, Boolean(active));
+    }
+
     isOpen() {
         if (!this.computer) return false;
         return (
@@ -98,6 +116,8 @@ class IframeControls {
     async hideIframe(firstTime = false) {
         this._zoomGeneration += 1;
         this._setEvilTinderHudLayout(false);
+        this._setFullscreenIframeHudLayout(false);
+        this._setNoiseBetweenStaticHudLayout(false);
         this.zoomOut();
         if (this.iframe.parentNode !== this.computer) {
             this.computer.appendChild(this.iframe);
@@ -108,6 +128,7 @@ class IframeControls {
         this.computer.style.display = 'none';
         this.computer.style.opacity = '0';
         this.computer.style.pointerEvents = 'none';
+        backButtonManager.updateVisibility();
         if (firstTime) {
             setTimeout(async () => {
                 cameraService.openEyes();
@@ -206,6 +227,7 @@ class IframeControls {
         this.iframe.src = url;
         this.iframe.style.display = 'block';
         this._setEvilTinderHudLayout(isEvilTinderUrl(url));
+        this._setNoiseBetweenStaticHudLayout(isNoiseBetweenStaticUrl(url));
         if (!keepsBackgroundMusic(url)) {
             audioService.fadeOutBackgroundMusic();
         }
@@ -214,6 +236,9 @@ class IframeControls {
     /** Show an iframe URL and zoom to fullscreen (same pattern as movement / CD flows). */
     openIframe(url, options = {}) {
         this.showIframe(url, options);
+        backButtonManager.enable();
+        this._setFullscreenIframeHudLayout(true);
+        backButtonManager.showBackButton();
         this.zoomIn(true);
     }
 

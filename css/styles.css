@@ -318,6 +318,16 @@ body.evil-tinder-iframe-open #dopamine-container {
     z-index: 10001;
 }
 
+/* Noise Between Static and other `openIframe` fullscreen embeds */
+body.fullscreen-iframe-open #backButton {
+    z-index: 10001;
+}
+
+/* Clears the site's top-left ☰ control (padding 15px × 2 + glyph ≈ 52px) */
+body.noise-between-static-iframe-open #backButton {
+    left: 72px;
+}
+
 #container {
     position: fixed;
     inset: 0;

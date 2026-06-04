@@ -1,0 +1,532 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.floatRight {
+  float: right;
+  width: 50%;
+}
+
+.floatLeft {
+  float: left;
+  width: 50%;
+}
+
+.creditsRow {
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+.centerDiv {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: black;
+}
+
+.centerDiv h5 {
+  width: 75%;
+  margin: 0 auto;
+  margin-bottom: 3rem;
+}
+
+.centerDiv h2 {
+  margin-top: 3rem;
+}
+
+#credits {
+  display: none;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  z-index: 1000;
+  color: white;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+button {
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+  background-color: Transparent;
+  color: black;
+  border: 2px solid black;
+}
+
+button:hover {
+  background-color: black;
+  border: 2px solid white;
+  color: white;
+}
+
+#fullBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-color: black;
+  z-index: 0;
+  opacity: 0;
+}
+
+.sidebar {
+  height: 100%;
+  width: 0;
+  max-width: 400px;
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: #111;
+  overflow-x: hidden;
+  transition: 0.5s;
+  padding-top: 60px;
+}
+
+.sidebar a {
+  padding: 8px 8px 8px 32px;
+  text-decoration: none;
+  font-size: 25px;
+  color: #818181;
+  display: block;
+  transition: 0.3s;
+}
+
+.sidebar a:hover {
+  color: #f1f1f1;
+}
+
+.sidebar .closebtn {
+  position: absolute;
+  top: 0;
+  right: 25px;
+  font-size: 36px;
+  margin-left: 50px;
+}
+
+.centerDiv .closebtn {
+  position: absolute;
+  top: 0;
+  right: 25px;
+  font-size: 36px;
+  margin-left: 50px;
+}
+
+.openbtn {
+  z-index: 2;
+  font-size: 20px;
+  cursor: pointer;
+  color: white;
+  padding: 15px 15px;
+  border: none;
+  position: absolute;
+  left: 0px;
+}
+
+.volumeSlider {
+  position: absolute;
+  left: 0px;
+  width: 60px;
+  bottom: 0px;
+  padding-top: 10px;
+  z-index: 10;
+  background-color: #111;
+  transition: 0.5s;
+}
+
+#warning {
+  position: absolute;
+  width: 100%;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  z-index: 9;
+  text-align: center;
+}
+
+#volumeBar {
+  transform: translateX(-100%);
+}
+
+.closeSound {
+  font-size: 3em;
+  width: 100%;
+  text-decoration: none;
+  color: #818181;
+  text-align: center;
+  transition: 0.3s;
+  padding-left: 8px;
+}
+
+.closeSound:hover {
+  color: white;
+}
+
+input[type=range][orient=vertical] {
+  writing-mode: bt-lr;
+  /* IE */
+  -webkit-appearance: slider-vertical;
+  /* WebKit */
+  width: 22px;
+  height: 175px;
+  padding: 0 18px;
+  margin: auto 0;
+}
+
+.volumnbtn {
+  z-index: 2;
+  font-size: 20px;
+  cursor: pointer;
+  color: white;
+  padding: 15px 15px;
+  border: none;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+}
+
+#main {
+  transition: margin-left .5s;
+  padding: 16px;
+}
+
+#myVideo {
+  opacity: 0;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+  z-index: -1;
+  transition: opacity 10s;
+}
+
+.fadeIn {
+  opacity: 1;
+}
+
+.fadeOut {
+  opacity: 0;
+}
+
+.fadeHalf {
+  opacity: 0.3;
+}
+
+.staticBackground {
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.2;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#trackControls1 {
+  display: none;
+}
+
+#trackControls2 {
+  display: none;
+}
+
+.track-controls-bar {
+  display: none;
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 11;
+  gap: 8px;
+  flex-direction: row;
+}
+
+body.track-controls-ready .track-controls-bar {
+  display: flex;
+}
+
+.track-controls-bar button {
+  color: white;
+  border: 2px solid white;
+  background-color: transparent;
+  padding: 10px 14px;
+  font-size: 10px;
+  font-family: 'Press Start 2P', cursive;
+  margin: 0;
+  cursor: pointer;
+}
+
+.track-controls-bar button:hover {
+  background-color: white;
+  color: black;
+}
+
+.hide {
+  display: none;
+}
+
+svg {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.fullRadio {
+  animation: shake 3s infinite cubic-bezier(.36, .07, .19, .97) both;
+  position: absolute;
+  top: -220px;
+  left: 100px;
+  transition: all 3s ease 0s;
+}
+
+.noSelect {}
+
+@keyframes shake {
+  0% {
+    transform: translate(1px, 1px) rotate(0deg);
+  }
+  10% {
+    transform: translate(-1px, -2px) rotate(-1deg);
+  }
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
+  }
+  30% {
+    transform: translate(3px, 2px) rotate(0deg);
+  }
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
+  }
+  50% {
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+  70% {
+    transform: translate(3px, 1px) rotate(-1deg);
+  }
+  80% {
+    transform: translate(-1px, -1px) rotate(1deg);
+  }
+  90% {
+    transform: translate(1px, 2px) rotate(0deg);
+  }
+  100% {
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
+}
+
+@keyframes talking {
+  0% {
+    height: 13.79613;
+  }
+  25% {
+    height: 5.79613;
+  }
+  50% {
+    height: 18;
+  }
+  75% {
+    height: 0;
+  }
+  100% {
+    height: 13.79613;
+  }
+}
+
+
+html,
+body {
+  font-family: 'Press Start 2P', cursive;
+  color: rgb(158, 158, 158);
+  font-size: 1em;
+  line-height: 1;
+  text-shadow: 0.06rem 0 0.06rem #ea36af, -0.125rem 0 0.06rem #75fa69;
+  letter-spacing: 0.125em;
+  animation-duration: 0.01s;
+  animation-name: textflicker;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+h1 {
+  font-size: 5em;
+}
+
+@keyframes textflicker {
+  from {
+    text-shadow: 1px 0 0 black, -2px 0 0 black;
+  }
+  to {
+    text-shadow: 2px 0.5px 2px black, -1px -0.5px 2px grey;
+  }
+}
+
+.radioleft {
+  transition: transform-origin 3.0s ease 0s;
+}
+
+#transmission {
+  animation: shake 3s infinite cubic-bezier(.47, .07, .9, .5) both;
+  background-color: #eee;
+  width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  height: 300px;
+  padding: 30px;
+  position: relative;
+  left: -50px;
+  top: -50px;
+  font-size: 1.35em;
+  color: black;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+#wholeRadio {
+  position: absolute;
+  display: none;
+  top: 55%;
+  transform: translateY(-50%);
+  width: 100%;
+  z-index: 4;
+}
+
+svg {
+  -webkit-filter: drop-shadow( 3px 3px 2px rgba(255, 255, 255, 0.7));
+  filter: drop-shadow( 3px 3px 2px rgba(255, 255, 255, 0.7));
+}
+
+/* the popup box css */
+
+.modal {
+  display: none;
+  /* Hidden by default */
+  position: fixed;
+  /* Stay in place */
+  z-index: 10;
+  /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%;
+  /* Full width */
+  height: 100%;
+  /* Full height */
+  overflow: auto;
+  /* Enable scroll if needed */
+  background-color: rgb(0, 0, 0);
+  /* Fallback color */
+  background-color: rgba(0, 0, 0, 0.4);
+  /* Black w/ opacity */
+}
+
+#radioBackground {
+  position: absolute;
+  left: 10%;
+  width: 80%;
+  top: 10%;
+  height: 80%;
+  z-index: 1;
+}
+
+.talking {
+  animation: talking 0.5s infinite;
+}
+
+/* Modal Content/Box */
+
+#modalContent {
+  background-color: #fefefe;
+  /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover, .close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#myModal {
+  height: 100%;
+  width: 100%;
+}
+
+#modalContent button {
+  height: 20vh;
+  width: 100%;
+  font-size: 5em;
+  font-family: 'Press Start 2P', cursive;
+}
+
+#modalContent input {
+  width: 100%;
+  font-size: 5em;
+  font-family: 'Press Start 2P', cursive;
+}
+
+.highlight {
+  animation-duration: 100ms;
+  animation-name: blink;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+
+@keyframes blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

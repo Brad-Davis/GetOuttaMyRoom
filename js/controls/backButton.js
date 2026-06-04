@@ -84,6 +84,7 @@ class BackButtonManager {
   returnToDefaultPos(camera, gsap, gameState) {
     this.unsetFocus?.();
     cameraService.resetPoster2Frame();
+    cameraService.resetVoidDeepClick();
     cameraService.currentPreset = null;
     iframeControls.hideIframe();
     gsap.to(camera.position, {

@@ -66,6 +66,8 @@ class Bedroom extends Room {
     this._rightWindowClickMesh = null;
     /** @type {THREE.Mesh | null} */
     this._poster2Mesh = null;
+    /** @type {THREE.Mesh | null} */
+    this._poster5Mesh = null;
     /** @type {import('./hallway.js').default | null} */
     this.hallway = null;
     /** Solid plane behind default interior view; removed before Thirties chase turn. */
@@ -73,6 +75,10 @@ class Bedroom extends Room {
     this._thirtiesBackdropWallTween = null;
 
     this.questionForPasserBy = false;
+    /** @type {THREE.Mesh | null} */
+    this._passerByClickMesh = null;
+    this._passerbyQuestionActive = false;
+    this._passerbyQuestionDone = false;
   }
 
   getDadsRoomDoor() {
@@ -92,6 +98,11 @@ class Bedroom extends Room {
   /** Grandpa poster on the back wall (see AssetManager). */
   getPoster2Mesh() {
     return this._poster2Mesh;
+  }
+
+  /** Editor's note poster on the right wall (see AssetManager). */
+  getPoster5Mesh() {
+    return this._poster5Mesh;
   }
 
   /**
@@ -213,6 +224,7 @@ class Bedroom extends Room {
       }
     }
     this._updateVideoWallAudio();
+    this._syncPasserbyClickMesh();
   }
 
   _configureOutsideModel(model) {
@@ -288,9 +300,64 @@ class Bedroom extends Room {
 
       scene.add(model);
       scene.add(this.headModel);
+      this._attachPasserbyClickMesh(scene);
+      window.gameEngine?.interactionManager?.registerPasserbyClick?.(
+        this._passerByClickMesh,
+        this
+      );
       this.walkByPasserby();
     } catch (error) {
       console.error('Error loading outside view model:', error);
+    }
+  }
+
+  /**
+   * Invisible target on the window plane (in front of the large right-window click plane)
+   * so clicks reach the passerby while he walks outside.
+   */
+  _attachPasserbyClickMesh(scene) {
+    const geometry = new THREE.BoxGeometry(1.4, 3.2, 1.2);
+    const material = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = 'passerByClick';
+    scene.add(mesh);
+    this._passerByClickMesh = mesh;
+    this._syncPasserbyClickMesh();
+  }
+
+  _syncPasserbyClickMesh() {
+    if (!this._passerByClickMesh || !this.passerByModel) return;
+
+    this._passerByClickMesh.visible = !this._passerbyQuestionDone;
+
+    const wallX = this.config.width / 2;
+    const p = this.passerByModel.position;
+    this._passerByClickMesh.position.set(wallX - 0.12, p.y, p.z);
+  }
+
+  /** Click the passerby — peek / question animation at the window. */
+  triggerPasserbyQuestion() {
+    if (!this.passerByModel || this._passerbyQuestionDone || this._passerbyQuestionActive) {
+      return;
+    }
+
+    this.questionForPasserBy = true;
+
+    const pauseZ = -2.2;
+    const z = this.passerByModel.position.z;
+    if (z >= pauseZ - 0.3) {
+      gsap.killTweensOf(this.passerByModel.position);
+      gsap.killTweensOf(this.passerByModel.rotation);
+      if (this.headModel) {
+        gsap.killTweensOf(this.headModel.position);
+      }
+      this.passerByModel.position.z = pauseZ;
+      this.questionForPasserBy = false;
+      this.passerByApproach();
     }
   }
 
@@ -326,8 +393,14 @@ class Bedroom extends Room {
 
 
   passerByApproach() {
+    if (!this.passerByModel || this._passerbyQuestionActive || this._passerbyQuestionDone) {
+      return;
+    }
+    this._passerbyQuestionActive = true;
+    this.questionForPasserBy = false;
+
     gsap.to(this.passerByModel.rotation, {
-      y: -Math.PI/2,
+      y: -Math.PI / 2,
       duration: 1,
       ease: 'power2.inOut',
       onComplete: () => {
@@ -336,27 +409,48 @@ class Bedroom extends Room {
           duration: 1,
           ease: 'power2.inOut',
           onComplete: () => {
+            if (!this.headModel) {
+              this._finishPasserbyQuestion();
+              return;
+            }
             gsap.to(this.headModel.position, {
               y: -0.7,
               duration: 0.1,
               ease: 'power2.inOut',
-              onComplete: () => {
-                this.questionForPasserBy = false;
-              }
-            })
-          }
-        })
-      }
-    })
+              onComplete: () => this._finishPasserbyQuestion(),
+            });
+          },
+        });
+      },
+    });
   }
 
+  _finishPasserbyQuestion() {
+    this._passerbyQuestionActive = false;
+    this._passerbyQuestionDone = true;
+    this.questionForPasserBy = false;
+  }
 
-  passerByDefaultLocation(){
+  passerByDefaultLocation() {
+    if (!this.passerByModel) return;
+
     this.passerByModel.position.set(
       7.5,
       this.config.floorLevel + 2,
       -20
     );
+    this.passerByModel.rotation.y = 0;
+    this._passerbyQuestionActive = false;
+    this._passerbyQuestionDone = false;
+    this.questionForPasserBy = false;
+
+    if (this.headModel) {
+      this.headModel.position.set(
+        6,
+        this.config.floorLevel - 1,
+        -2
+      );
+    }
   }
 
   /**
@@ -476,6 +570,7 @@ class Bedroom extends Room {
     const surfaces = [];
     this.voidMeshes = [];
     this._poster2Mesh = null;
+    this._poster5Mesh = null;
     this._thirtiesBackdropWallTween?.kill();
     this._thirtiesBackdropWall = null;
     
@@ -616,19 +711,20 @@ class Bedroom extends Room {
       texture: "dad.png"
     });
 
-    // const poster5 = this.createSurface('poster', {
-    //   width: 1,
-    //   height: 1.6,
-    //   x: this.config.width/2 - 0.1,
-    //   y: this.config.wallHeight/4 - 0.4,
-    //   z: 1,
-    //   rotX: 0,
-    //   rotY: -Math.PI / 2,
-    //   rotZ: 0,
-    //   texture: "grandpa.png"
-    // });
-    // surfaces.push(poster5);
-    // scene.add(poster5);
+    const poster5 = this.createSurface('poster', {
+      width: 1,
+      height: 1.6,
+      x: this.config.width/2 - 0.1,
+      y: this.config.wallHeight/4 - 0.4,
+      z: 1,
+      rotX: 0,
+      rotY: -Math.PI / 2,
+      rotZ: 0,
+      texture: "peepee.png"
+    });
+    this._poster5Mesh = poster5;
+    surfaces.push(poster5);
+    scene.add(poster5);
 
     const voidSurface1 = this.createSurface('void', {
       width: 3,

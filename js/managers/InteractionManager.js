@@ -104,6 +104,9 @@ class GameInteractionManager {
             case 'poster2':
                 this.setupPoster2Interaction(mesh);
                 break;
+            case 'poster5':
+                this.setupPoster5Interaction(mesh);
+                break;
             case 'bed':
                 this.setupBedInteraction(mesh, object, gameState);
                 break;
@@ -167,6 +170,14 @@ class GameInteractionManager {
         this.addCursorListener(mesh);
     }
 
+    setupPoster5Interaction(mesh) {
+        mesh.addEventListener('click', () => {
+            if (!interactionService.checkEnabled()) return;
+
+            cameraService.lookAtPoster5();
+        });
+        this.addCursorListener(mesh);
+    }
 
     setupBedInteraction(mesh, _bed, gameState) {
         mesh.addEventListener('click', async () => {
@@ -330,6 +341,18 @@ class GameInteractionManager {
 
     getMovement(){
         return this.movement;
+    }
+
+    /** Passerby loads async after initial setup — register when the model is ready. */
+    registerPasserbyClick(mesh, bedroom) {
+        if (!mesh || !this.threeInteractionManager) return;
+
+        this.threeInteractionManager.add(mesh);
+        mesh.addEventListener('click', () => {
+            if (!interactionService.checkEnabled()) return;
+            bedroom?.triggerPasserbyQuestion?.();
+        });
+        this.addCursorListener(mesh);
     }
 }
 

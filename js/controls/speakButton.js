@@ -3,6 +3,9 @@ import cameraService from '../utils/cameraPresets.js';
 import dialogService from '../utils/dialogService.js';
 import voiceRecognition from '../services/voiceRecognition.js';
 
+/** Set true when the speak UI should appear again. */
+const SPEAK_BUTTON_ENABLED = false;
+
 class SpeakButtonManager {
   constructor() {
     this.camera = null;
@@ -49,6 +52,10 @@ class SpeakButtonManager {
 
   /** Call each frame — speak control at default room view or RIGHT_WINDOW_VIEW. */
   updateVisibility() {
+    if (!SPEAK_BUTTON_ENABLED) {
+      this.hideSpeakButton();
+      return;
+    }
     if (!this.speakButtonEl || !this.camera) return;
     if (this.disabled || this._listening) {
       this.hideSpeakButton();
@@ -66,7 +73,7 @@ class SpeakButtonManager {
   }
 
   showSpeakButton() {
-    if (!this.speakButtonEl) return;
+    if (!SPEAK_BUTTON_ENABLED || !this.speakButtonEl) return;
     this.speakButtonEl.style.display = 'inline-flex';
   }
 
@@ -76,6 +83,7 @@ class SpeakButtonManager {
   }
 
   enable() {
+    if (!SPEAK_BUTTON_ENABLED) return;
     this.disabled = false;
     this.updateVisibility();
   }

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.10.2/p5.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css" />
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.10.2/addons/p5.sound.min.js"></script>
+
+  <!-- or from surge.sh -->
+  <script src="p5.speech.js"></script>
+  <script src="radio.js"></script>
+  <script src="sketch.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="https://csshake.surge.sh/csshake.min.css" />
+  <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <meta charset="utf-8" />
+</head>
+
+<body>
+  <div id="warning">Photosensitive Warning: Flashing Lights</div>
+  <div id="credits">
+    <div class="centerDiv">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeCredits()">×</a>
+      <h2>A Special Thank You To</h2>
+      <div class="creditsRow">
+        <h3 class="floatLeft">Derek Chan</h3>
+        <h3 class="floatRight"><a href="https://www.instagram.com/elkhuntingwithbow/">Insta</a></h3>
+      </div>
+      <h3>Videos 2 and 3</h3>
+      <div class="creditsRow">
+        <h3 class="floatLeft">Alex Vrahas</h3>
+        <h3 class="floatRight"><a href="https://www.instagram.com/bigalspopcornshop/">Insta</a></h3>
+      </div>
+      <h3>Video 1</h3>
+      <div class="creditsRow">
+        <h3 class="floatLeft">Jordan Huynh</h3>
+        <h3 class="floatRight"><a href="https://www.instagram.com/jordan300dpi/">Insta</a></h3>
+      </div>
+      <h3>Album Artwork</h3>
+      <br>
+      <h5><a href="https://distrokid.com/hyperfollow/bradleycd/noise-between-static">Listen to the album here!</a></h5>
+      <h5>Appriciate y'all deeply and wish u many special days</h5>
+    </div>
+  </div>
+  <div id="fullBackground">
+    <div id="player"></div>
+    <!--<iframe width="100%" height="100%" src="https://www.youtube.com/embed/9YffrCViTVk?rel=0&showinfo=0autohide=1" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>-->
+  </div>
+  <div id="mySidebar" style="z-index: 10" class="sidebar">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+    <!-- <a href="https://distrokid.com/hyperfollow/bradleycd/noise-between-static">Listen</a> -->
+    <!-- <a href="https://bradcampdavis.com/">My Webstuff</a>
+    <a href="https://www.instagram.com/bradleyceedee/">My Insta</a> -->
+    <a href="javascript:void(0)" onclick="openCredits()">Credits</a>
+    <br>
+    <br>
+    <a id="trackControls1" href="javascript:nextTrack();">Next Track</a>
+    <a id="trackControls2" href="javascript:prevTrack();">Prev Track</a>
+  </div>
+
+
+  <div class="volumeSlider" id="volumeBar">
+    <input onchange=setVolume(this.value) min="1" max="100" step="1" value="50" type="range" orient="vertical" />
+    <a href="javascript:void(0)" class="closeSound" onclick="closeVolume()">×</a>
+  </div>
+
+  <img src="staticRepeat.gif" class="staticBackground" />
+
+  <div id="trackControlsBar" class="track-controls-bar">
+    <button type="button" onclick="prevTrack();">Prev Track</button>
+    <button type="button" onclick="nextTrack();">Next Track</button>
+  </div>
+
+  <button class="openbtn" onclick="openNav()">☰</button>
+  <button class="volumnbtn" onclick="openVolume()"><i class="fa fa-volume-up" style="font-size:24px"></i></button>
+
+  <div id="myModal" class="modal">
+    <!-- Modal content -->
+    <div id="modalContent"></div>
+  </div>
+  <div id="radioBackground"></div>
+  <div id="wholeRadio">
+    <div id="transmission">transmission incoming:</div>
+    <svg class="fullRadio" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#"
+      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg"
+      xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+      xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="158.67496mm" height="172.93829mm"
+      viewBox="0 0 158.67495 172.93829" version="1.1" id="svg8" inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+      sodipodi:docname="radio.svg">
+      <defs id="defs2" />
+      <sodipodi:namedview id="base" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0"
+        inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="0.49497475" inkscape:cx="-468.22077"
+        inkscape:cy="191.56632" inkscape:document-units="mm" inkscape:current-layer="layer1"
+        inkscape:document-rotation="0" showgrid="false" inkscape:window-width="1920" inkscape:window-height="1002"
+        inkscape:window-x="-8" inkscape:window-y="-8" inkscape:window-maximized="1" />
+      <metadata id="metadata5">
+        <rdf:RDF>
+          <cc:Work rdf:about="">
+            <dc:format>image/svg+xml</dc:format>
+            <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+            <dc:title></dc:title>
+          </cc:Work>
+        </rdf:RDF>
+      </metadata>
+      <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(-42.063732,-35.515556)">
+        <g class="antenna">
+          <path style="
+                fill: none;
+                stroke: #000000;
+                stroke-width: 0.266148px;
+                stroke-linecap: butt;
+                stroke-linejoin: miter;
+                stroke-opacity: 1;
+              "
+            d="M 178.2542,133.62841 C 197.71996,36.866096 197.90895,36.866096 197.90895,36.866096 L 172.20657,133.62841 Z"
+            id="path26" class="antenna" />
+          <path style="
+                fill: #000000;
+                stroke: #000000;
+                stroke-width: 0;
+                stroke-miterlimit: 4;
+                stroke-dasharray: none;
+              "
+            d="m 195.27002,41.013391 c -2.01646,-2.016456 -0.60166,-5.497835 2.23426,-5.497835 0.99489,0 1.53988,0.277365 2.28503,1.162928 1.06889,1.270296 1.21563,2.221373 0.53883,3.492127 -1.06344,1.996675 -3.4985,2.402403 -5.05812,0.84278 z"
+            id="path50" class="antenna" />
+          <path style="
+                fill: #000000;
+                stroke: #000000;
+                stroke-width: 0;
+                stroke-miterlimit: 4;
+                stroke-dasharray: none;
+              "
+            d="m 173.93139,133.70632 -1.72482,-0.0779 12.27267,-46.150081 c 6.74996,-25.382545 12.29123,-46.097433 12.31394,-46.033086 0.0227,0.06434 -1.47005,7.533105 -3.3172,16.59724 -1.84715,9.064135 -5.99169,29.522797 -9.21008,45.463687 -3.2184,15.9409 -5.91626,29.28772 -5.99526,29.6596 l -0.14362,0.67616 -1.2354,-0.0288 c -0.67947,-0.0159 -2.01157,-0.064 -2.96023,-0.10676 z"
+            id="path1143" class="antenna" />
+        </g>
+        <g class="radio">
+          <path class="radioleft" id="rect1145" style="
+                fill: #000000;
+                stroke: #000000;
+                stroke-width: 0;
+                stroke-miterlimit: 4;
+                stroke-dasharray: none;
+              "
+            d="M 212.07227 369.43164 L 0 369.43164 L 0 653.625 L 264.65039 653.625 L 281.42773 609.28516 L 222.85742 581.42773 L 273.57227 520 L 213.57227 487.85742 L 257.85742 435 L 212.07227 369.43164 z "
+            transform="matrix(0.26458333,0,0,0.26458333,42.063732,35.515556)" />
+          <path class="radioright" id="path29" style="
+                fill: #000000;
+                stroke: #000000;
+                stroke-width: 0;
+                stroke-miterlimit: 4;
+                stroke-dasharray: none;
+              "
+            d="m 96.615368,133.26101 12.349252,17.34829 -11.94467,13.9852 16.18331,8.50439 -13.678901,16.25275 15.797691,7.37061 -4.52521,11.73159 h 67.65805 v -75.19283 z" />
+        </g>
+        <circle class="speaker" style="
+              fill: #ffffff;
+              stroke: #000000;
+              stroke-width: 0;
+              stroke-miterlimit: 4;
+              stroke-dasharray: none;
+            " id="path1147" cx="82.940491" cy="171.03423" r="28.726189" />
+        <circle class="dial1" style="
+              fill: #ffffff;
+              stroke: #000000;
+              stroke-width: 0;
+              stroke-miterlimit: 4;
+              stroke-dasharray: none;
+            " id="circle1149" cx="126.87189" cy="157.23254" r="5.6696415" />
+        <circle class="dial2" style="
+              fill: #ffffff;
+              stroke: #000000;
+              stroke-width: 0;
+              stroke-miterlimit: 4;
+              stroke-dasharray: none;
+            " id="circle1151" cx="145.30656" cy="156.698" r="5.6696415" />
+        <circle class="dial3" style="
+              fill: #ffffff;
+              stroke: #000000;
+              stroke-width: 0;
+              stroke-miterlimit: 4;
+              stroke-dasharray: none;
+            " id="circle1153" cx="163.67641" cy="156.32002" r="5.6696415" />
+        <rect class="screen" style="
+              fill: #ffffff;
+              stroke: #000000;
+              stroke-width: 0;
+              stroke-miterlimit: 4;
+              stroke-dasharray: none;
+            " id="rect1155" width="50.081848" height="13.79613" x="120.32771" y="172.04956" />
+      </g>
+    </svg>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

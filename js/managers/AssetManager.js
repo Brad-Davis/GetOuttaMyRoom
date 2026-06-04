@@ -118,6 +118,15 @@ class AssetManager {
             });
         }
 
+        const poster5Mesh = bedroom.getPoster5Mesh();
+        if (poster5Mesh) {
+            this.interactableObjects.set('poster5', {
+                object: bedroom,
+                mesh: poster5Mesh,
+                type: 'poster5'
+            });
+        }
+
         // Rug
         const rug = new Rug(gameGroup);
         rug.createRug(0, -3, -1.5);
