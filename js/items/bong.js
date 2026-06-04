@@ -35,7 +35,7 @@ class Bong {
             transmission: 0.9, // Enable transparency
             transparent: true,
             opacity: 0.8,
-            ior: 100, // Index of refraction
+            ior: 10, // Index of refraction
           });
         }
       });

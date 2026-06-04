@@ -15,7 +15,7 @@ const RECHARGE_ACCEL_NO_ITEMS_START = 6;
 const RECHARGE_ACCEL_NO_ITEMS_GROWTH_PER_FRAME = 0.1;
 const RECHARGE_ACCEL_NO_ITEMS_MAX = 32;
 /** Item recharge stays flat until this many ms, then inner monologue + ramp begins. */
-const RECHARGE_ACCEL_DELAY_MS = 30_000;
+const RECHARGE_ACCEL_DELAY_MS = 90_000;
 const BATTLE_LOOP_MS = 100;
 
 class Battle {
@@ -71,12 +71,6 @@ class Battle {
         }
 
         this.rechargeAccelUnlocking = true;
-        await dialogService.runLines([
-            {
-                speaker: 'Inner Monologue',
-                text: 'time starts moving faster as we start getting older',
-            },
-        ]);
 
         if (!this.battleRunning) {
             this.rechargeAccelUnlocking = false;
@@ -178,8 +172,13 @@ class Battle {
     endBattle(playerWon) {
         this.battleRunning = false;
         this.rechargeAccelUnlocking = false;
+        this.player.resetBuffs();
+        if (this.enemy) {
+            this.enemy.phyDamage = 1;
+            this.enemy.emoDamage = 1;
+        }
         this.hideBattleElements();
-        audioService.playDefaultBackgroundMusic();
+        audioService.restoreBackgroundMusicAfterBattle(this.enemy);
         if (playerWon) {
             this.gameState.winBattle();
         } else {

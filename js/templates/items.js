@@ -147,7 +147,7 @@ const itemPool = {
         /* rechargeTime */ 0.5,
         /* image */ "./resources/images/punch.png",
         /* triggerFunction */ (fromEnemy = false) => {
-            hurt(10, fromEnemy);
+            hurt(120, fromEnemy);
         },
         /* id */ "punch",
         /* phyDamage */ 10,
@@ -187,6 +187,7 @@ const itemPool = {
         /* rechargeTime */ 10,
         /* image */ "./resources/images/shot.png",
         /* triggerFunction */ (fromEnemy = false) => {
+            effectsService.playSfx("shot", { volume: 0.2 });
             buffPlayer(1.25, 0.75, 1, fromEnemy);
         },
         /* id */ "shot",
@@ -356,7 +357,7 @@ const itemPool = {
         "Bite",
         "Bite your family members to hurt them and heal yourself.",
         /* value */ 5,
-        /* rechargeTime */ 2,
+        /* rechargeTime */ 5,
         /* image */ "./resources/images/bite.png",
         /* triggerFunction */ (fromEnemy = false) => {
             hurt(10, fromEnemy);
@@ -482,80 +483,76 @@ const itemPool = {
         "Call Ex",
         "Grants a randomized outcome.",
         /* value */ 5,
-        /* rechargeTime */ 5,
+        /* rechargeTime */ 3,
         /* image */ "./resources/images/callFromEx.png",
-        /* triggerFunction */ (fromEnemy = false) => {
-            // GIVE DOPAMINE
-            dopamineManager.giveDopamine(5);
+        /* triggerFunction */ async (fromEnemy = false) => {
+            effectsService.playSfx("callEx", { volume: 0.2 });
 
-            // Define possible outcomes
             const outcomes = [
                 {
-                    text: "They Didn't Respond",
-                    action: () => {
-                        // emotional damage debuff
-                        heal(-10, fromEnemy);
-                        dialogService.runLines([{speaker: "Inner Monologue", text: "silent treatment... that stings."}, {speaker: "Inner Monologue", text: "Ouchie you take 10 damage."}]);
-                    }
+                    lines: [
+                        { speaker: "Inner Monologue", text: "silent treatment... that stings." },
+                        { speaker: "Inner Monologue", text: "Ouchie you take 10 damage." },
+                    ],
+                    effect: () => heal(-10, fromEnemy),
                 },
                 {
-                    text: "They pick up and they miss you.",
-                    action: () => {
-                        buffPlayer(1, 1.5);
-                        dialogService.runLines([{speaker: "Inner Monologue", text: "Aw, I do miss you."}, {speaker: "Inner Monologue", text: "You feel a weird power... physical buff"}]);
-                    }
+                    lines: [
+                        { speaker: "Inner Monologue", text: "Aw, I do miss you." },
+                        { speaker: "Inner Monologue", text: "You feel a weird power... emotional buff" },
+                    ],
+                    effect: () => buffPlayer(1, 1.5),
                 },
                 {
-                    text: "They pick up and they say they're busy.",
-                    action: () => {
-                        dialogService.runLines([{speaker: "EX", text: "Sorry, I'm busy right now."}, {speaker: "Inner Monologue", text: "Alright, they at least respect you enough to pick up. No effect "}]);
-                    }
+                    lines: [
+                        { speaker: "EX", text: "Sorry, I'm busy right now." },
+                        { speaker: "Inner Monologue", text: "Alright, they at least respect you enough to pick up. No effect " },
+                    ],
                 },
                 {
-                    text: "They pick up and say 'hey sexy u miss me?'",
-                    action: () => {
-                        // Physical damage buff
-                        buffPlayer(2, 0);
-                        dialogService.runLines([{speaker: "EX", text: "Hey sexy, you miss me?"}]);
-                        dialogService.runLines([{speaker: "Inner Monologue", text: "You are bricked up... physical buff"}]);
-                    }
+                    lines: [
+                        { speaker: "EX", text: "Hey sexy, you miss me?" },
+                        { speaker: "Inner Monologue", text: "You are bricked up... emotional buff" },
+                    ],
+                    effect: () => buffPlayer(1, 2),
                 },
                 {
-                    text: "They pick up and you start arguing",
-                    action: () => {
-                        //NEED TO ADD STUN EFFECT!
-                        // Stunned for 3 seconds, 50/50 buff or debuff physical damage
+                    resolve: () => {
                         const buff = Math.random() < 0.5;
-
-                        if (buff) {
-                            buffPlayer(2, 0);
-                            dialogService.runLines([{speaker: "EX", text: "You always start this! (You feel a weird power... physical buff)"}]);
-                        } else {
-                            hurt(5, fromEnemy);
-                            dialogService.runLines([{speaker: "EX", text: "You always start this! (You feel drained)"}]);
-                        }
-                        // Optionally set a stun effect here
-                    }
+                        return {
+                            lines: [
+                                { speaker: "Inner Monologue", text: "They pickup and you start arguing with your ex." },
+                                {
+                                    speaker: "EX",
+                                    text: buff
+                                        ? "You always start this! (You feel a weird power... physical buff)"
+                                        : "You always start this! (You feel drained)",
+                                },
+                            ],
+                            effect: () => (buff ? buffPlayer(1.5, 1) : hurt(5, fromEnemy)),
+                        };
+                    },
                 },
                 {
-                    text: "They need you and they're on their way now",
-                    action: () => {
-                        // BIG EMOTIONAL DAMAGE TO YOUR FAMILY
-                        hurt(50, fromEnemy, false, true); // 'true' as last param to signal family harm
-                        dialogService.runLines([{speaker: "EX", text: "I'm coming over <3"}]);
-                        dialogService.runLines([{speaker: "Inner Monologue", text: "Your family is terrified of this beast. They take BIG damage."}]);
-                    }
-                }
+                    lines: [
+                        { speaker: "EX", text: "I'm coming over <3" },
+                        { speaker: "Inner Monologue", text: "Your family is terrified of this beast. They take BIG damage." },
+                    ],
+                    effect: () => hurt(50, fromEnemy, false, true),
+                },
             ];
-            
-            // Pick a random outcome
+
             const outcome = outcomes[Math.floor(Math.random() * outcomes.length)];
-            outcome.action();
+            await dialogService.runLines([{ speaker: "Inner Monologue", text: "You find your ex in the contact list." }]);
+
+            const { lines, effect } = outcome.resolve ? outcome.resolve() : outcome;
+            await dialogService.runLines(lines);
+            effect?.();
         },
         /* phyDamage */ 0,
         /* emoDamage */ 0,
         /* effects */ null,
-        /* sfx */ "callMom"
+        /* sfx */ null,
     ),
     "Uninformed Political Discussion": new Item(
         "Uninformed Political Discussion",

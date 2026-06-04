@@ -1,4 +1,5 @@
 import iframeSites from '../config/iframeSites.js';
+import { getInitialComputerPhase } from '../config/gameFlow.js';
 import cameraService from '../utils/cameraPresets.js';
 import backButtonManager from '../controls/backButton.js';
 import speakButtonManager from '../controls/speakButton.js';
@@ -8,6 +9,9 @@ import dopamineManager from '../managers/dopamineManager.js';
 import audioService from '../utils/audioService.js';
 
 export const IFRAME_WAKE_MESSAGE = 'GOMR_IFRAME_WAKE_UP';
+
+/** Please Wake Up Daddy mini-game: wake video finished — return to kitchen. */
+export const IFRAME_DADDY_WAKE_MESSAGE = 'GOMR_DADDY_WAKE_UP';
 
 /** Computer iframe only: close iframe and deliver textarea text to `setComputerSubmitCallback`. */
 export const IFRAME_COMPUTER_SUBMIT_MESSAGE = 'GOMR_COMPUTER_SUBMIT';
@@ -22,13 +26,14 @@ function isEvilTinderUrl(url) {
     return typeof url === 'string' && url.includes('/evilTinder/');
 }
 
-/** Tinder, LinkedIn, and YouTube computer iframes keep ambient BGM; everything else fades it out. */
+/** These iframes keep ambient BGM; everything else fades it out. */
 function keepsBackgroundMusic(url) {
     if (typeof url !== 'string') return false;
     return (
         url.includes('/evilTinder/') ||
         url.includes('/evilLinkedIn/') ||
-        url.includes('/evilYoutube/')
+        url.includes('/evilYoutube/') ||
+        url.includes('/thoseWhoAreRemebered/')
     );
 }
 
@@ -103,18 +108,48 @@ class IframeControls {
         this.computer.style.display = 'none';
         this.computer.style.opacity = '0';
         this.computer.style.pointerEvents = 'none';
-        if(firstTime) {
+        if (firstTime) {
             setTimeout(async () => {
                 cameraService.openEyes();
                 setTimeout(async () => {
-                    await this.tinderStartup();
+                    await this.runWakeStartup(getInitialComputerPhase());
                 }, 1000);
             }, 1000);
-            
         }
     }
 
+    /**
+     * Preload mini-game in the dresser iframe while the HUD stays hidden (wake / checkpoint).
+     */
+    primeComputerSrc(url) {
+        if (!url || !this.iframe) return;
+        if (this.iframe.parentNode !== this.computer) {
+            this.computer.appendChild(this.iframe);
+        }
+        const externalEmbed = /^https?:\/\//i.test(url);
+        if (externalEmbed) {
+            this.iframe.removeAttribute('sandbox');
+        } else {
+            this.iframe.setAttribute('sandbox', DEFAULT_IFRAME_SANDBOX);
+        }
+        this.iframe.setAttribute('allow', DEFAULT_IFRAME_ALLOW);
+        if (this.iframe.src !== url) {
+            this.iframe.src = url;
+        }
+        this.computer.style.display = 'none';
+        this.computer.style.opacity = '0';
+        this.computer.style.pointerEvents = 'none';
+    }
+
+    async runWakeStartup(phase) {
+        if (phase === 'tinder') return this.tinderStartup();
+        if (phase === 'youtube') return this.youtubeStartup();
+        return this.linkedInStartup();
+    }
+
     async linkedInStartup() {
+        this._computerInstance?.setFrame('linkedin');
+        this._computerInstance?.primeIframe?.();
         await dialogService.runLines([
             {
                 speaker: 'Inner Monologue',
@@ -124,10 +159,11 @@ class IframeControls {
         backButtonManager.enable();
         speakButtonManager.enable();
         missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
-        this._computerInstance?.setFrame('linkedin');
     }
 
     async tinderStartup() {
+        this._computerInstance?.setFrame('tinder');
+        this._computerInstance?.primeIframe?.();
         await dialogService.runLines([
             {
                 speaker: 'Inner Monologue',
@@ -137,7 +173,20 @@ class IframeControls {
         backButtonManager.enable();
         speakButtonManager.enable();
         missionService.setCurrentMission('Swipe on Tinder to get dopamine.');
-        this._computerInstance?.setFrame('tinder');
+    }
+
+    async youtubeStartup() {
+        this._computerInstance?.setFrame('youtube');
+        this._computerInstance?.primeIframe?.();
+        await dialogService.runLines([
+            {
+                speaker: 'Inner Monologue',
+                text: 'You have no dopamine or clout. Your body is telling you to post on Youtube.',
+            }
+        ]);
+        backButtonManager.enable();
+        speakButtonManager.enable();
+        missionService.setCurrentMission('Post on Youtube to get dopamine.');
     }
 
     showIframe(url, options = {}) {
@@ -165,7 +214,7 @@ class IframeControls {
     /** Show an iframe URL and zoom to fullscreen (same pattern as movement / CD flows). */
     openIframe(url, options = {}) {
         this.showIframe(url, options);
-        this.zoomIn();
+        this.zoomIn(true);
     }
 
     openSite(siteKey) {
@@ -298,6 +347,13 @@ window.addEventListener('message', (event) => {
 
     if (data.type === IFRAME_WAKE_MESSAGE) {
         iframeControls.hideIframe(true);
+        return;
+    }
+
+    if (data.type === IFRAME_DADDY_WAKE_MESSAGE) {
+        void iframeControls.hideIframe(false);
+        window.gameEngine?.getInteractionManager?.()?.getMovement?.()?.finishDaddyWakeGame?.();
+        return;
     }
 });
 

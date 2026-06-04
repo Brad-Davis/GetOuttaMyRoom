@@ -14,7 +14,7 @@ const OUTSIDE_VIDEO_PATH = './resources/images/soFarGone.mp4';
 const OUTSIDE_VIDEO_TILE_COUNT = 3;
 const OUTSIDE_VIDEO_TILE_WIDTH = 800;
 /** World-unit bleed so adjacent tile planes overlap (no repeat-UV seams). */
-const OUTSIDE_VIDEO_TILE_OVERLAP = 8;
+const OUTSIDE_VIDEO_TILE_OVERLAP = 0;
 const OUTSIDE_VIDEO_Y_OFFSET = 150;
 
 const OUTSIDE_MOON_SCALE = 3.5;

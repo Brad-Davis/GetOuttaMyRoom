@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Potta+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <title>Please Wake Up Daddy!</title>
+</head>
+
+<body>
+    <audio id="room" preload="auto" webkit-playsinline playsinline>
+        <source src="./audio/room.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+    <video id="sleepVid" webkit-playsinline playsinline >
+        <source src="./videos/1.mp4" type="video/mp4">
+        Your browser does not support HTML video.
+    </video>
+    <video id="quietVid" webkit-playsinline playsinline >
+        <source src="./videos/2.mp4" type="video/mp4">
+        Your browser does not support HTML video.
+    </video>
+    <video id="loudVid" webkit-playsinline playsinline >
+        <source src="./videos/3.mp4" type="video/mp4">
+        Your browser does not support HTML video.
+    </video>
+    <video id="wakeVid" webkit-playsinline playsinline>
+        <source src="./videos/4.mp4" type="video/mp4">
+        Your browser does not support HTML video.
+    </video>
+    <p id="reaction"></p>
+    <div id="volume-visualizer"></div>
+    <div id="modal">
+        <h1 id="daddyTitle">Please Wake Up Daddy!</h1>
+        <img alt="dad's face" src="./imgs/DADDY.png" />
+        <div ontouchstart="">
+            <div class="button" id="Start">
+                <a href="#" id="start">Start!</a>
+            </div>
+            <div id="PlayAgain">
+                <div class="button" id="playAgainButton">
+                    <a href="#" id="playAgain">Play Again?</a>
+                </div>
+
+            </div>
+            
+        </div>
+        <h4>Made by Alex Vrahas and Brad Davis</h4>
+    </div>
+
+    <div id="output">
+    </div>
+    <div id="phoneWarning">if u see this u could turn ur phone sideways (or on instagram go to external browser) if u care about the experience or whatever...</div>
+
+    <!-- <div id="pissAd">
+        <a href="https://distrokid.com/hyperfollow/bradleycd/piss" target="_blank">
+            <img class="pissAdImg" src="./imgs/cd2.jpeg" alt="piss cd cover">
+            <p>NEXT CD DROPPING <br>AUG 26th<br><br>click to save</p>
+        </a>
+
+        <a href="https://distrokid.com/hyperfollow/bradleycd/piss" target="_blank">
+            <img class="pissAdImg" src="./imgs/cd2.jpeg" alt="piss cd cover">
+            <p>NEXT CD DROPPING <br>AUG 26th<br><br>click to save</p>
+        </a>
+    </div> -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="tooLoud.js"></script>
+</body>
+
+</html>

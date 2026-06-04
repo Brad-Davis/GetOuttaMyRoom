@@ -10,7 +10,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "dev:vercel": "npx vercel dev",
-    "compress:outside": "npx @gltf-transform/cli optimize ./resources/models/Outside.source.glb ./resources/models/Outside.glb --texture-compress webp --texture-size 512"
+    "compress:outside": "npx @gltf-transform/cli optimize ./resources/models/Outside.source.glb ./resources/models/Outside.glb --texture-compress webp --texture-size 512",
+    "compress:outside2": "npx @gltf-transform/cli optimize ./resources/models/outside2.source.glb ./resources/models/outside2.glb --texture-compress webp --texture-size 512"
   },
   "dependencies": {
     "98.css": "^0.1.21",

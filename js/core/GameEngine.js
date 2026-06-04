@@ -48,6 +48,8 @@ class GameEngine {
             
             // Setup interactions
             this.setupInteractions();
+
+            gameState.applyDevSkipCheckpointsAtStart();
             
             // Start game loop
             this.startGameLoop();
@@ -91,18 +93,13 @@ class GameEngine {
         textOverlay.hide();
         dismissInitialLoadingScreen();
 
-        const gameGroup = this.sceneManager.gameGroup;
-        // Keep default scroll origin (-5); offset camera to match (see getKitchenCameraPosition).
-        cameraService.lookAtKitchen({ duration: 0 });
-        this.interactionManager.syncOrbitToGameGroup(gameGroup);
-
         const activeItems = document.getElementById('active-items');
         const invBtn = document.getElementById('inventory-button');
         if (activeItems) activeItems.style.display = 'block';
         if (invBtn) invBtn.style.display = 'block';
 
+        this.interactionManager.movement.enterKitchenChapter();
         interactionService.enable();
-        this.interactionManager.movement.enable(true);
     }
 
     async applySkipIntroFlow() {

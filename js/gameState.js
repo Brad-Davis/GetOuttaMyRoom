@@ -6,11 +6,23 @@ import player from "./templates/player.js";
 import sceneService from "./utils/sceneService.js";
 import store from "./enviroments/store.js";
 import effectsService from "./utils/effectsService.js";
+import { shakeDamageMultiplierHud } from "./utils/damageMultiplierHud.js";
 import missionService from "./utils/missionService.js";
 import dialogService from "./utils/dialogService.js";
+import iframeControls from "./UI/iframeControls.js";
+import {
+    setSkipIntroForNextLoad,
+    SKIP_FIRST_FIGHT,
+    SKIP_SECOND_FIGHT,
+    SKIP_THIRD_FIGHT,
+} from "./config/gameFlow.js";
+
+/** @typedef {'linkedin' | 'tinder' | 'youtube'} ComputerPhase */
 
 class GameState {
     constructor() {
+        /** @type {ComputerPhase} */
+        this.computerPhase = 'linkedin';
         this.player = player;
         this.inventoryManager = inventoryManager;
         this.currentEvent = null;
@@ -67,6 +79,11 @@ class GameState {
             this.currentEvent.enemy.changeHp(-damage);
             this.currentEvent.enemy.takeDamage(damage);
             this.generatePainText(damage, fromEnemy, physical);
+            if (physical) {
+                shakeDamageMultiplierHud('physical');
+            } else {
+                shakeDamageMultiplierHud('emotional');
+            }
         }
 
         
@@ -149,12 +166,68 @@ class GameState {
         }
     }
 
+    _shouldSkipDoorFight(enemyName) {
+        if (enemyName === 'Uncle') return SKIP_FIRST_FIGHT;
+        if (enemyName === 'Cousin') return SKIP_SECOND_FIGHT;
+        if (enemyName === 'Grandma') return SKIP_THIRD_FIGHT;
+        return false;
+    }
+
+    _closeDoorAfterDoorFight() {
+        const door = window.gameEngine?.getAssetManager?.()?.getGameObject('door');
+        if (door?.doorOpen) {
+            door.close();
+        }
+    }
+
+    /**
+     * Apply dev skip flags as soon as assets exist so the dresser iframe and wake text
+     * match the current checkpoint (not only after opening the door).
+     */
+    applyDevSkipCheckpointsAtStart() {
+        if (SKIP_FIRST_FIGHT && this.enemySpawner.peekNextEnemy()?.name === 'Uncle') {
+            this.enemySpawner.skipNextEnemy();
+            this.prepareForSecondBattle({ silent: true });
+        }
+        if (SKIP_SECOND_FIGHT && this.enemySpawner.peekNextEnemy()?.name === 'Cousin') {
+            this.enemySpawner.skipNextEnemy();
+            this.prepareForThirdBattle({ silent: true });
+        }
+        if (SKIP_THIRD_FIGHT && this.enemySpawner.peekNextEnemy()?.name === 'Grandma') {
+            this.enemySpawner.skipNextEnemy();
+        }
+    }
+
+    /** Dev skip: same door/post-fight bookkeeping as winning, plus battle prep checkpoints. */
+    _applyDoorFightSkipCheckpoint(enemyName) {
+        this.inventoryManager.resetAllActiveItems();
+        if (enemyName === 'Uncle' || enemyName === 'Cousin') {
+            this._closeDoorAfterDoorFight();
+        }
+        if (enemyName === 'Uncle') {
+            this.prepareForSecondBattle({ silent: this.computerPhase !== 'linkedin' });
+        } else if (enemyName === 'Cousin') {
+            this.prepareForThirdBattle({ silent: this.computerPhase === 'youtube' });
+        }
+    }
+
     async goToBattle(door, options = {}) {
         const { openDoorOnStart = false, skipNoItemsPrompt = false } = options;
         if (!skipNoItemsPrompt && !this.inventoryManager.hasAnyItems()) {
             this.showAreYouReadyForBattle(door);
             return false;
         }
+
+        const nextEnemy = this.enemySpawner.peekNextEnemy();
+        if (nextEnemy && this._shouldSkipDoorFight(nextEnemy.name)) {
+            this.enemySpawner.skipNextEnemy();
+            this._applyDoorFightSkipCheckpoint(nextEnemy.name);
+            if (openDoorOnStart && door && !door.doorOpen) {
+                door.open();
+            }
+            return true;
+        }
+
         await this.enemySpawner.spawnEnemy();
         if (!this.enemySpawner.curEnemy) {
             return false;
@@ -233,26 +306,35 @@ class GameState {
                 : 'You have died.';
         this.textOverlay.showWindowOverlay(message, 'Game over', ['Okay'], [
             () => {
+                setSkipIntroForNextLoad(true);
                 window.location.reload();
             },
         ]);
     }
 
-    /** LinkedIn computer, mission, and bed goblin shop — before the second battle stretch. */
-    prepareForSecondBattle() {
+    /** Tinder computer, mission, and bed goblin shop — before the second battle stretch. */
+    prepareForSecondBattle({ silent = false } = {}) {
         const computer = window.gameEngine?.getAssetManager?.()?.getGameObject('computer');
-        computer?.resetForNewLinkedInSession?.();
+        computer?.resetForNewTinderSession?.();
+        this.computerPhase = 'tinder';
 
-        missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
+        if (!silent) {
+            void iframeControls.tinderStartup();
+        }
 
         this.store.refillShopWithLinkedInItems();
     }
 
-    prepareForThirdBattle() {
+    prepareForThirdBattle({ silent = false } = {}) {
         const computer = window.gameEngine?.getAssetManager?.()?.getGameObject('computer');
         computer?.resetForNewYoutubeSession?.();
+        this.computerPhase = 'youtube';
 
-        missionService.setCurrentMission('Post on Youtube to get dopamine.');
+        if (!silent) {
+            void iframeControls.youtubeStartup();
+        } else {
+            missionService.setCurrentMission('Post on Youtube to get dopamine.');
+        }
 
         this.store.refillShopWithYoutubeItems();
     }

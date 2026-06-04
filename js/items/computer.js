@@ -110,19 +110,17 @@ class Computer {
   async handleIframeSubmit(text) {
     this.unsetFocus();
     if (COMPUTER_IFRAME_URL === TINDER_COMPUTER_IFRAME_URL) {
-      this.unsetFocus();
       this.computerTimeUsed = true;
-      console.log("first mission");
-      await this.firstMission();
+      dopamineManager.giveDopamine(10);
+      missionService.completeCurrentMission();
     } else if (COMPUTER_IFRAME_URL === LINKEDIN_COMPUTER_IFRAME_URL) {
       this._computerIframeOpensBlockedUntil = Date.now() + COMPUTER_REOPEN_COOLDOWN_MS;
       this._postSubmitComputerIframeUrl = POST_SUBMIT_COMPUTER_IFRAME_URL;
       this.lastIframeSubmitText = text;
       console.log(text);
       this.unsetFocus();
-      // Call linkedInScore, then show a dialog with the result
-      this.gradeLinkedIn(text);
       this.computerTimeUsed = true;
+      await this.gradeLinkedIn(text);
     }
   }
 
@@ -130,12 +128,31 @@ class Computer {
     this.computerTimeUsed = false;
   }
 
-  /** LinkedIn session again after a battle — clears cooldown and post-submit redirect. */
-  resetForNewLinkedInSession() {
-    this.setFrame('linkedin');
+  getComputerIframeUrl() {
+    return COMPUTER_IFRAME_URL;
+  }
+
+  /** Load the current mini-game in the hidden #computer iframe (before the player clicks the mesh). */
+  primeIframe() {
+    iframeControls.primeComputerSrc(this.getComputerIframeUrl());
+  }
+
+  /** Tinder session again after a battle — clears cooldown and post-submit redirect. */
+  resetForNewTinderSession() {
+    this.setFrame('tinder');
     this.resetComputerTimeUsed();
     this._computerIframeOpensBlockedUntil = 0;
     this._postSubmitComputerIframeUrl = null;
+    this.primeIframe();
+  }
+
+  /** Youtube session after the second door battle — same reset pattern as Tinder. */
+  resetForNewYoutubeSession() {
+    this.setFrame('youtube');
+    this.resetComputerTimeUsed();
+    this._computerIframeOpensBlockedUntil = 0;
+    this._postSubmitComputerIframeUrl = null;
+    this.primeIframe();
   }
 
   async gradeLinkedIn(text) {
@@ -156,9 +173,9 @@ class Computer {
       ]);
 
       if (scoreResult.score > 50) {
-        // Give a dopamine boost
         dopamineManager.giveDopamine(10);
         missionService.completeCurrentMission();
+        await this.firstMission();
       } else {
         await dialogService.runLines([
           {
@@ -177,8 +194,8 @@ class Computer {
         }
       ]);
       dopamineManager.giveDopamine(10);
-    } finally {
-      
+      missionService.completeCurrentMission();
+      await this.firstMission();
     }
   }
 

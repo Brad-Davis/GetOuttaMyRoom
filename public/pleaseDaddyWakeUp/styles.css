@@ -1,0 +1,381 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+#volume-visualizer {
+    --volume: 0%;
+    position: absolute;
+    width: 100vw;
+    top: 0;
+    left: 0;
+    height: 5px;
+    background-color: #DDD;
+    z-index: 10000;
+}
+
+html{
+    background-color: pink;
+   
+}
+
+body, html {
+    overflow: hidden;
+    font-family: 'Press Start 2P', cursive !important; /*
+    /* height: 110vh; */
+    height: 100%;
+    max-height: 100vh;
+    /* width: 110vw; */
+    width: 100vw;
+    /* background-image: url(/imgs/theRoom.svg); */
+    background-color:black;
+    background-repeat: no-repeat;
+    margin: 0;
+    /* padding: 5vh 5vw; */
+    /* left: -5vw;
+    top: -5vh; */
+    position: absolute;
+    background-size: cover;
+    background-position: bottom;
+}
+
+
+video {
+    min-height: 100vh;
+    min-width: 100vw;
+    max-width: 100vw;
+    position: absolute;
+    z-index: 10;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    visibility: hidden;
+}
+
+#sleepVid{
+    visibility: unset;
+}
+
+
+
+.subtext{
+    margin: 0;
+    margin-bottom: 1em;
+    font-size: 0.75em;
+}
+
+#volume-visualizer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: var(--volume);
+    background-color: green;
+    transition: width 100ms linear;
+}
+
+.volume-full {
+    --volume: 100% !important;
+}
+
+h3 {
+    margin: 20px;
+    font-family: sans-serif;
+}
+
+#output {
+    min-height: 100%;
+    width: 100vw;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    position: fixed;
+    flex: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1;
+}
+
+.bubble {
+    animation-duration: 4s;
+    animation-name: slidein;
+    transform: rotateY(50deg) translate(-50%, -50%);
+    transition-timing-function:cubic-bezier(0.2,0.5,0.3,1);
+    animation-fill-mode: forwards;
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: 50%;
+    color: white;
+}
+
+#modal{
+    border-radius: 1em;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 50%;
+    min-width: 200px;
+    max-height: 75%;
+    padding: 2em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column; 
+    z-index: 100;
+    text-align: center;
+    background-color: black;
+    opacity: 1;
+    -moz-transition: opacity 0.4s ease-out;  /* FF4+ */
+    -o-transition: opacity 0.4s ease-out;  /* Opera 10.5+ */
+    -webkit-transition: opacity 0.4s ease-out;  /* Saf3.2+, Chrome */
+    -ms-transition: opacity 0.4s ease-out;  /* IE10? */
+    transition: opacity 0.4s ease-out;  
+    border: 0.5em solid white;
+    color: white;
+    overflow-x: hidden;
+}
+
+.bigShake {
+    animation: shake 0.5s;
+    animation-iteration-count: infinite;
+}
+
+.lilShake{
+    animation: lilshake 1.5s;
+    animation-iteration-count: infinite;
+}
+
+.button{
+    position:relative;
+    display:inline-block;
+    margin:20px;
+}
+
+#modal img{
+    max-width: 20em;
+    border-radius: 50%;
+    width: 100%;
+}
+
+.button a{
+    font-family: 'Press Start 2P', cursive !important; 
+    font-size:20px;
+    text-align: center;
+    text-decoration:none;
+    background-color: #3E0F2A;
+    display:block;
+    position:relative;
+    padding:20px 40px;
+
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    text-shadow: 0px 1px 0px #000;
+    filter: dropshadow(color=#000, offx=0px, offy=1px);
+
+    -webkit-box-shadow:inset 0 1px 0 #7b4c67, 0 10px 0 #1b0612;
+    -moz-box-shadow:inset 0 1px 0 #7b4c67, 0 10px 0 #1b0612;
+    box-shadow:inset 0 1px 0 #7b4c67, 0 10px 0 #1b0612;
+
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    color: white;
+}
+
+.button a:active{
+    top:10px;
+    background-color:#3E0F2A;
+
+    -webkit-box-shadow:inset 0 1px 0 #7b4c67, inset 0 -3px 0 #1b0612;
+    -moz-box-shadow:inset 0 1px 0 #7b4c67, inset 0 -3pxpx 0 #1b0612;
+    box-shadow:inset 0 1px 0 #7b4c67, inset 0 -3px 0 #1b0612;
+}
+
+.button:after{
+    content:"";
+    height:100%;
+    width:100%;
+    padding:4px;
+    position: absolute;
+    bottom:-15px;
+    left:-4px;
+    z-index:-1;
+    background-color:white;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+}
+
+@keyframes lilshake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-1px, 0px) rotate(1deg); }
+    30% { transform: translate(1px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 1px) rotate(-1deg); }
+    60% { transform: translate(-1px, 1px) rotate(0deg); }
+    70% { transform: translate(1px, 1px) rotate(-1deg); }
+    80% { transform: translate(0px, -1px) rotate(1deg); }
+    90% { transform: translate(1px, 0px) rotate(0deg); }
+    100% { transform: translate(1px, -1px) rotate(-1deg); }
+}
+
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(3px, 1px) rotate(-1deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    90% { transform: translate(1px, 2px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+@keyframes slidein {
+    0% {
+        transform: rotateY(0deg) rotateX(0deg) rotateZ(0deg) scale(10);
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: rotateY(120deg) rotateX(360deg) rotateZ(-100deg) scale(0);
+        opacity: 1;
+    }
+}
+
+#modal h4 a{
+    color: white;
+    font-weight: bold;
+}
+
+#PlayAgain {
+    display: none;
+}
+
+#pissAd {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    /* display:none; */
+    flex-direction: row;
+    pointer-events: none;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    justify-content: space-between;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    z-index: 10000;
+}
+
+#pissAd a {
+    text-decoration: none;
+    color: white;
+    width: 200px;
+    margin-right: 50px;
+    margin-left: 50px;
+    font-size: 10px;
+    pointer-events: all;
+
+}
+
+@keyframes rotateYLoop {
+    from {
+        transform: rotateY(0deg);
+    }
+    to {
+        transform: rotateY(360deg);
+    }
+}
+
+.pissAdImg {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    animation: rotateYLoop 4s linear infinite;
+}
+
+#phoneWarning {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 100px;
+    text-align: center;
+    font-size: 0.75em;
+    color: white;
+    z-index: 0;
+    width: 60vw;
+    margin: auto;
+}
+
+/* If the screen size is 600px wide or less, set the font-size of <div> to 30px */
+@media screen and (max-height: 570px) {
+    #modal{
+        overflow: scroll;
+        padding-top: 100px;
+        height: 100%;
+    }
+  }
+
+  /* If the screen size is 600px wide or less, set the font-size of <div> to 30px */
+@media screen and (max-width: 800px) {
+    body {
+      font-size: 0.7em;
+    }
+
+    #PlayAgain {
+        font-size: 17px;
+    }
+
+    #pissAd{
+        max-width: 100%;
+        height: 100px;
+        margin-right: 25px;
+        margin-left: 25px;
+        font-size: 10px;
+        position:absolute;
+        bottom: 150px;
+        margin-right: 0;
+        margin-left: 0;
+        top: unset;
+        right: 0;
+        left: 0;
+    }
+
+    #playAgain {
+        padding: 20px 20px !important;
+    }
+
+    #pissAd a {
+        width: 100px;
+        height: 100px;
+        font-size: 10px;
+        margin-right: 0;
+        margin-left: 0;
+    }
+
+    #pissAd img {
+        width: 100px;
+        height: 100px;
+    }
+  }
+
+  @media screen and (max-width: 1100px) {
+    body {
+      font-size: 0.7em;
+    }
+    #daddyTitle {
+        font-size: 1.5em;
+    }
+  }

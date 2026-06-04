@@ -5,6 +5,7 @@ import loaderService from "../utils/loaderService.js";
 import items from "../templates/items.js";
 import effectsService from "../utils/effectsService.js";
 import dialogService from "../utils/dialogService.js";
+import textOverlay from "../UI/textOverlay.js";
 
 /**
  * Pose name → 0-based frame index (same order as uncle1.png … uncle5.png).
@@ -173,6 +174,19 @@ class Cousin extends Enemy {
                 text: "WAHHHHHHHHHHHHHH"
             },
         ]);
+        textOverlay.showWindowOverlay(
+            "Your cousin has been defeated. Time to post on Youtube.",
+            "Victory",
+            ["Okay"],
+            [
+                () => {
+                    textOverlay.closeWindowOverlay();
+                    import('../gameState.js').then(({ default: gameState }) => {
+                        gameState.prepareForThirdBattle();
+                    });
+                },
+            ]
+        );
     }
 
     getRandomDialog() {

@@ -159,8 +159,22 @@ class AudioService {
         return thirties != null && enemy === thirties;
     }
 
+    _isThirtiesChaseActive() {
+        return !!window.gameEngine?.getThirties?.()?.isChasing?.();
+    }
+
     playDefaultBackgroundMusic() {
+        if (this._isThirtiesChaseActive()) {
+            return this.playThirtiesMusic();
+        }
         return this.switchBackgroundMusic(DEFAULT_BGM_URL);
+    }
+
+    restoreBackgroundMusicAfterBattle(enemy) {
+        if (this._isThirtiesEnemy(enemy) || this._isThirtiesChaseActive()) {
+            return this.playThirtiesMusic();
+        }
+        return this.playDefaultBackgroundMusic();
     }
 
     isDefaultBackgroundMusicPlaying() {
@@ -176,6 +190,7 @@ class AudioService {
     async ensureDefaultBackgroundMusic(options = {}) {
         const { default: gameState } = await import('../gameState.js');
         if (gameState.currentEvent?.battleRunning) return;
+        if (this._isThirtiesChaseActive()) return;
 
         const defaultKey = this._trackKey(DEFAULT_BGM_URL);
         if (this._currentTrackUrl !== defaultKey) {

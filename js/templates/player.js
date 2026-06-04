@@ -1,5 +1,6 @@
 import HealthBar from "../UI/healthBar.js";
 import { playerActiveItems } from "../UI/activeItems.js";
+import { updateDamageMultiplierHud } from "../utils/damageMultiplierHud.js";
 
 class Player {
     constructor(name) {
@@ -69,11 +70,13 @@ class Player {
     buffPhysical(amount) {
         this.phyDamage *= amount;
         console.log("Player physical damage buffed to " + this.phyDamage);
+        updateDamageMultiplierHud(this);
     }
 
     buffEmotional(amount) {
         this.emoDamage *= amount;
         console.log("Player emotional damage buffed to " + this.emoDamage);
+        updateDamageMultiplierHud(this);
     }
 
     buffHealth(amount) {
@@ -85,6 +88,7 @@ class Player {
         this.phyDamage = this.basePhyDamage;
         this.emoDamage = this.baseEmoDamage;
         this.healthBuff = this.baseHealthBuff;
+        updateDamageMultiplierHud(this);
     }
 
 }

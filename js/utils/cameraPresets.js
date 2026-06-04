@@ -177,6 +177,10 @@ class CameraService {
     }
 
     // Centralized camera movement methods
+    stopDresserMirrorWebcam() {
+        window.gameEngine?.getAssetManager?.()?.getGameObject('dresser')?.stopMirrorWebcam?.();
+    }
+
     lookAtBed() {
         console.log('Looking at bed');
         if (!this.camera) {
@@ -214,7 +218,6 @@ class CameraService {
 
     lookAtComputer() {
         if (!this.camera) return;
-        
         applyCameraPreset('COMPUTER_VIEW');
     }
 
@@ -284,6 +287,7 @@ class CameraService {
 
     resetToDefault() {
         if (!this.camera) return;
+        this.stopDresserMirrorWebcam();
         this.currentPreset = null;
         gsap.to(this.camera.position, {
             ...this.defaultPosition,
@@ -512,13 +516,30 @@ class CameraService {
         }
     }
 
+    /** Kill hallway / Dad's-room camera tweens before kitchen spawn (iframe handoff only). */
+    clearCameraTweens() {
+        if (!this.camera) return;
+        gsap.killTweensOf(this.camera.position);
+        gsap.killTweensOf(this.camera.rotation);
+    }
+
     lookAtKitchen(options = {}) {
         if (!this.camera) return;
+        const { duration = 1, ease = 'power2.inOut', onComplete } = options;
         const gameGroup = window.gameEngine?.sceneManager?.gameGroup;
         const scrollZ = gameGroup?.position?.z ?? KITCHEN_SCROLL_ALIGNED_Z;
         const position = getKitchenCameraPosition(scrollZ);
+        const rotation = CAMERA_PRESETS.KITCHEN_VIEW.rotation;
         this.currentPreset = 'KITCHEN_VIEW';
-        return this.transitionTo(position, CAMERA_PRESETS.KITCHEN_VIEW.rotation, options);
+
+        if (duration === 0) {
+            this.camera.position.set(position.x, position.y, position.z);
+            this.camera.rotation.set(rotation.x, rotation.y, rotation.z);
+            onComplete?.();
+            return;
+        }
+
+        return this.transitionTo(position, rotation, { duration, ease, onComplete });
     }
 
     lookAtMom(options = {}) {
@@ -535,6 +556,11 @@ export function applyCameraPreset(presetName, options = {}) {
     if (!preset) {
         console.warn(`Camera preset '${presetName}' not found`);
         return;
+    }
+    const keepDresserMirror =
+        presetName === 'DRESSER_VIEW' || presetName === 'COMPUTER_VIEW';
+    if (!keepDresserMirror) {
+        cameraService.stopDresserMirrorWebcam();
     }
     cameraService.currentPreset = presetName;
     return cameraService.transitionTo(preset.position, preset.rotation, options);

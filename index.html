@@ -107,6 +107,16 @@
         <div class="status-bar-field active-item-container"></div>
       </div>
     </div>
+    <div id="damage-multiplier-hud" class="damage-multiplier-hud" aria-live="polite">
+      <div id="phy-damage-multiplier" class="damage-multiplier damage-multiplier--phy" hidden>
+        <span class="damage-multiplier__label">PHY</span>
+        <span class="damage-multiplier__value"></span>
+      </div>
+      <div id="emo-damage-multiplier" class="damage-multiplier damage-multiplier--emo" hidden>
+        <span class="damage-multiplier__label">EMO</span>
+        <span class="damage-multiplier__value"></span>
+      </div>
+    </div>
     <div id="battleMode">
       <div id="enemyHealthContainer" class="progress-container">
         <progress id="enemyHealth" value="50" max="100">
@@ -164,6 +174,7 @@
       <div id="bottomEye"></div>
     </div>
 </div>
+  <div id="hold-restart-countdown" hidden aria-live="polite" aria-label="Hold to restart countdown"></div>
   
   <script type="module" src="./js/game.js"></script>
 </body>

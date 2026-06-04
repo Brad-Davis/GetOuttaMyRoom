@@ -54,7 +54,7 @@ class Inventory {
                 const container = containers[index];
                 container.innerHTML = `
                     <div class="inventory-item" draggable="true" data-item-id="${item.id}" data-item-type="${item.type}">
-                        <img src="${item.image}" alt="${item.name}" title="${item.name}">
+                        <img src="${item.image}" alt="${item.name}" title="${item.name}" draggable="false">
                     </div>
                 `;
                 container.classList.add('has-item');

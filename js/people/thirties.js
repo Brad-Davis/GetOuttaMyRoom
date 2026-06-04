@@ -9,6 +9,7 @@ import audioService from "../utils/audioService.js";
 import { enemyActiveItems } from "../UI/activeItems.js";
 import backButtonManager from "../controls/backButton.js";
 import items from "../templates/items.js";
+import { SKIP_THIRTIES_DIALOG } from "../config/gameFlow.js";
 
 const THIRTIES_GLB = "./resources/models/thirties2.glb";
 /** Positive Z = behind INTERIOR_START / default camera at the origin. */
@@ -295,6 +296,13 @@ class Thirties extends Enemy {
     }
 
     async runThirtiesHello() {
+        if (SKIP_THIRTIES_DIALOG) {
+            audioService.playThirtiesMusic();
+            backButtonManager.disablePermanently();
+            await this.startRun({ skipIntroCameraTurn: true });
+            return;
+        }
+
         effectsService.shakeScreen(10, 0.1);
         audioService.playThirtiesMusic();
         backButtonManager.disablePermanently();
@@ -360,8 +368,12 @@ class Thirties extends Enemy {
         shakeFrame();
     }
 
-    startRun() {
-        cameraService.turnCamera(Math.PI);
+    async startRun(options = {}) {
+        const bedroom = window.gameEngine?.getAssetManager?.()?.getGameObject('bedroom');
+        await bedroom?.removeThirtiesBackdropWall?.();
+        if (!options.skipIntroCameraTurn) {
+            cameraService.turnCamera(-Math.PI);
+        }
         this.startChase();
         window.gameEngine?.getInteractionManager?.()?.movement?.enable();
     }

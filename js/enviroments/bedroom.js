@@ -14,6 +14,9 @@ const HEAD_MODEL_PATH = './resources/models/head.glb';
 const VIDEO_TAPES_PATH = './resources/images/videoTapes.mp4';
 const VIDEO_WALL_BACKING_TEXTURE = './resources/images/goldFrame.png';
 
+/** Blocks +Z behind the default interior camera until the Thirties turn-around. */
+const THIRTIES_BACKDROP_WALL_Z = 5;
+
 class Bedroom extends Room {
   constructor(config = {}) {
     // Bedroom-specific default configuration
@@ -65,6 +68,9 @@ class Bedroom extends Room {
     this._poster2Mesh = null;
     /** @type {import('./hallway.js').default | null} */
     this.hallway = null;
+    /** Solid plane behind default interior view; removed before Thirties chase turn. */
+    this._thirtiesBackdropWall = null;
+    this._thirtiesBackdropWallTween = null;
 
     this.questionForPasserBy = false;
   }
@@ -86,6 +92,62 @@ class Bedroom extends Room {
   /** Grandpa poster on the back wall (see AssetManager). */
   getPoster2Mesh() {
     return this._poster2Mesh;
+  }
+
+  /**
+   * Wall behind INTERIOR_START (+Z). Fades out when the hallway chase begins.
+   * @returns {Promise<void>}
+   */
+  removeThirtiesBackdropWall({ duration = 0.45 } = {}) {
+    const wall = this._thirtiesBackdropWall;
+    if (!wall) return Promise.resolve();
+
+    this._thirtiesBackdropWallTween?.kill();
+    this._thirtiesBackdropWall = null;
+
+    const material = wall.material;
+    if (!material) {
+      wall.parent?.remove(wall);
+      wall.geometry?.dispose?.();
+      return Promise.resolve();
+    }
+
+    material.transparent = true;
+    material.depthWrite = false;
+
+    return new Promise((resolve) => {
+      this._thirtiesBackdropWallTween = gsap.to(material, {
+        opacity: 0,
+        duration,
+        ease: 'power2.in',
+        onComplete: () => {
+          wall.parent?.remove(wall);
+          wall.geometry?.dispose?.();
+          material.map?.dispose?.();
+          material.dispose?.();
+          this._thirtiesBackdropWallTween = null;
+          resolve();
+        },
+      });
+    });
+  }
+
+  _addThirtiesBackdropWall(scene) {
+    const wall = this.createSurface('wall', {
+      width: this.config.width,
+      height: this.config.height,
+      x: 0,
+      y: this.config.wallHeight,
+      z: THIRTIES_BACKDROP_WALL_Z,
+      rotX: 0,
+      rotY: Math.PI,
+      rotZ: 0,
+      texture: 'wall.jpg',
+    });
+    wall.name = 'thirtiesBackdropWall';
+    scene.add(wall);
+    this._thirtiesBackdropWall = wall;
+    return wall;
   }
 
   /**
@@ -414,6 +476,8 @@ class Bedroom extends Room {
     const surfaces = [];
     this.voidMeshes = [];
     this._poster2Mesh = null;
+    this._thirtiesBackdropWallTween?.kill();
+    this._thirtiesBackdropWall = null;
     
     // Floor — extend 1 unit past the back wall so it overlaps the hallway plane (no seam).
     const floorDepth = this.config.depth + 1;
@@ -833,6 +897,9 @@ class Bedroom extends Room {
     surfaces.push(grass);
     // 
     scene.add(grass);
+
+    const thirtiesBackdropWall = this._addThirtiesBackdropWall(scene);
+    surfaces.push(thirtiesBackdropWall);
 
     this.hallway = new Hallway(scene);
 

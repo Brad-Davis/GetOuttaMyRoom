@@ -5,6 +5,8 @@ import '98.css';
 import GameEngine from './core/GameEngine.js';
 import './utils/missionService.js';
 import { dismissInitialLoadingScreen } from './utils/initialLoadingScreen.js';
+import { initHoldToRestart } from './utils/holdToRestart.js';
+import { initIdleRestart } from './utils/idleRestart.js';
 
 // Initialize and start the game
 async function startGame() {
@@ -50,8 +52,14 @@ async function startGame() {
 
 // Start the game when the page loads
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startGame);
+    document.addEventListener('DOMContentLoaded', () => {
+        initHoldToRestart();
+        initIdleRestart();
+        startGame();
+    });
 } else {
+    initHoldToRestart();
+    initIdleRestart();
     startGame();
 }
 

@@ -20,6 +20,7 @@ const SFX_LIBRARY = {
     bongHit1: './resources/sounds/bong1.mp3',
     bongHit2: './resources/sounds/bong2.mp3',
     bongHit3: './resources/sounds/bong3.mp3',
+    callEx: './resources/sounds/callEx.mp3',
 };
 
 class EffectsService {

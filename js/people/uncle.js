@@ -170,7 +170,7 @@ class Uncle extends Enemy {
             },
         ]);
         textOverlay.showWindowOverlay(
-            "Congratulations! You have defeated your weird Uncle. Looks like computer time is back. Time to post on linkedin.",
+            "Congratulations! You have defeated your weird Uncle. Looks like computer time is back. Time to swipe on Tinder.",
             "Victory",
             ["Okay"],
             [

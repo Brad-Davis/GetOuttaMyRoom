@@ -34,7 +34,7 @@ class InventoryManager {
 
     addTestItems() {
         // Add some test items to the inventory
-        // this.inventory.addItem(items.punch_001);
+        this.inventory.addItem(items.punch_001);
         // this.inventory.addItem(items.shot_001);
         // this.inventory.addItem(items.scream_001);
     }
@@ -56,6 +56,10 @@ class InventoryManager {
         });
 
         document.addEventListener('dragstart', (e) => {
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault();
+                return;
+            }
             if (e.target.closest('.inventory-item, .active-item')) {
                 this.handleDragStart(e);
             }

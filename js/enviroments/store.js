@@ -41,7 +41,7 @@ class Store {
             if (index >= containers.length) return;
             const container = containers[index];
             const imgHtml = item.image
-                ? `<img src="${item.image}" alt="${item.name}" title="${item.name}">`
+                ? `<img src="${item.image}" alt="${item.name}" title="${item.name}" draggable="false">`
                 : `<span class="item-name">${item.name}</span>`;
             container.innerHTML = `
                 <div class="inventory-item" draggable="true" data-item-id="${item.id}" data-item-type="${item.type}">

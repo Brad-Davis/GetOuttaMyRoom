@@ -114,7 +114,7 @@ class ActiveItems {
                         // Add new item
                         container.innerHTML = `
                             <div class="${itemClass}"${dragAttr} data-item-id="${item.id}" data-item-type="${item.type}">
-                                <img src="${item.image}" alt="${item.name}" title="${item.name}">
+                                <img src="${item.image}" alt="${item.name}" title="${item.name}" draggable="false">
                             </div>
                         `;
                         container.classList.add('has-item');

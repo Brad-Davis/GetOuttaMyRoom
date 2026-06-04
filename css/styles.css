@@ -108,6 +108,92 @@ body {
     display: none !important;
 }
 
+.damage-multiplier-hud {
+    position: absolute;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+.damage-multiplier {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-size: 11px;
+    line-height: 1.1;
+    text-align: center;
+    min-width: 56px;
+}
+
+.damage-multiplier[hidden] {
+    display: none !important;
+}
+
+.damage-multiplier--phy {
+    left: 20px;
+}
+
+.damage-multiplier--emo {
+    right: 20px;
+}
+
+.damage-multiplier__label {
+    font-weight: bold;
+    letter-spacing: 0.08em;
+}
+
+.damage-multiplier--phy .damage-multiplier__label,
+.damage-multiplier--phy .damage-multiplier__value {
+    color: #e88;
+    text-shadow: 0 0 8px rgba(139, 0, 0, 0.8);
+}
+
+.damage-multiplier--emo .damage-multiplier__label,
+.damage-multiplier--emo .damage-multiplier__value {
+    color: #c9b3ff;
+    text-shadow: 0 0 8px rgba(75, 0, 130, 0.8);
+}
+
+.damage-multiplier__value {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.damage-multiplier--shake {
+    animation: damageMultiplierShake 0.45s ease-in-out;
+}
+
+@keyframes damageMultiplierShake {
+    0%, 100% {
+        transform: translateY(-50%) translateX(0);
+    }
+    15% {
+        transform: translateY(-50%) translateX(-8px);
+    }
+    30% {
+        transform: translateY(-50%) translateX(8px);
+    }
+    45% {
+        transform: translateY(-50%) translateX(-5px);
+    }
+    60% {
+        transform: translateY(-50%) translateX(5px);
+    }
+    75% {
+        transform: translateY(-50%) translateX(-2px);
+    }
+    90% {
+        transform: translateY(-50%) translateX(2px);
+    }
+}
+
 .mission-list {
     display: flex;
     flex-direction: column;
@@ -280,6 +366,8 @@ body.evil-tinder-iframe-open #dopamine-container {
 }
 
 /* Invisible HUD must not block the scene (parent none does not apply to children) */
+#damage-multiplier-hud,
+#damage-multiplier-hud *,
 #battleMode,
 #battleMode *,
 #shop,
@@ -404,6 +492,24 @@ body.evil-tinder-iframe-open #dopamine-container {
   height: 100%;
   pointer-events: none;
   z-index: 1000;
+}
+
+#hold-restart-countdown {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 0 #ff2ba3bf, 4px 4px 8px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 9990;
+}
+
+#hold-restart-countdown[hidden] {
+  display: none !important;
 }
 
 #full-overlay {
@@ -536,10 +642,6 @@ body.evil-tinder-iframe-open #dopamine-container {
   pointer-events: all !important;
 }
 
-.inventory-item img, .active-item img, .enemy-active-item img {
-  pointer-events: none;
-}
-
 .inventory-item:hover, .active-item:hover, .enemy-active-item:hover {
   border-color: #007BFF;
   background-color: rgba(255, 255, 255, 0.2);
@@ -558,6 +660,10 @@ body.evil-tinder-iframe-open #dopamine-container {
   height: 60px;
   object-fit: contain;
   margin-bottom: 4px;
+  -webkit-user-drag: none;
+  user-drag: none;
+  user-select: none;
+  pointer-events: none;
 }
 
 .inventory-item .item-name, .active-item .item-name, .enemy-active-item .item-name {

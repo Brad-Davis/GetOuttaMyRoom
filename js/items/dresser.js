@@ -67,9 +67,14 @@ class Dresser {
     this.mirrorWebcam?.update();
   }
 
+  /** Stop the mirror feed immediately (camera hardware + mesh). */
+  stopMirrorWebcam() {
+    this.mirrorWebcam?.stop();
+  }
+
   unsetFocus() {
     this.dresserFocus = false;
-    this.mirrorWebcam?.hide(() => this.mirrorWebcam?.stop());
+    this.stopMirrorWebcam();
   }
 
   getDresserFocus() {

@@ -6,7 +6,11 @@ import effectsService from '../utils/effectsService.js';
 import gameState from '../gameState.js';
 import dialogService from '../utils/dialogService.js';
 import voiceRecognition from '../services/voiceRecognition.js';
+import interactionService from '../utils/interactionService.js';
+import backButtonManager from './backButton.js';
+import speakButtonManager from './speakButton.js';
 
+import { FAST_SCROLL, LOG_PLAYER_Z, SKIP_DADDY_WAKE_IFRAME } from '../config/gameFlow.js';
 import {
     FIRST_BATTLE_POSITION,
     SECOND_BATTLE_POSITION,
@@ -31,15 +35,18 @@ const SECOND_BATTLE_Z = scrollBattleZ(SECOND_BATTLE_POSITION);
 
 const _thirtiesWorldPos = new THREE.Vector3();
 
-const DADDY_IFRAME_URL = 'https://pleasewakeupdaddy.com/';
+const DADDY_IFRAME_URL = '/pleaseDaddyWakeUp/index.html';
 /** Trigger Dad's room sequence when scroll reaches the wall (small epsilon for float). */
 const DADS_ROOM_TRIGGER_EPSILON = 0.05;
 const BATTLE_TRIGGER_EPSILON = 0.05;
 
 const MOVEMENT_SPEED = 0.001;
+/** Multiplier applied when {@link FAST_SCROLL} is enabled in gameFlow.js. */
+const FAST_SCROLL_MULTIPLIER = 12;
+const EFFECTIVE_MOVEMENT_SPEED = MOVEMENT_SPEED * (FAST_SCROLL ? FAST_SCROLL_MULTIPLIER : 1);
 /** Wheel deltaY equivalent needed for 100% fill (higher = harder to max out). */
 const REFERENCE_WHEEL_DELTA = 400;
-const MAX_DISPLAY_SPEED = MOVEMENT_SPEED * REFERENCE_WHEEL_DELTA;
+const MAX_DISPLAY_SPEED = EFFECTIVE_MOVEMENT_SPEED * REFERENCE_WHEEL_DELTA;
 /** How much each scroll tick blends into the running average (lower = longer memory). */
 const SCROLL_EMA_ALPHA = 0.06;
 /** Per-frame retention when idle (higher = slower falloff; ~0.99 ≈ several seconds at 60fps). */
@@ -56,6 +63,7 @@ export default class Movement {
       this._firstScrollBattleDone = false;
       this._secondScrollBattleDone = false;
       this._firstScrollBattleWon = false;
+      this._secondScrollBattleWon = false;
       this._scrollBattleStarting = false;
       this._caughtByThirties = false;
       this._averageScrollSpeed = 0;
@@ -63,6 +71,7 @@ export default class Movement {
       this._lastWheelAt = 0;
       this.kitchenEnabled = false;
       this._momEncounterStarted = false;
+      this._daddyKitchenWakeDone = false;
 
       window.addEventListener('wheel', this.handleScroll.bind(this));
     //   this.enable(true); // Start in kitchen mode
@@ -73,7 +82,36 @@ export default class Movement {
         return performance.now() - this._lastWheelAt;
     }
 
+    _getHallway() {
+        return window.gameEngine?.getAssetManager?.()?.getGameObject('bedroom')?.hallway ?? null;
+    }
+
+    _shouldHallwayShake() {
+        return (
+            this.enableMovement &&
+            !this.kitchenEnabled &&
+            this._firstScrollBattleWon &&
+            !this._dadsRoomSequenceStarted &&
+            !this._scrollBattleStarting
+        );
+    }
+
+    _syncHallwayShake() {
+        const hallway = this._getHallway();
+        if (!hallway) return;
+
+        if (!this._shouldHallwayShake()) {
+            hallway.stopShake();
+            return;
+        }
+
+        hallway.setShakeTier(this._secondScrollBattleWon ? 2 : 1);
+        hallway.updateShake();
+    }
+
     _updateThirtiesChase(scrollBoost = 0) {
+        if (this.kitchenEnabled) return;
+
         const thirties = window.gameEngine?.getThirties?.();
         if (!thirties?.isChasing?.() || !this.gameGroup) return;
 
@@ -95,7 +133,7 @@ export default class Movement {
 
       this._lastWheelAt = performance.now();
 
-      const deltaZ = MOVEMENT_SPEED * event.deltaY;
+      const deltaZ = EFFECTIVE_MOVEMENT_SPEED * event.deltaY;
       const instantSpeed = Math.abs(deltaZ);
 
       this._averageScrollSpeed +=
@@ -110,7 +148,10 @@ export default class Movement {
       this._updateThirtiesChase(instantSpeed);
       this._updateSpeedBar();
       this._checkScrollBattleTriggers();
-      this._maybeTriggerDadsRoomSequence();
+      if (!this.kitchenEnabled) {
+          this._maybeTriggerDadsRoomSequence();
+          this._syncHallwayShake();
+      }
     }
 
     showSpeed() {
@@ -148,8 +189,24 @@ export default class Movement {
 
             this._updateSpeedBar();
             this._checkScrollBattleTriggers();
-            this._maybeTriggerDadsRoomSequence();
+            if (!this.kitchenEnabled) {
+                this._maybeTriggerDadsRoomSequence();
+            }
         }
+
+        if (!this.kitchenEnabled) {
+            this._syncHallwayShake();
+        }
+
+        this._logPlayerZ();
+    }
+
+    _logPlayerZ() {
+        if (!LOG_PLAYER_Z) return;
+        const gameGroup = this._getGameGroup();
+        if (!gameGroup) return;
+        console.log('[gamegroup z]', gameGroup.position.z.toFixed(4));
+        console.log('[camera enabled]', cameraService.getCameraPosition().z.toFixed(4));
     }
 
     _handleCaughtByThirties() {
@@ -176,6 +233,7 @@ export default class Movement {
 
         this._dadsRoomSequenceStarted = true;
         this.gameGroup.position.z = MAX_GAME_GROUP_Z;
+        this._getHallway()?.stopShake();
         this.disable();
 
         const interactionManager = window.gameEngine?.getInteractionManager?.();
@@ -190,14 +248,74 @@ export default class Movement {
                     dadsRoomDoor.open();
                 }
             },
+            onWooshComplete: SKIP_DADDY_WAKE_IFRAME
+                ? () => this._finishDadsRoomDoorThenKitchen()
+                : undefined,
         });
+
+        if (SKIP_DADDY_WAKE_IFRAME) return;
 
         setTimeout(() => {
             effectsService.playSfx('startupEffect');
             setTimeout(() => {
-                iframeControls.openIframe(DADDY_IFRAME_URL, { externalEmbed: true });
+                cameraService.closeEyesFast();
+                iframeControls.openIframe(DADDY_IFRAME_URL);
             }, 1000);
         }, 3100);
+    }
+
+    /** Dev flag: after hallway door woosh, skip iframe and run {@link finishDaddyWakeGame}. */
+    _finishDadsRoomDoorThenKitchen() {
+        effectsService.playSfx('startupEffect');
+        this.finishDaddyWakeGame();
+    }
+
+    _getGameGroup() {
+        const group = window.gameEngine?.sceneManager?.gameGroup ?? this.gameGroup;
+        if (group) {
+            this.gameGroup = group;
+        }
+        return group;
+    }
+
+    /**
+     * Single kitchen entry — rail at SceneManager default (-5); camera via `lookAtKitchen`.
+     */
+    enterKitchenChapter() {
+        window.gameEngine?.getThirties?.()?.stopChase?.();
+
+        const gameGroup = this._getGameGroup();
+        if (!gameGroup) return;
+
+        cameraService.clearCameraTweens();
+        gameGroup.position.set(0, 0, INITIAL_GAME_GROUP_Z);
+
+        cameraService.lookAtKitchen({ duration: 0 });
+
+        const interactionManager = window.gameEngine?.getInteractionManager?.();
+        interactionManager?.syncOrbitToGameGroup?.(gameGroup);
+
+        this.enable(true);
+    }
+
+    /** After pleaseDaddyWakeUp (or skip-iframe): same kitchen entry as dev spawn + chapter UI. */
+    finishDaddyWakeGame() {
+        if (this._daddyKitchenWakeDone) return;
+        this._daddyKitchenWakeDone = true;
+
+        this.enterKitchenChapter();
+
+        const gameGroup = this._getGameGroup();
+        const interactionManager = window.gameEngine?.getInteractionManager?.();
+        interactionManager?.endProgrammaticCameraMove?.(gameGroup);
+
+        interactionService.enable();
+        backButtonManager.enable();
+        speakButtonManager.enable();
+
+        setTimeout(() => {
+            cameraService.openEyes();
+        }, 900);
     }
 
     _getThirtiesPosition() {
@@ -234,7 +352,7 @@ export default class Movement {
 
         const youZ = this.gameGroup.position.z;
         if (this.kitchenEnabled) {
-            if (youZ >= -MOM_ENCOUNTER_Z) {
+            if (youZ > MOM_ENCOUNTER_Z) {
                 this.encounterMom();
             }
             return;
@@ -300,46 +418,46 @@ export default class Movement {
         this._momEncounterStarted = true;
 
         this.gameGroup.position.z = -MOM_ENCOUNTER_Z;
-        // this.disable();
+        this.disable();
 
         //REENABLE AFTER TESTING
         const kitchen = window.gameEngine?.getAssetManager?.()?.getGameObject('kitchen');
-        kitchen?.activateOutsideBeyondDoorAtmosphere?.();
-        // cameraService.lookAtMom({
-        //     duration: 1.2,
-        //     onComplete: async () => {
-        //         await dialogService.runLines([
-        //             { speaker: "Mom", text: "Hey honey. Good to see you outside of your room." },
-        //             { speaker: "Mom", text: "Thanks for waking up Dad! He just ran out! Think he'll make it in time." },
-        //             { speaker: "Mom", text: "You seem like you have something on your mind. What's up?" },
-        //             { speaker: "Inner Monologue", text: "Say something to your mom. Anything. It won't be graded, timed or sent to an online database. Just say something." },
-        //         ]);
-        //         const response = await voiceRecognition.getAndPrintStatement(false);
-        //         await dialogService.runLines([
-        //             { speaker: "Mom", text: "That's wonderful honey. Why don't you go take a walk it's a wonderful evening."    },
-        //         ]);
+        
+        cameraService.lookAtMom({
+            duration: 1.2,
+            onComplete: async () => {
+                await dialogService.runLines([
+                    { speaker: "Mom", text: "Hey honey. Good to see you outside of your room." },
+                    { speaker: "Mom", text: "Thanks for waking up Dad! He just ran out! Think he'll make it in time." },
+                    { speaker: "Mom", text: "You seem like you have something on your mind. What's up?" },
+                    { speaker: "Inner Monologue", text: "Say something to your mom. Anything. It won't be graded, timed or sent to an online database. Just say something." },
+                ]);
+                const response = await voiceRecognition.getAndPrintStatement(false);
+                await dialogService.runLines([
+                    { speaker: "Mom", text: "That's wonderful honey. Why don't you go take a walk it's a wonderful evening."    },
+                ]);
 
-        //         const door = kitchen?.getKitchenDoor?.();
-        //         cameraService.lookAtKitchen({
-        //             duration: 1.2,
-        //             onComplete: () => {
-        //                 if (door && !door.doorOpen) {
-        //                     door.open();
-        //                 }
-        //                 this.enable(true);
-        //             },
-        //         });
-        //     },
-        // });
-        const door = kitchen?.getKitchenDoor?.();
-        door.open();
-        this.enable(true);
+                const door = kitchen?.getKitchenDoor?.();
+                cameraService.lookAtKitchen({
+                    duration: 1.2,
+                    onComplete: () => {
+                        if (door && !door.doorOpen) {
+                            door.open();
+                        }
+                        kitchen?.activateOutsideBeyondDoorAtmosphere?.();
+                        this.enable(true);
+                    },
+                });
+            },
+        });
     }
 
     resumeAfterScrollBattle() {
         this._scrollBattleStarting = false;
         if (!this._firstScrollBattleWon && this._firstScrollBattleDone) {
             this._firstScrollBattleWon = true;
+        } else if (this._secondScrollBattleDone) {
+            this._secondScrollBattleWon = true;
         }
         cameraService.turnCamera(-Math.PI, {
             onComplete: () => {
@@ -366,5 +484,6 @@ export default class Movement {
         this.enableMovement = false;
         this._averageScrollSpeed = 0;
         this.hideSpeed();
+        this._getHallway()?.stopShake();
     }
 }
