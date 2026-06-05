@@ -24,7 +24,10 @@ class Item {
         this.emoBuff = emoBuff;
         this.effects = effects;
         this.sfx = sfx;
+        this.readyIdleTime = 0;
     }
+
+    static READY_IDLE_FLASH_DELAY = 5;
 
     use(fromEnemy = false) {
         console.log(`${this.name} is used.`);
@@ -39,17 +42,21 @@ class Item {
         this.triggerFunction(fromEnemy);
     }
 
-    tick(timeAmount, index, activeItems) {
-        // For charging animation, we target the container
-        const containerElement = activeItems[index + 1];
+    tick(timeAmount, index, containers) {
+        const containerElement = containers[index];
         // For click events when ready, we target the inner item
-        const innerItemElement = containerElement ? containerElement.querySelector('.active-item') : null;
+        const innerItemElement = containerElement ? containerElement.querySelector('.active-item, .enemy-active-item') : null;
         
         if (this.isReady) {
+            this.readyIdleTime += timeAmount;
+            if (innerItemElement && this.readyIdleTime >= Item.READY_IDLE_FLASH_DELAY) {
+                innerItemElement.classList.add('idle-flash');
+            }
             return;
         }
         if (this.rechargeTime === 0) {
             this.isReady = true;
+            this.readyIdleTime = 0;
             if (containerElement) {
                 containerElement.style.background = `rgba(192, 192, 192, 1)`;
             }
@@ -75,6 +82,7 @@ class Item {
         if (this.currentCharge >= this.rechargeTime) {
             this.currentCharge = 0;
             this.isReady = true;
+            this.readyIdleTime = 0;
             
             if (containerElement) {
                 containerElement.style.background = `rgba(192, 192, 192, 1)`;
@@ -82,8 +90,6 @@ class Item {
             
             // Apply ready-state effects to the inner item if it exists and isn't already set up
             if (innerItemElement && !innerItemElement._readyClickHandler) {
-                innerItemElement.style.cursor = `pointer`;
-                innerItemElement.style.boxShadow = "0 0 16px 4px #ffe066, 0 0 4px 2px #fff";
                 innerItemElement.style.transition = "box-shadow 0.2s, transform 0.1s";
                 innerItemElement.classList.add('active-item-ready');
 
@@ -97,6 +103,9 @@ class Item {
 
                 // Add the click event handler
                 innerItemElement._readyClickHandler = () => {
+                    if (speakingActive) {
+                        return;
+                    }
                     this.onUse(innerItemElement, containerElement);                    
                     // Remove the click event handler after use
                     if (innerItemElement._readyClickHandler) {
@@ -117,10 +126,9 @@ class Item {
         }
         const innerItemElement = containerElement.querySelector('.active-item, .enemy-active-item');
         if (innerItemElement) {
-            innerItemElement.style.boxShadow = "";
-            innerItemElement.style.cursor = "";
-            innerItemElement.classList.remove('active-item-ready');
+            innerItemElement.classList.remove('active-item-ready', 'idle-flash');
             innerItemElement.style.transform = "scale(1)";
+            this.readyIdleTime = 0;
             if (innerItemElement._readyClickHandler) {
                 innerItemElement.removeEventListener('click', innerItemElement._readyClickHandler);
                 innerItemElement._readyClickHandler = null;
@@ -130,6 +138,9 @@ class Item {
     }
 
     onUse(innerItemElement, containerElement, fromEnemy = false) {
+        if (!fromEnemy && speakingActive) {
+            return;
+        }
         effectsService.apply(this.effects);
         console.log(this.sfx);
         // Prevent double-playing the same sound when effects.sfx already handled it.
@@ -144,6 +155,15 @@ class Item {
 
 
 let speakingActive = false;
+
+function setSpeakingActive(active) {
+    speakingActive = active;
+    const slots = document.getElementById('active-items-slots');
+    if (slots) {
+        slots.style.pointerEvents = active ? 'none' : '';
+    }
+}
+
 export function isSpeakingActive() {
     return speakingActive;
 }
@@ -192,7 +212,7 @@ const itemPool = {
     "shot": new Item(
         "Shot",
         "A shot that boosts physical damage, but lowers emotional damage.",
-        /* value */ 6,
+        /* value */ 5,
         /* rechargeTime */ 10,
         /* image */ "./resources/images/shot.png",
         /* triggerFunction */ (fromEnemy = false) => {
@@ -244,7 +264,7 @@ const itemPool = {
                 // SHOULD BE AN ERROR MESSAGE HERE TO SAY THAT YOU ARE ALREADY SPEAKING
                 return;
             }
-            speakingActive = true;
+            setSpeakingActive(true);
             const lengthOfTime = 10;
             const topics = ["Men's Rights", "The State of Stand Up Comedy", "World War II", "Dating in the modern age", "AI", "Looksmaxxing", "Israel", "Crypto"];
             const topic = topics[Math.floor(Math.random() * topics.length)];
@@ -272,14 +292,14 @@ const itemPool = {
                 } else {
                     response += ` You are a terrible speaker. Your family is relieved.`;
                 }
-                dialogService.runLines([{
+                await dialogService.runLines([{
                     speaker: 'Podcast Producer',
                     text: response,
                 }]);
             } catch (error) {
                 console.warn("[Podcast item] failed:", error);
             } finally {
-                speakingActive = false;
+                setSpeakingActive(false);
             }
         },
         /* phyDamage */ 0,
@@ -302,7 +322,7 @@ const itemPool = {
                 // SHOULD BE AN ERROR MESSAGE HERE TO SAY THAT YOU ARE ALREADY SPEAKING
                 return;
             }
-            speakingActive = true;
+            setSpeakingActive(true);
             const lengthOfTime = 5;
 
             const insultTopics = ["Their looks", "Their Identity", "Their personality", "Their intelligence", "Their wealth", "Their social status", "Their family", "Their friends", "Their job", "Their home", "Their car", "Their clothes", "Their shoes", "Their hair", "Their makeup", "Their body", "Their sex", "Their gender", "Their sexuality", "Their religion", "Their politics", "Their beliefs", "Their opinions", "Their values", "Their morals", "Their ethics", "Their behavior", "Their attitude", "Their personality", "Their intelligence", "Their wealth", "Their social status", "Their family", "Their friends", "Their job", "Their home", "Their car", "Their clothes", "Their shoes", "Their hair", "Their makeup", "Their body", "Their sex", "Their gender", "Their sexuality", "Their religion", "Their politics", "Their beliefs", "Their opinions", "Their values", "Their morals", "Their ethics", "Their behavior", "Their attitude"];
@@ -330,14 +350,14 @@ const itemPool = {
                 } else {
                     response += ` You are kind. Learn from your mistakes.`;
                 }
-                dialogService.runLines([{
+                await dialogService.runLines([{
                     speaker: 'Inner Monologue',
                     text: response,
                 }]);
             } catch (error) {
                 console.warn("[Insult item] failed:", error);
             } finally {
-                speakingActive = false;
+                setSpeakingActive(false);
             }
         },
         /* phyDamage */ 0,
@@ -389,7 +409,7 @@ const itemPool = {
             if (speakingActive) {
                 return;
             }
-            speakingActive = true;
+            setSpeakingActive(true);
             const lengthOfTime = 4;
             const meterSegments = 12;
             let lastUiUpdateMs = 0;
@@ -436,19 +456,19 @@ const itemPool = {
                 hurt(selfDamage, !fromEnemy, false);
 
                 dialogService.endLiveDialog();
-                dialogService.runLines([{
+                await dialogService.runLines([{
                     speaker: 'Inner Monologue',
                     text: `Family takes ${familyDamage} damage. You take ${selfDamage} recoil damage.`,
                 }]);
             } catch (error) {
                 console.warn("[Scream item] failed:", error);
                 dialogService.endLiveDialog();
-                dialogService.runLines([{
+                await dialogService.runLines([{
                     speaker: 'Inner Monologue',
                     text: 'Could not read your mic scream level. Check mic permissions and try again.',
                 }]);
             } finally {
-                speakingActive = false;
+                setSpeakingActive(false);
             }
         },
         /* phyDamage */ 0,
@@ -573,7 +593,7 @@ const itemPool = {
             if (speakingActive) {
                 return;
             }
-            speakingActive = true;
+            setSpeakingActive(true);
             const lengthOfTime = 5;
             const questions = [
                 "Name a U.S. senator.",
@@ -608,14 +628,14 @@ const itemPool = {
                 } else {
                     response += ` Classic uninformed energy. Your family is relieved you embarrassed yourself.`;
                 }
-                dialogService.runLines([{
+                await dialogService.runLines([{
                     speaker: 'Inner Monologue',
                     text: response,
                 }]);
             } catch (error) {
                 console.warn("[Political item] failed:", error);
             } finally {
-                speakingActive = false;
+                setSpeakingActive(false);
             }
         },
         /* phyDamage */ 0,
@@ -666,7 +686,7 @@ const itemPool = {
             if (speakingActive) {
                 return;
             }
-            speakingActive = true;
+            setSpeakingActive(true);
             const lengthOfTime = 10;
 
             try {
@@ -692,14 +712,14 @@ const itemPool = {
                 } else {
                     response += ` Your family is relieved. Maybe they can get you into the classics.`;
                 }
-                dialogService.runLines([{
+                await dialogService.runLines([{
                     speaker: 'Inner Monologue',
                     text: response,
                 }]);
             } catch (error) {
                 console.warn("[Music Taste item] failed:", error);
             } finally {
-                speakingActive = false;
+                setSpeakingActive(false);
             }
         },
         /* phyDamage */ 0,

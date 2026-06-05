@@ -7,7 +7,7 @@ export const CD_STARTS_BATTLE_IMMEDIATELY = false;
  * monologue, mission). When false: normal CD → bed → iframe intro.
  * Overridden at runtime via sessionStorage when the player holds mouse to restart from the beginning.
  */
-export const SKIP_INTRO_DEFAULT = false;
+export const SKIP_INTRO_DEFAULT = true;
 
 const SKIP_INTRO_STORAGE_KEY = 'skip_intro';
 

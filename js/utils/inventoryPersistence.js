@@ -1,5 +1,6 @@
 import items, { cloneItemFromTemplate } from '../templates/items.js';
 import store from '../enviroments/store.js';
+import { shouldSkipThirdFight } from '../config/gameFlow.js';
 
 const STORAGE_KEY = 'gomr_player_inventory_v1';
 
@@ -51,11 +52,10 @@ function deserializeSlot(slot) {
     });
 }
 
-/** Persist bag + equipped slots for the next reload after death. */
+/** Persist active items for the next reload after death. */
 export function savePlayerInventoryForRespawn(inventoryManager) {
     const payload = {
-        v: 1,
-        inventory: inventoryManager.inventory.items.map((item) => serializeSlot(item)),
+        v: 2,
         active: inventoryManager.activeItems.items.map((item) => serializeSlot(item)),
     };
     writePayload(payload);
@@ -72,26 +72,40 @@ export function restorePlayerInventoryAfterRespawn(inventoryManager) {
     if (!payload?.v) return false;
 
     const shopIds = getShopItemIds();
-    inventoryManager.inventory.items.length = 0;
-    inventoryManager.activeItems.items = [null, null];
+    const keepShopItems = shouldSkipThirdFight();
+    inventoryManager.activeItems.items = [];
 
-    for (const slot of payload.inventory ?? []) {
-        if (!slot?.id || isListedInShop(slot.id, shopIds)) continue;
-        const item = deserializeSlot(slot);
-        if (item) inventoryManager.inventory.items.push(item);
+    const slots = [];
+
+    const shouldRestoreSlot = (slot) => {
+        if (!slot?.id) return false;
+        return keepShopItems || !isListedInShop(slot.id, shopIds);
+    };
+
+    if (payload.v === 1) {
+        for (const slot of payload.inventory ?? []) {
+            if (shouldRestoreSlot(slot)) {
+                slots.push(slot);
+            }
+        }
+        for (const slot of payload.active ?? []) {
+            if (shouldRestoreSlot(slot)) {
+                slots.push(slot);
+            }
+        }
+    } else {
+        for (const slot of payload.active ?? []) {
+            if (shouldRestoreSlot(slot)) {
+                slots.push(slot);
+            }
+        }
     }
 
-    const activeSlots = payload.active ?? [];
-    activeSlots.forEach((slot, index) => {
-        if (index >= inventoryManager.activeItems.items.length) return;
-        if (!slot?.id || isListedInShop(slot.id, shopIds)) {
-            inventoryManager.activeItems.items[index] = null;
-            return;
-        }
-        inventoryManager.activeItems.items[index] = deserializeSlot(slot);
-    });
+    for (const slot of slots) {
+        const item = deserializeSlot(slot);
+        if (item) inventoryManager.activeItems.items.push(item);
+    }
 
-    inventoryManager.inventory.renderItems();
     inventoryManager.activeItems.renderItems();
     inventoryManager.activeItems.refreshAllChargeVisuals();
     return true;

@@ -22,6 +22,9 @@ const BEHIND_SCREEN_DOOR_Z_OFFSET = 1000;
  */
 export const KITCHEN_SCROLL_ALIGNED_Z = 0;
 
+/** `gameGroup.position.z` when entering the kitchen chapter (aligned rail minus 5). */
+export const KITCHEN_SPAWN_GAME_GROUP_Z = KITCHEN_SCROLL_ALIGNED_Z - 5;
+
 /** Standing eye position at the center of the kitchen floor (gameGroup local space). */
 export function getKitchenCenter() {
     const eyeHeightAboveFloor = 3;

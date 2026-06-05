@@ -31,11 +31,9 @@ class ActiveItems {
         oldItem.isReady = false;
         oldItem.currentCharge = 0;
         this.items[placementIndex] = item;
-        console.log(oldItem);
         return oldItem;
     }
 
-    // Base renderItems method - subclasses should override with specific selectors
     renderItems() {
         throw new Error("renderItems must be implemented by subclass");
     }
@@ -44,23 +42,27 @@ class ActiveItems {
         return this.items.filter(item => item !== null).length >= this.size;
     }
 
-    // Base tickItems method - subclasses can override with specific element selectors
-    tickItems(timeAmount) {
+    getItemContainers() {
         const activeItemsElement = this.getActiveItemsElement();
+        if (!activeItemsElement) return [];
+        return Array.from(activeItemsElement.querySelectorAll(this.getContainerSelector()));
+    }
+
+    tickItems(timeAmount) {
+        const containers = this.getItemContainers();
         
         this.items.forEach((item, index) => {
             if (item) {
-                item.tick(timeAmount, index, activeItemsElement.children);
+                item.tick(timeAmount, index, containers);
                 if (this instanceof EnemyActiveItems) {
                     if (item.isReady && this._currentEnemy && !this._currentEnemy.isDefeated) {
-                        const container = activeItemsElement.children[index + 1];
+                        const container = containers[index];
                         this._currentEnemy.onEnemyItemUsed?.(item, index);
-                        item.onUse(container.children[0], container, true); // USE ITEM!
+                        item.onUse(container.children[0], container, true);
                     }
                 }
             } else {
-                // Handle empty slots - clear the container background
-                const container = activeItemsElement.children[index + 1];
+                const container = containers[index];
                 if (container) {
                     container.style.background = `rgba(192, 192, 192, 0)`;
                 }
@@ -68,23 +70,18 @@ class ActiveItems {
         });
     }
 
-    // Method for subclasses to override to specify their DOM element
     getActiveItemsElement() {
         throw new Error("getActiveItemsElement must be implemented by subclass");
     }
 
-    // Method for subclasses to override to specify their container class
     getContainerSelector() {
         throw new Error("getContainerSelector must be implemented by subclass");
     }
 
     refreshAllChargeVisuals() {
-        const activeItemsElement = this.getActiveItemsElement();
-        if (!activeItemsElement) {
-            return;
-        }
+        const containers = this.getItemContainers();
         this.items.forEach((item, index) => {
-            const container = activeItemsElement.children[index + 1];
+            const container = containers[index];
             if (item) {
                 item.resetChargeVisual(container);
             } else if (container) {
@@ -93,42 +90,32 @@ class ActiveItems {
         });
     }
 
-    renderItems(containerName, options = {}) {
+    renderItemsToContainers(containerName, options = {}) {
         const containers = document.querySelectorAll(containerName);
         const itemClass = options.itemClass ?? 'active-item';
         const draggable = options.draggable !== false;
-
-        console.log(this.items);
         
-        // Update each container only if it needs to change
         this.items.forEach((item, index) => {
             if (index < containers.length) {
                 const container = containers[index];
                 const currentItemId = container.querySelector(`.${itemClass}`)?.getAttribute('data-item-id');
                 const newItemId = item?.id;
                 
-                // Only update if the item has changed
                 if (currentItemId !== newItemId) {
                     if (item !== null) {
                         const dragAttr = draggable ? ' draggable="true"' : '';
-                        // Add new item
                         container.innerHTML = `
                             <div class="${itemClass}"${dragAttr} data-item-id="${item.id}" data-item-type="${item.type}">
                                 <img src="${item.image}" alt="${item.name}" title="${item.name}" draggable="false">
                             </div>
                         `;
                         container.classList.add('has-item');
-                        
-                       
                     } else {
-                        // Remove item
                         container.innerHTML = '';
                         container.classList.remove('has-item');
                         container.style.background = `rgba(192, 192, 192, 0)`;
                     }
                 }
-                // If currentItemId === newItemId, don't touch the container at all
-                // This preserves existing DOM elements and their event handlers
             }
         });
     }
@@ -137,24 +124,111 @@ class ActiveItems {
 class PlayerActiveItems extends ActiveItems {
     constructor() {
         super();
+        this.items = [];
+        this.size = Infinity;
     }
 
     getActiveItemsElement() {
         return document.getElementById('active-items');
     }
 
+    getSlotsElement() {
+        return document.getElementById('active-items-slots');
+    }
+
     getContainerSelector() {
         return '.active-item-container';
     }
 
+    getItemContainers() {
+        const slots = this.getSlotsElement();
+        if (!slots) return [];
+        return Array.from(slots.querySelectorAll(this.getContainerSelector()));
+    }
+
+    syncContainers() {
+        const slots = this.getSlotsElement();
+        if (!slots) return;
+
+        const existing = slots.querySelectorAll(this.getContainerSelector());
+        const needed = this.items.length;
+
+        for (let i = existing.length - 1; i >= needed; i--) {
+            existing[i].remove();
+        }
+
+        for (let i = existing.length; i < needed; i++) {
+            const div = document.createElement('div');
+            div.className = 'status-bar-field active-item-container';
+            slots.appendChild(div);
+        }
+    }
+
+    addItem(item, placementIndex = null) {
+        if (placementIndex === null || placementIndex >= this.items.length) {
+            this.items.push(item);
+            this.syncContainers();
+            this.renderItems();
+            return null;
+        }
+
+        const displaced = this.items[placementIndex];
+        if (displaced) {
+            displaced.isReady = false;
+            displaced.currentCharge = 0;
+        }
+        this.items[placementIndex] = item;
+        if (displaced) {
+            this.items.push(displaced);
+            this.syncContainers();
+        }
+        this.renderItems();
+        return displaced ?? null;
+    }
+
+    removeItem(item) {
+        const index = this.items.indexOf(item);
+        if (index === -1) return;
+        item.isReady = false;
+        item.currentCharge = 0;
+        this.items.splice(index, 1);
+        this.syncContainers();
+        this.renderItems();
+    }
+
+    reorderItem(fromIndex, toIndex) {
+        if (fromIndex === toIndex) return;
+        if (fromIndex < 0 || fromIndex >= this.items.length) return;
+        if (toIndex < 0 || toIndex >= this.items.length) return;
+
+        const [item] = this.items.splice(fromIndex, 1);
+        this.items.splice(toIndex, 0, item);
+        this.renderItems();
+    }
+
+    isFull() {
+        return false;
+    }
+
+    updateTitleVisibility() {
+        const title = this.getActiveItemsElement()?.querySelector('.active-items-title');
+        if (title) {
+            title.hidden = this.items.length === 0;
+        }
+    }
+
     renderItems() {
-        super.renderItems(this.getContainerSelector(), { itemClass: 'active-item', draggable: true });
+        this.syncContainers();
+        const slots = this.getSlotsElement();
+        const selector = slots ? '#active-items-slots .active-item-container' : this.getContainerSelector();
+        super.renderItemsToContainers(selector, { itemClass: 'active-item', draggable: true });
+        this.updateTitleVisibility();
     }
 }
 
 class EnemyActiveItems extends ActiveItems {
     constructor() {
-        super(); // Properly call parent constructor
+        super();
         /** @type {import('../templates/enemy.js').default | null} */
         this._currentEnemy = null;
     }
@@ -165,11 +239,10 @@ class EnemyActiveItems extends ActiveItems {
             this.renderItems();
             return null;
         }
-        // Note: Enemy active items don't support swapping like player items
     }  
 
     renderItems() {
-        super.renderItems(this.getContainerSelector(), { itemClass: 'enemy-active-item', draggable: false });
+        super.renderItemsToContainers(this.getContainerSelector(), { itemClass: 'enemy-active-item', draggable: false });
     }
 
     getActiveItemsElement() {

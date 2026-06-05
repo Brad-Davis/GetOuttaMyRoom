@@ -21,7 +21,7 @@ function isInteractiveTarget(el) {
     if (!el || el === document.documentElement || el === document.body) return false;
     return Boolean(
         el.closest(
-            'button, a, input, textarea, select, #window-overlay, #inventory-button, iframe, #computer, #initial-loading-screen'
+            'button, a, input, textarea, select, #window-overlay, iframe, #computer, #initial-loading-screen'
         )
     );
 }

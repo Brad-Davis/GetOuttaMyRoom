@@ -3,6 +3,7 @@ import gsap from "gsap";
 import items from "../templates/items.js";
 import dialogService from "../utils/dialogService.js";
 import dopamineManager from "../managers/dopamineManager.js";
+import { shouldSkipFirstFight } from "../config/gameFlow.js";
 
 class Store {
     constructor() {
@@ -54,8 +55,11 @@ class Store {
 
     showSetup(scene) {
         // window.goblin = this.sprite;
-        dopamineManager.getDopamine()
-        if (this.storeVisited === false && dopamineManager.getDopamine() > 0) {
+        if (
+            this.storeVisited === false &&
+            dopamineManager.getDopamine() > 0 &&
+            !shouldSkipFirstFight()
+        ) {
             items.punch_001.value = dopamineManager.getDopamine();
             this.firstTimeWithDopamine();
             this.storeVisited = true;
@@ -83,14 +87,6 @@ class Store {
                 speaker: 'BED GOBLIN',
                 text: 'GOOD YOU HAVE DOPAMINE. PURCHASE THE PUNCH THEN CONFRONT THAT UGLY LOUD MAN IN THE HALLWAY.',
             },
-            {
-                speaker: 'BED GOBLIN',
-                text: 'DRAG IT INTO THE ACTIVE SLOT',
-            },
-            {
-                speaker: 'BED GOBLIN',
-                text: 'YOU CAN ALSO STORE YOUR OBJECTS IN YOUR BACKPACK BUT THEY WONT CHARGE IN BATTLE.',
-            }
         ]);
     }
 

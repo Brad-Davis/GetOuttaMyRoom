@@ -207,7 +207,9 @@ class GameState {
 
     /** Dev skip: same door/post-fight bookkeeping as winning, plus battle prep checkpoints. */
     _applyDoorFightSkipCheckpoint(enemyName) {
-        this.inventoryManager.resetAllActiveItems();
+        if (enemyName !== 'Grandma') {
+            this.inventoryManager.resetAllActiveItems();
+        }
         if (enemyName === 'Uncle' || enemyName === 'Cousin') {
             this._closeDoorAfterDoorFight();
         }
@@ -226,7 +228,11 @@ class GameState {
     }
 
     async goToBattle(door, options = {}) {
-        const { openDoorOnStart = false, skipNoItemsPrompt = false } = options;
+        const { openDoorOnStart = false, skipNoItemsPrompt = false, skipShopItemsPrompt = false } = options;
+        if (!skipShopItemsPrompt && this.store.items.length > 0) {
+            this.showShopItemsRemainingPrompt(door, options);
+            return false;
+        }
         if (!skipNoItemsPrompt && !this.inventoryManager.hasAnyItems()) {
             this.showAreYouReadyForBattle(door);
             return false;
@@ -255,7 +261,11 @@ class GameState {
     }
 
     async startBattleNow(door) {
-        return this.goToBattle(door, { skipNoItemsPrompt: true, openDoorOnStart: true });
+        return this.goToBattle(door, {
+            skipNoItemsPrompt: true,
+            skipShopItemsPrompt: true,
+            openDoorOnStart: true,
+        });
     }
 
     /** Scroll-hallway fight with the Thirties model already in the world. */
@@ -266,6 +276,21 @@ class GameState {
         this.currentEvent = new Battle(this.player, thirties);
         this.currentEvent.startBattle();
         return true;
+    }
+
+    showShopItemsRemainingPrompt(door, options = {}) {
+        this.textOverlay.showWindowOverlay(
+            "There are still items in the bed goblin's shop.",
+            "Don't forget your gear",
+            ["Okay, I'll go buy something", "Continue to battle anyway"],
+            [
+                () => this.textOverlay.closeWindowOverlay(),
+                () => {
+                    this.textOverlay.closeWindowOverlay();
+                    void this.goToBattle(door, { ...options, skipShopItemsPrompt: true });
+                },
+            ]
+        );
     }
 
     showAreYouReadyForBattle(door) {

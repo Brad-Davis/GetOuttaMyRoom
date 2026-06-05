@@ -26,8 +26,10 @@ import { DADS_ROOM_WALL_LOCAL_Z } from '../enviroments/hallway.js';
 import {
     getKitchenEndingTriggerScrollZ,
     getKitchenMaxGameGroupZ,
+    KITCHEN_SPAWN_GAME_GROUP_Z,
 } from '../enviroments/kitchenLayout.js';
 import audioService from '../utils/audioService.js';
+import textOverlay from '../UI/textOverlay.js';
 
 /** Matches `SceneManager` initial `gameGroup.position.z`. */
 const INITIAL_GAME_GROUP_Z = -5;
@@ -89,6 +91,7 @@ export default class Movement {
       this._daddyKitchenWakeDone = false;
       this._flyingStarted = false;
       this._kitchenEndingStarted = false;
+      this._kitchenScrollHintVisible = false;
 
       window.addEventListener('wheel', this.handleScroll.bind(this));
     //   this.enable(true); // Start in kitchen mode
@@ -154,8 +157,11 @@ export default class Movement {
             this.gameGroup.position.z = maxZ;
         }
 
-        if (REVERSE_SCROLL && this.gameGroup.position.z < INITIAL_GAME_GROUP_Z) {
-            this.gameGroup.position.z = INITIAL_GAME_GROUP_Z;
+        const minZ = this.kitchenEnabled
+            ? KITCHEN_SPAWN_GAME_GROUP_Z
+            : INITIAL_GAME_GROUP_Z;
+        if (REVERSE_SCROLL && this.gameGroup.position.z < minZ) {
+            this.gameGroup.position.z = minZ;
         }
     }
 
@@ -165,6 +171,10 @@ export default class Movement {
         if (event.deltaY * SCROLL_DIRECTION <= 0) return;
 
       this._lastWheelAt = performance.now();
+
+      if (this.kitchenEnabled && this._kitchenScrollHintVisible) {
+          this._dismissKitchenScrollHint();
+      }
 
       const deltaZ = EFFECTIVE_MOVEMENT_SPEED * event.deltaY * SCROLL_DIRECTION;
       const instantSpeed = Math.abs(deltaZ);
@@ -338,7 +348,7 @@ export default class Movement {
     }
 
     /**
-     * Single kitchen entry — rail at SceneManager default (-5); camera via `lookAtKitchen`.
+     * Single kitchen entry — rail at {@link KITCHEN_SPAWN_GAME_GROUP_Z}; camera via `lookAtKitchen`.
      */
     enterKitchenChapter() {
         window.gameEngine?.getThirties?.()?.stopChase?.();
@@ -347,7 +357,7 @@ export default class Movement {
         if (!gameGroup) return;
 
         cameraService.clearCameraTweens();
-        gameGroup.position.set(0, 0, INITIAL_GAME_GROUP_Z);
+        gameGroup.position.set(0, 0, KITCHEN_SPAWN_GAME_GROUP_Z);
 
         cameraService.lookAtKitchen({ duration: 0 });
 
@@ -355,6 +365,18 @@ export default class Movement {
         interactionManager?.syncOrbitToGameGroup?.(gameGroup);
 
         this.enable(true);
+        this._showKitchenScrollHint();
+    }
+
+    _showKitchenScrollHint() {
+        this._kitchenScrollHintVisible = true;
+        textOverlay.showBottomHint('[scroll to leave]');
+    }
+
+    _dismissKitchenScrollHint() {
+        if (!this._kitchenScrollHintVisible) return;
+        this._kitchenScrollHintVisible = false;
+        textOverlay.hideBottomHint();
     }
 
     /** After pleaseDaddyWakeUp (or skip-iframe): same kitchen entry as dev spawn + chapter UI. */

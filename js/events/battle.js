@@ -10,7 +10,7 @@ const BASE_ITEM_TICK_DELTA = 0.1;
 const RECHARGE_ACCEL_START = 1;
 const RECHARGE_ACCEL_GROWTH_PER_FRAME = 0.012;
 const RECHARGE_ACCEL_MAX = 8;
-/** Unarmed player (no inventory / active items): much faster ramp so the fight moves. */
+/** Unarmed player (no active items): much faster ramp so the fight moves. */
 const RECHARGE_ACCEL_NO_ITEMS_START = 6;
 const RECHARGE_ACCEL_NO_ITEMS_GROWTH_PER_FRAME = 0.1;
 const RECHARGE_ACCEL_NO_ITEMS_MAX = 32;
@@ -130,8 +130,7 @@ class Battle {
     }
 
     startBattleLoop() {
-        document.getElementById('active-items').style.display = 'block';
-        document.getElementById('inventory-button').style.display = 'block';
+        document.getElementById('active-items').style.display = 'flex';
         if (!this.battleRunning) return;
         this.battleElapsedMs += BATTLE_LOOP_MS;
         void this.tryUnlockRechargeAccel();

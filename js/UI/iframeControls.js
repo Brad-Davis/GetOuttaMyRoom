@@ -33,7 +33,11 @@ function isEvilTinderUrl(url) {
 }
 
 function isNoiseBetweenStaticUrl(url) {
-    return typeof url === 'string' && url.includes('/noiseBetweenStatic/');
+    if (typeof url !== 'string') return false;
+    return (
+        url.includes('/noiseBetweenStatic/') ||
+        /noisebetweenstatic\.com/i.test(url)
+    );
 }
 
 /** These iframes keep ambient BGM; everything else fades it out. */
@@ -49,6 +53,15 @@ function keepsBackgroundMusic(url) {
 
 const DEFAULT_IFRAME_SANDBOX =
     'allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-presentation';
+
+/** Noise Between Static: block popups so nested YouTube embeds cannot open new tabs. */
+const NOISE_BETWEEN_STATIC_IFRAME_SANDBOX =
+    'allow-scripts allow-same-origin allow-forms allow-modals allow-presentation';
+
+function getIframeSandboxForUrl(url) {
+    if (isNoiseBetweenStaticUrl(url)) return NOISE_BETWEEN_STATIC_IFRAME_SANDBOX;
+    return DEFAULT_IFRAME_SANDBOX;
+}
 
 const DEFAULT_IFRAME_ALLOW =
     'microphone *; camera *; autoplay *; encrypted-media *; fullscreen *; speaker-selection *';
@@ -151,7 +164,7 @@ class IframeControls {
         if (externalEmbed) {
             this.iframe.removeAttribute('sandbox');
         } else {
-            this.iframe.setAttribute('sandbox', DEFAULT_IFRAME_SANDBOX);
+            this.iframe.setAttribute('sandbox', getIframeSandboxForUrl(url));
         }
         this.iframe.setAttribute('allow', DEFAULT_IFRAME_ALLOW);
         if (this.iframe.src !== url) {
@@ -179,7 +192,7 @@ class IframeControls {
         ]);
         backButtonManager.enable();
         speakButtonManager.enable();
-        missionService.setCurrentMission('Post on LinkedIn to get dopamine.');
+        missionService.setCurrentMission('Post on LinkedIn on your computer to get dopamine.');
     }
 
     async tinderStartup() {
@@ -222,7 +235,7 @@ class IframeControls {
         if (options.externalEmbed) {
             this.iframe.removeAttribute('sandbox');
         } else {
-            this.iframe.setAttribute('sandbox', DEFAULT_IFRAME_SANDBOX);
+            this.iframe.setAttribute('sandbox', getIframeSandboxForUrl(url));
         }
         this.iframe.src = url;
         this.iframe.style.display = 'block';

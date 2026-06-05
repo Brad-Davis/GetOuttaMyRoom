@@ -20,10 +20,20 @@ function pickRandomYoutubeVideo() {
   return EVIL_YOUTUBE_VIDEOS[index];
 }
 
+function buildYoutubeEmbedUrl(videoId) {
+  const params = new URLSearchParams({
+    rel: '0',
+    modestbranding: '1',
+    playsinline: '1',
+    origin: window.location.origin,
+  });
+  return `https://www.youtube.com/embed/${videoId}?${params}`;
+}
+
 function initYoutubePlayer() {
   if (!youtubePlayer) return;
   const videoId = pickRandomYoutubeVideo();
-  youtubePlayer.src = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+  youtubePlayer.src = buildYoutubeEmbedUrl(videoId);
 }
 
 initYoutubePlayer();

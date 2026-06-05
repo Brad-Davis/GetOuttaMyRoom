@@ -164,8 +164,7 @@ class CD {
           iframeControls.zoomIn(true);
           setTimeout(() => {
             cameraService.sleepInBed();
-            document.getElementById('active-items').style.display = 'block';
-            document.getElementById('inventory-button').style.display = 'block';
+            document.getElementById('active-items').style.display = 'flex';
           }, 1000);
       }, 1000);
     }, 3100)

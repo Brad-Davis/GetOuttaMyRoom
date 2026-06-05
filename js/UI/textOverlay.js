@@ -144,6 +144,22 @@ class TextOverlay {
         this.bottomOverlay.textContent = '';
     }
 
+    /** Blinking bottom HUD hint (same element as the opening CD prompt). */
+    showBottomHint(message) {
+        this._stopBlinkLoop = false;
+        this.isVisible = true;
+        if (this.bottomOverlay) {
+            this.bottomOverlay.textContent = message;
+        }
+        this.show('bottom');
+        this.blink('1');
+    }
+
+    hideBottomHint() {
+        this.clearBottomOverlay();
+        this.hide();
+    }
+
     _playDialogRevealSfx() {
         effectsService.playSfx('dialogReveal', { volume: 0.55 });
     }

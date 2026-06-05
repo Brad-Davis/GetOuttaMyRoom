@@ -158,7 +158,7 @@ function setup() {
     rectMode(CENTER);
     rotate(0);
     background(0);
-    textFont('Press Start 2P');
+    textFont('Nintendoid1');
     startButton = createButton('START');
     const startEl = startButton.elt;
     startEl.id = 'noise-start-btn';

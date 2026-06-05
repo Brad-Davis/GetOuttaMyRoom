@@ -158,12 +158,14 @@
           draggable="false"
         />
 
+        <!-- sandbox omits allow-popups so YouTube logo/title links cannot open new tabs -->
         <iframe
           id="youtube-player"
           class="video-player"
           title="Youtube video player"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen
+          sandbox="allow-scripts allow-same-origin allow-presentation"
         ></iframe>
 
         <form class="overlay" id="evil-form" aria-label="Comment">

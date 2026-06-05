@@ -346,8 +346,7 @@ body.noise-between-static-iframe-open #backButton {
 /* Only these controls capture clicks; everything else is visual-only */
 #backButton,
 #speakButton,
-#mission-hud:not([hidden]),
-#inventory-button {
+#mission-hud:not([hidden]) {
     pointer-events: auto;
 }
 
@@ -616,30 +615,42 @@ body.noise-between-static-iframe-open #backButton {
   font-size: 1em;
 }
 
-#inventory-button {
-  position: absolute;
-  bottom: 50px;
-  right: 20px;
-  width: 100px;
-  height: 100px;
-  display: none;
-}
-
 #active-items {
   position: absolute;
   bottom: 50px;
   left: 20px;
-  width: auto;
-  width: 100px;
-  display: flex;
-  text-align: center;
+  width: 208px;
+  max-width: calc(100vw - 40px);
+  display: none;
   flex-direction: column;
-  gap: 0;
+  gap: 8px;
   align-items: center;
+}
+
+.active-items-title {
+  color: white;
+  padding-bottom: 4px;
+  width: 100%;
+  text-align: center;
+}
+
+.active-items-title:not([hidden]) {
+  display: block;
+}
+
+.active-items-title[hidden] {
   display: none;
 }
 
-.active-item-container, .inventory-item-container, .enemy-active-item-container {
+.active-items-slots {
+  display: grid;
+  grid-template-columns: repeat(2, 100px);
+  gap: 8px;
+  min-height: 100px;
+  width: 208px;
+}
+
+.active-item-container, .enemy-active-item-container {
   width: 100px;
   height: 100px;
   background-color: rgba(0, 0, 0, 0.5);
@@ -647,27 +658,7 @@ body.noise-between-static-iframe-open #backButton {
 }
 
 .active-item-container {
-  display: inline-block; /* Keep inline-block for active items */
-}
-
-.inventory-item-container {
-  padding: 0 !important;
-  max-width: 100px;
-  max-height: 100px;
-  box-sizing: border-box;
-}
-
-#inventory-items {
-  position: absolute;
-  right: 0px;
-  width: 200px;
-  height: 200px;
-  top: 50%;
-  transform: translate(100%, -50%);
-  transition: transform 0.5s ease-in-out;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0; /* Optional: adds consistent spacing between items */
+  display: inline-block;
 }
 
 /* Drag and Drop Styles */
@@ -726,17 +717,17 @@ body.noise-between-static-iframe-open #backButton {
 }
 
 /* Drag over states */
-.inventory-item-container.drag-over, .active-item-container.drag-over {
+.active-item-container.drag-over, #active-items-slots.drag-over {
   background-color: rgba(0, 123, 255, 0.3);
   border: 2px #007BFF;
 }
 
 /* Item container states */
-.inventory-item-container.has-item, .active-item-container.has-item, .shop-item-container.has-item {
+.active-item-container.has-item, .shop-item-container.has-item {
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.inventory-item-container:empty, .active-item-container:empty, #shop-items .shop-item-container:empty {
+.active-item-container:empty, #shop-items .shop-item-container:empty {
   border: 1px dashed rgba(255, 255, 255, 0.2);
 }
 
@@ -752,7 +743,25 @@ body.noise-between-static-iframe-open #backButton {
 
 /* Active items specific styling */
 .active-item-container {
-  margin: 0 5px;
+  margin: 0;
+}
+
+.active-item-ready {
+  cursor: pointer;
+  box-shadow: 0 0 16px 4px #ffe066, 0 0 4px 2px #fff;
+}
+
+.active-item-ready.idle-flash {
+  animation: active-item-glow-flash 0.75s ease-in-out infinite;
+}
+
+@keyframes active-item-glow-flash {
+  0%, 100% {
+    box-shadow: 0 0 16px 4px #ffe066, 0 0 4px 2px #fff;
+  }
+  50% {
+    box-shadow: 0 0 28px 10px #ffe066, 0 0 16px 6px #fff;
+  }
 }
 
 #item-info-block.item-info-window {

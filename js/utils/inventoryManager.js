@@ -1,4 +1,3 @@
-import inventory from "../UI/inventory.js";
 import { playerActiveItems, enemyActiveItems } from "../UI/activeItems.js";
 import items from "../templates/items.js";
 import store from "../enviroments/store.js";
@@ -10,23 +9,12 @@ import backButtonManager from "../controls/backButton.js";
 
 class InventoryManager {
     constructor() {
-        this.inventory = inventory;
         this.activeItems = playerActiveItems;
         this.enemyActiveItems = enemyActiveItems;
         this.inventoryContainer = document.getElementById("inventory-container");
-        this.inventoryButton = document.getElementById("inventory-button");
-        this.inventoryItems = document.getElementById("inventory-items");
-        this.inventoryVisible = false;
         this.draggedItem = null;
         this.dragSource = null;
-
-        this.inventoryButton.addEventListener("click", () => {
-            if (this.inventoryVisible) {
-                this.hideInventory();
-            } else {
-                this.showInventory();
-            }
-        });
+        this.dragSourceIndex = null;
 
         this.setupDragAndDrop();
         this.setupShopClick();
@@ -34,25 +22,26 @@ class InventoryManager {
         if (!hasPendingInventoryRestore()) {
             this.addTestItems();
         }
+
+        this.activeItems.updateTitleVisibility();
     }
 
     addTestItems() {
-        // this.inventory.addItem(items.punch_001);
-        // this.inventory.addItem(items.shot_001);
-        // this.inventory.addItem(items.scream_001);
+        // this.activeItems.addItem(items.punch_001);
+        // this.activeItems.addItem(items.shot_001);
+        // this.activeItems.addItem(items.scream_001);
     }
 
     setupDragAndDrop() {
-        // Set up drag and drop event listeners
         document.addEventListener('mouseover', (e) => {
-            const rowEl = e.target.closest('.inventory-item, .active-item, .enemy-active-item');
+            const rowEl = e.target.closest('.active-item, .enemy-active-item, #shop-items .inventory-item');
             if (rowEl) {
                 this.showItemInfo(rowEl.dataset.itemId, rowEl);
             }
         });
 
         document.addEventListener('mouseout', (e) => {
-            const rowEl = e.target.closest('.inventory-item, .active-item, .enemy-active-item');
+            const rowEl = e.target.closest('.active-item, .enemy-active-item, #shop-items .inventory-item');
             if (rowEl && !rowEl.contains(e.relatedTarget)) {
                 this.removeItemInfo();
             }
@@ -63,7 +52,7 @@ class InventoryManager {
                 e.preventDefault();
                 return;
             }
-            if (e.target.closest('.inventory-item, .active-item')) {
+            if (e.target.closest('.active-item, #shop-items .inventory-item')) {
                 this.handleDragStart(e);
             }
         });
@@ -109,19 +98,13 @@ class InventoryManager {
     }
 
     buyShopItem(item) {
-        const emptyIndex = this.activeItems.items.findIndex((i) => i === null);
-        const placementIndex = emptyIndex !== -1 ? emptyIndex : 0;
-        const containers = document.querySelectorAll('.active-item-container');
-        const targetContainer = containers[placementIndex];
-        if (!targetContainer) return;
-
-        this.moveItem(item, 'shop', 'active', targetContainer, placementIndex);
+        this.moveItem(item, 'shop', 'active', null, this.activeItems.items.length);
     }
 
     handleDragStart(e) {
-        const rowEl = e.target.classList.contains('inventory-item') || e.target.classList.contains('active-item')
+        const rowEl = e.target.classList.contains('active-item') || e.target.classList.contains('inventory-item')
             ? e.target
-            : e.target.closest('.inventory-item, .active-item');
+            : e.target.closest('.active-item, .inventory-item');
         if (!rowEl) return;
 
         const shopSlot = rowEl.closest('#shop-items .shop-item-container');
@@ -143,10 +126,10 @@ class InventoryManager {
                 return;
             }
             this.dragSource = 'shop';
-        } else if (rowEl.classList.contains('inventory-item')) {
-            this.dragSource = 'inventory';
+            this.dragSourceIndex = null;
         } else if (rowEl.classList.contains('active-item')) {
             this.dragSource = 'active';
+            this.dragSourceIndex = this.activeItems.items.findIndex((i) => i?.id === rowEl.dataset.itemId);
         } else {
             return;
         }
@@ -162,61 +145,60 @@ class InventoryManager {
     }
 
     handleDragOver(e) {
-        const target = e.target.closest('.inventory-item-container, .active-item-container');
+        const target = e.target.closest('.active-item-container, #active-items-slots');
         if (target) {
             target.classList.add('drag-over');
         }
     }
 
     handleDragExit(e) {
-        const target = e.target.closest('.inventory-item-container, .active-item-container');
+        const target = e.target.closest('.active-item-container, #active-items-slots');
         if (target) {
             target.classList.remove('drag-over');
         }
     }
 
     handleDrop(e) {
-        const target = e.target.closest('.inventory-item-container, .active-item-container');
+        const target = e.target.closest('.active-item-container, #active-items-slots');
         if (target && this.draggedItem) {
-            const targetType = target.classList.contains('inventory-item-container') ? 'inventory' : 'active';
+            if (this.dragSource === 'shop' || this.dragSource === 'active') {
+                const containers = this.activeItems.getItemContainers();
+                const placementIndex = target.id === 'active-items-slots'
+                    ? this.activeItems.items.length
+                    : containers.indexOf(target);
+                if (placementIndex === -1) return;
 
-            if (this.dragSource === 'shop' && targetType !== 'active') {
-                document.querySelectorAll('.inventory-item-container, .active-item-container').forEach((container) => {
-                    container.classList.remove('drag-over');
-                });
-                return;
-            }
+                const itemId = this.draggedItem.id;
+                let item = null;
 
-            const itemId = this.draggedItem.id;
-            let item = null;
+                if (this.dragSource === 'active') {
+                    item = this.activeItems.items.find((i) => i?.id === itemId);
+                    if (item && this.dragSourceIndex !== null && this.dragSourceIndex !== placementIndex) {
+                        this.activeItems.reorderItem(this.dragSourceIndex, placementIndex);
+                        document.querySelectorAll('.active-item-container').forEach((container) => {
+                            container.classList.remove('drag-over');
+                        });
+                        return;
+                    }
+                } else if (this.dragSource === 'shop') {
+                    item = store.items.find((i) => i.id === itemId);
+                }
 
-            if (this.dragSource === 'inventory') {
-                item = this.inventory.items.find(i => i.id === itemId);
-            } else if (this.dragSource === 'active') {
-                item = this.activeItems.items.find(i => i != null && i.id === itemId);
-            } else if (this.dragSource === 'shop') {
-                item = store.items.find(i => i.id === itemId);
-            }
-
-            if (item) {
-                const containers = Array.from(document.querySelectorAll(
-                    targetType === 'inventory' ? '.inventory-item-container' : '.active-item-container'
-                ));
-                const placementIndex = containers.indexOf(target);
-                this.moveItem(item, this.dragSource, targetType, target, placementIndex);
+                if (item) {
+                    this.moveItem(item, this.dragSource, 'active', target, placementIndex);
+                }
             }
         }
 
-        // Remove drag over styling from all containers
-        document.querySelectorAll('.inventory-item-container, .active-item-container').forEach(container => {
+        document.querySelectorAll('.active-item-container, #active-items-slots').forEach((container) => {
             container.classList.remove('drag-over');
         });
     }
 
     handleDragEnd(e) {
-        const rowEl = e.target.classList.contains('inventory-item') || e.target.classList.contains('active-item')
+        const rowEl = e.target.classList.contains('active-item') || e.target.classList.contains('inventory-item')
             ? e.target
-            : e.target.closest('.inventory-item, .active-item');
+            : e.target.closest('.active-item, .inventory-item');
         if (rowEl) {
             rowEl.style.opacity = '1';
         }
@@ -227,6 +209,7 @@ class InventoryManager {
 
         this.draggedItem = null;
         this.dragSource = null;
+        this.dragSourceIndex = null;
     }
 
     showItemInfo(itemId, sourceEl = null) {
@@ -302,8 +285,6 @@ class InventoryManager {
 
     findItemById(itemId) {
         if (!itemId) return null;
-        const fromInventory = this.inventory.items.find((i) => i?.id === itemId);
-        if (fromInventory) return fromInventory;
         const fromActive = this.activeItems.items.find((i) => i?.id === itemId);
         if (fromActive) return fromActive;
         const fromEnemy = this.enemyActiveItems.items.find((i) => i?.id === itemId);
@@ -317,66 +298,24 @@ class InventoryManager {
     }
 
     moveItem(item, source, target, targetContainer, placementIndex) {
-        // Don't move if dropping on the same type
-        if (source === target) {
-            // SWAP ACTIVE ITEMS INTERNALLY!!!!
+        if (source !== 'shop' || target !== 'active') {
             return;
         }
 
-        // Check if target container already has an item
-        const hasItem = targetContainer.classList.contains('has-item');
-        
-        if (source === 'inventory' && target === 'active') {
-            this.inventory.removeItem(item);
-            const swapItem = this.activeItems.addItem(item, placementIndex);
-            if (swapItem && !this.inventory.addItem(swapItem)) {
-                this.activeItems.removeItem(item);
-                this.inventory.addItem(item);
-                this.activeItems.addItem(swapItem, placementIndex);
-            }
-        } else if (source === 'shop' && target === 'active') {
-            const cost = item.value;
-            if (!dopamineManager.trySpend(cost)) {
-                dialogService.runLines([
-                    {
-                        speaker: 'BED GOBLIN',
-                        text: 'YOU HAVE NO DOPAMINE! LEAVE ME BE!',
-                    }
-                ]);
-                effectsService.playSfx('notEnoughDopamine');
-                return;
-                
-            }
-            //BOUGHT ITEM FROM SHOP
-            
-
-
-            store.removeItem(item);
-            const swapItem = this.activeItems.addItem(item, placementIndex);
-            if (swapItem && !this.inventory.addItem(swapItem)) {
-                this.activeItems.removeItem(item);
-                this.activeItems.addItem(swapItem, placementIndex);
-                store.addItem(item);
-                dopamineManager.giveDopamine(cost);
-                return;
-            }
-        } else if (source === 'active' && target === 'inventory') {
-            if (!this.inventory.hasSpace()) {
-                return;
-            }
-            this.activeItems.removeItem(item);
-            this.inventory.addItem(item);
+        const cost = item.value;
+        if (!dopamineManager.trySpend(cost)) {
+            dialogService.runLines([
+                {
+                    speaker: 'BED GOBLIN',
+                    text: 'YOU HAVE NO DOPAMINE! LEAVE ME BE!',
+                }
+            ]);
+            effectsService.playSfx('notEnoughDopamine');
+            return;
         }
-    }
 
-    showInventory() {
-        this.inventoryVisible = true;
-        this.inventoryItems.style.transform = "translate(0%, -50%)";
-    }
-
-    hideInventory() {
-        this.inventoryVisible = false;
-        this.inventoryItems.style.transform = "translate(100%, -50%)";
+        store.removeItem(item);
+        this.activeItems.addItem(item, placementIndex);
     }
 
     hideAllElements() {
@@ -391,12 +330,11 @@ class InventoryManager {
         this.inventoryContainer.style.pointerEvents = 'auto';
     }
 
-    /** Backpack, active slots, dopamine, damage multipliers — kitchen walk / end credits. */
+    /** Active items, dopamine, damage multipliers — kitchen walk / end credits. */
     hideGameplayHud() {
         if (this._gameplayHudHidden) return;
         this._gameplayHudHidden = true;
 
-        this.hideInventory();
         this.hideAllElements();
 
         this._savedHudDisplay = this._savedHudDisplay ?? {};
@@ -422,9 +360,7 @@ class InventoryManager {
     }
 
     hasAnyItems() {
-        const inInventory = this.inventory.items.length > 0;
-        const equipped = this.activeItems.items.some((item) => item !== null);
-        return inInventory || equipped;
+        return this.activeItems.items.length > 0;
     }
 
     resetAllActiveItems() {

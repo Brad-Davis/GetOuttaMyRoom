@@ -99,9 +99,7 @@ class GameEngine {
         dismissInitialLoadingScreen();
 
         const activeItems = document.getElementById('active-items');
-        const invBtn = document.getElementById('inventory-button');
-        if (activeItems) activeItems.style.display = 'block';
-        if (invBtn) invBtn.style.display = 'block';
+        if (activeItems) activeItems.style.display = 'flex';
 
         this.interactionManager.movement.enterKitchenChapter();
         interactionService.enable();
@@ -121,9 +119,7 @@ class GameEngine {
         }
 
         const activeItems = document.getElementById('active-items');
-        const invBtn = document.getElementById('inventory-button');
-        if (activeItems) activeItems.style.display = 'block';
-        if (invBtn) invBtn.style.display = 'block';
+        if (activeItems) activeItems.style.display = 'flex';
 
         dismissInitialLoadingScreen();
 
